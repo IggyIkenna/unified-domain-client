@@ -12,3 +12,9 @@ venv/
 
 # Env
 .env
+
+# Local deps (CI clones to deps/; local: symlinks)
+deps/
+*.bak
+.coverage
+pyrightconfig.json
