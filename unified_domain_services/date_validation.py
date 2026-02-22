@@ -30,12 +30,10 @@ Usage:
 import logging
 import math
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
-from typing import Optional
 
 import yaml
-
 from unified_cloud_services.domain import (
     FEATURE_GROUP_LOOKBACK,
     MAX_LOOKBACK_DAYS_BY_TIMEFRAME,
@@ -51,9 +49,9 @@ class DateValidationResult:
 
     is_valid: bool
     reason: str
-    earliest_valid_date: Optional[str] = None
-    requested_date: Optional[str] = None
-    days_until_valid: Optional[int] = None
+    earliest_valid_date: str | None = None
+    requested_date: str | None = None
+    days_until_valid: int | None = None
 
 
 class DateValidator:
@@ -64,14 +62,14 @@ class DateValidator:
     for each category/venue/timeframe combination.
     """
 
-    def __init__(self, config_path: Optional[Path] = None):
+    def __init__(self, config_path: Path | None = None):
         """
         Initialize the validator.
 
         Args:
             config_path: Path to expected_start_dates.yaml (auto-detected if None)
         """
-        self._config: dict = {}
+        self._config: dict[str, object] = {}
         self._config_path = config_path
         self._loaded = False
 
@@ -111,8 +109,8 @@ class DateValidator:
         self,
         service: str,
         category: str,
-        venue: Optional[str] = None,
-    ) -> Optional[str]:
+        venue: str | None = None,
+    ) -> str | None:
         """
         Get earliest raw data date for a service/category/venue.
 
@@ -127,6 +125,8 @@ class DateValidator:
         self._load_config()
 
         service_config = self._config.get(service, {})
+        if not isinstance(service_config, dict):
+            service_config = {}
         category_config = service_config.get(category, {})
 
         if venue and "venues" in category_config:
@@ -137,9 +137,9 @@ class DateValidator:
     def get_earliest_valid_feature_date(
         self,
         category: str,
-        venue: Optional[str] = None,
+        venue: str | None = None,
         timeframe: str = "24h",
-    ) -> Optional[str]:
+    ) -> str | None:
         """
         Get earliest date when features can be computed.
 
@@ -155,25 +155,33 @@ class DateValidator:
 
         # Try per-venue dates first
         features_config = self._config.get("features-delta-one-service", {})
+        if not isinstance(features_config, dict):
+            features_config = {}
         category_config = features_config.get(category, {})
 
         timeframe_key = f"venues_{timeframe}"
+        if not isinstance(category_config, dict):
+            category_config = {}
         if venue and timeframe_key in category_config:
-            venue_date = category_config[timeframe_key].get(venue)
+            timeframe_venues = category_config[timeframe_key]
+            venue_date = timeframe_venues.get(venue) if isinstance(timeframe_venues, dict) else None
             if venue_date:
                 return venue_date
 
         # Fall back to category-level computed dates
         earliest_features = self._config.get("earliest_valid_features", {})
+        if not isinstance(earliest_features, dict):
+            earliest_features = {}
         timeframe_dates = earliest_features.get(timeframe, {})
-
+        if not isinstance(timeframe_dates, dict):
+            return None
         return timeframe_dates.get(category)
 
     def get_earliest_valid_ml_date(
         self,
         category: str,
         timeframe: str = "24h",
-    ) -> Optional[str]:
+    ) -> str | None:
         """
         Get earliest date when ML models can be trained.
 
@@ -187,15 +195,20 @@ class DateValidator:
         self._load_config()
 
         ml_config = self._config.get("ml-training-service", {})
+        if not isinstance(ml_config, dict):
+            ml_config = {}
         earliest_ml = ml_config.get("earliest_valid_ml", {})
+        if not isinstance(earliest_ml, dict):
+            earliest_ml = {}
         timeframe_dates = earliest_ml.get(timeframe, {})
-
+        if not isinstance(timeframe_dates, dict):
+            return None
         return timeframe_dates.get(category)
 
     def calculate_lookback_days(
         self,
         timeframe: str,
-        feature_groups: Optional[list] = None,
+        feature_groups: list[str] | None = None,
     ) -> int:
         """
         Calculate required lookback days for given timeframe and feature groups.
@@ -222,7 +235,7 @@ class DateValidator:
         self,
         date: str,
         category: str,
-        venue: Optional[str] = None,
+        venue: str | None = None,
         timeframe: str = "24h",
         service: str = "features-delta-one-service",
     ) -> DateValidationResult:
@@ -255,7 +268,7 @@ class DateValidator:
 
             if raw_date:
                 lookback_days = MAX_LOOKBACK_DAYS_BY_TIMEFRAME.get(timeframe, 200)
-                raw_dt = datetime.strptime(raw_date, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+                raw_dt = datetime.strptime(raw_date, "%Y-%m-%d").replace(tzinfo=UTC)
                 earliest_dt = raw_dt + timedelta(days=lookback_days)
                 earliest_date = earliest_dt.strftime("%Y-%m-%d")
             else:
@@ -266,8 +279,8 @@ class DateValidator:
                 )
 
         # Compare dates
-        requested_dt = datetime.strptime(date, "%Y-%m-%d").replace(tzinfo=timezone.utc)
-        earliest_dt = datetime.strptime(earliest_date, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+        requested_dt = datetime.strptime(date, "%Y-%m-%d").replace(tzinfo=UTC)
+        earliest_dt = datetime.strptime(earliest_date, "%Y-%m-%d").replace(tzinfo=UTC)
 
         if requested_dt >= earliest_dt:
             return DateValidationResult(
@@ -290,7 +303,7 @@ class DateValidator:
 
 
 # Module-level instance for convenience
-_validator: Optional[DateValidator] = None
+_validator: DateValidator | None = None
 
 
 def get_validator() -> DateValidator:
@@ -304,7 +317,7 @@ def get_validator() -> DateValidator:
 def should_skip_date(
     date: str,
     category: str,
-    venue: Optional[str] = None,
+    venue: str | None = None,
     timeframe: str = "24h",
 ) -> bool:
     """
@@ -330,9 +343,9 @@ def should_skip_date(
 
 def get_earliest_valid_date(
     category: str,
-    venue: Optional[str] = None,
+    venue: str | None = None,
     timeframe: str = "24h",
-) -> Optional[str]:
+) -> str | None:
     """
     Get earliest valid date for feature processing.
 

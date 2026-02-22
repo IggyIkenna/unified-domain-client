@@ -2,23 +2,37 @@
 requires = ["setuptools>=65", "wheel"]
 build-backend = "setuptools.build_meta"
 
+[tool.uv.sources]
+# Workspace-level path dependencies (no nested deps/)
+unified-cloud-services = { path = "../unified-cloud-services" }
+unified-config-interface = { path = "../unified-config-interface" }
+unified-events-interface = { path = "../unified-events-interface" }
+
 [project]
 name = "unified-domain-services"
-version = "0.1.3"
+version = "0.1.6"
 description = "Trading domain services - clients, validation, cloud service wrappers"
 requires-python = ">=3.13,<3.14"
 dependencies = [
-    "pandas>=2.2.0",
-    "pyyaml>=6.0",
+    "pandas>=2.3.0,<3.0.0",
+    "pyarrow>=23.0.0,<24.0.0",
+    "pyyaml>=6.0.1,<7.0.0",
     "unified-cloud-services>=1.5.0",
+    "unified-config-interface>=0.3.0",
+    "unified-events-interface>=0.1.0",
 ]
 
 [project.optional-dependencies]
 dev = [
-    "pytest>=7.0",
-    "pytest-cov>=4.0",
-    "pytest-asyncio>=0.21",
+    "pytest>=9.0.1,<10.0.0",
+    "pytest-cov>=7.0.0,<8.0.0",
+    "pytest-asyncio>=1.0.0,<2.0.0",
+    "pytest-timeout>=2.2.0,<3.0.0",
+    "pytest-xdist>=3.5.0,<4.0.0",
     "ruff==0.15.0",
+    "pandas-stubs>=2.2.0,<3.0.0",
+    "basedpyright>=1.20.0,<2.0.0",
+    "pyright>=1.1.390,<2.0.0",
 ]
 
 [tool.setuptools.packages.find]
@@ -29,3 +43,21 @@ exclude = ["tests*"]
 [tool.ruff]
 line-length = 120
 target-version = "py313"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+norecursedirs = ["deps", ".venv", ".git", "build", "dist", "__pycache__"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP"]
+ignore = ["E501"]
+
+[tool.basedpyright]
+exclude = ["build", "dist", "deps"]
+# Treat pyright warnings as errors (codex strict type checking)
+reportAny = "error"
+reportUnknownArgumentType = "error"
+reportUnknownMemberType = "error"
+reportOptionalMemberAccess = "error"
+reportOptionalSubscript = "error"
+reportGeneralTypeIssues = "error"

@@ -24,7 +24,6 @@ import logging
 from dataclasses import dataclass
 
 import pandas as pd
-
 from unified_cloud_services.models.validation import ValidationResult
 
 logger = logging.getLogger(__name__)

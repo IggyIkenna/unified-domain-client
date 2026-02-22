@@ -14,14 +14,13 @@ Domains supported:
 import logging
 import os
 from abc import ABC
-from datetime import datetime
-from typing import Optional
+from datetime import UTC, datetime
 
 import pandas as pd
-
 from unified_cloud_services.core.cloud_config import CloudTarget
-from unified_cloud_services.core.config import get_config
+from unified_cloud_services.core.config import get_config, unified_config
 from unified_cloud_services.core.market_category import get_bucket_for_category
+
 from unified_domain_services.standardized_service import (
     StandardizedDomainCloudService,
 )
@@ -45,11 +44,11 @@ class CloudDataProviderBase(ABC):
     def __init__(
         self,
         domain: str,
-        cloud_target: Optional[CloudTarget] = None,
-        project_id: Optional[str] = None,
-        gcs_bucket: Optional[str] = None,
-        bigquery_dataset: Optional[str] = None,
-        bigquery_location: Optional[str] = None,
+        cloud_target: CloudTarget | None = None,
+        project_id: str | None = None,
+        gcs_bucket: str | None = None,
+        bigquery_dataset: str | None = None,
+        bigquery_location: str | None = None,
     ):
         """
         Initialize cloud data provider.
@@ -66,8 +65,11 @@ class CloudDataProviderBase(ABC):
 
         # Build cloud target from parameters or defaults
         if cloud_target is None:
+            proj = project_id or unified_config.gcp_project_id
+            if not proj:
+                raise ValueError("GCP_PROJECT_ID must be set in config or environment. No hardcoded fallbacks allowed.")
             cloud_target = CloudTarget(
-                project_id=project_id or get_config("GCP_PROJECT_ID", "central-element-323112"),
+                project_id=proj,
                 gcs_bucket=gcs_bucket or get_config("GCS_BUCKET", f"{domain}-store"),
                 bigquery_dataset=bigquery_dataset or get_config("BIGQUERY_DATASET", domain),
                 bigquery_location=bigquery_location or get_config("BIGQUERY_LOCATION", "asia-northeast1"),
@@ -115,11 +117,12 @@ class CloudDataProviderBase(ABC):
         """
         try:
             logger.info(f"📥 Loading from GCS: {self.cloud_target.gcs_bucket}/{gcs_path}")
-            df = self.cloud_service.download_from_gcs(
+            result = self.cloud_service.download_from_gcs(
                 gcs_path=gcs_path,
                 format=format,
                 log_errors=log_errors,
             )
+            df = result if isinstance(result, pd.DataFrame) else pd.DataFrame()
 
             if df.empty:
                 logger.warning(f"⚠️ No data found at {gcs_path}")
@@ -173,11 +176,12 @@ class CloudDataProviderBase(ABC):
             )
 
             logger.info(f"📥 Loading {category} data from: {category_bucket}/{gcs_path}")
-            df = category_service.download_from_gcs(
+            result = category_service.download_from_gcs(
                 gcs_path=gcs_path,
                 format=format,
                 log_errors=False,
             )
+            df = result if isinstance(result, pd.DataFrame) else pd.DataFrame()
 
             if df.empty:
                 logger.warning(f"⚠️ No {category} data found at {category_bucket}/{gcs_path}")
@@ -198,7 +202,7 @@ class CloudDataProviderBase(ABC):
     def query_bigquery(
         self,
         query: str,
-        parameters: Optional[dict] = None,
+        parameters: dict[str, object] | None = None,
     ) -> pd.DataFrame:
         """
         Execute a BigQuery query.
@@ -214,7 +218,7 @@ class CloudDataProviderBase(ABC):
             logger.info("📥 Executing BigQuery query")
             result = self.cloud_service.query_bigquery(
                 query=query,
-                parameters=parameters,
+                parameters=parameters or {},
             )
             logger.info(f"✅ Query returned {len(result)} rows")
             return result
@@ -243,7 +247,7 @@ class CloudDataProviderBase(ABC):
         try:
             logger.info(f"📤 Uploading {len(df)} rows to GCS: {gcs_path}")
             self.cloud_service.upload_to_gcs(
-                df=df,
+                data=df,
                 gcs_path=gcs_path,
                 format=format,
             )
@@ -271,23 +275,36 @@ class CloudDataProviderBase(ABC):
             return False
 
 
+def _resolve_instruments_bucket_cefi() -> str:
+    """Resolve instruments CEFI bucket from config. Fails if not configured."""
+    bucket = get_config("INSTRUMENTS_GCS_BUCKET_CEFI", "")
+    if bucket:
+        return bucket
+    proj = unified_config.gcp_project_id
+    if not proj:
+        raise ValueError(
+            "INSTRUMENTS_GCS_BUCKET_CEFI or GCP_PROJECT_ID must be set in config. No hardcoded fallbacks allowed."
+        )
+    return f"instruments-store-cefi-{proj}"
+
+
 class InstrumentsDataProvider(CloudDataProviderBase):
     """Data provider for instruments domain."""
 
-    def __init__(self, cloud_target: Optional[CloudTarget] = None):
+    def __init__(self, cloud_target: CloudTarget | None = None):
         super().__init__(
             domain="instruments",
             cloud_target=cloud_target,
-            gcs_bucket=get_config("INSTRUMENTS_GCS_BUCKET_CEFI", "instruments-store-cefi-central-element-323112"),
+            gcs_bucket=_resolve_instruments_bucket_cefi(),
             bigquery_dataset=get_config("INSTRUMENTS_BIGQUERY_DATASET", "instruments"),
         )
 
     def get_instruments_for_date(
         self,
         date: datetime,
-        category: Optional[str] = None,
-        venue: Optional[str] = None,
-        instrument_type: Optional[str] = None,
+        category: str | None = None,
+        venue: str | None = None,
+        instrument_type: str | None = None,
     ) -> pd.DataFrame:
         """
         Get instruments for a specific date.
@@ -320,7 +337,7 @@ class InstrumentsDataProvider(CloudDataProviderBase):
     def check_instruments_exist(
         self,
         date: datetime,
-        categories: Optional[list] = None,
+        categories: list[str] | None = None,
     ) -> bool:
         """
         Check if instruments exist for a date.
@@ -346,7 +363,7 @@ class InstrumentsDataProvider(CloudDataProviderBase):
 class MarketDataProvider(CloudDataProviderBase):
     """Data provider for market_data domain."""
 
-    def __init__(self, cloud_target: Optional[CloudTarget] = None):
+    def __init__(self, cloud_target: CloudTarget | None = None):
         super().__init__(
             domain="market_data",
             cloud_target=cloud_target,
@@ -360,7 +377,7 @@ class MarketDataProvider(CloudDataProviderBase):
         timeframe: str,
         start_date: datetime,
         end_date: datetime,
-        limit: Optional[int] = None,
+        limit: int | None = None,
     ) -> pd.DataFrame:
         """
         Get candles from BigQuery.
@@ -375,13 +392,12 @@ class MarketDataProvider(CloudDataProviderBase):
         Returns:
             DataFrame with OHLCV data
         """
-        from datetime import timezone
 
         # Ensure timezone-aware datetimes
         if start_date.tzinfo is None:
-            start_date = start_date.replace(tzinfo=timezone.utc)
+            start_date = start_date.replace(tzinfo=UTC)
         if end_date.tzinfo is None:
-            end_date = end_date.replace(tzinfo=timezone.utc)
+            end_date = end_date.replace(tzinfo=UTC)
 
         # Build table name
         table_suffix = timeframe.replace("h", "h").replace("m", "m").replace("s", "s")
@@ -399,7 +415,7 @@ class MarketDataProvider(CloudDataProviderBase):
         ORDER BY timestamp ASC
         """
 
-        params = {
+        params: dict[str, object] = {
             "instrument_id": instrument_id,
             "start_time": start_date.isoformat(),
             "end_time": end_date.isoformat(),
@@ -415,7 +431,7 @@ class MarketDataProvider(CloudDataProviderBase):
 class FeaturesDataProvider(CloudDataProviderBase):
     """Data provider for features domain."""
 
-    def __init__(self, cloud_target: Optional[CloudTarget] = None):
+    def __init__(self, cloud_target: CloudTarget | None = None):
         super().__init__(
             domain="features",
             cloud_target=cloud_target,
@@ -427,7 +443,7 @@ class FeaturesDataProvider(CloudDataProviderBase):
         self,
         date: datetime,
         feature_type: str = "delta_one",
-        instrument_key: Optional[str] = None,
+        instrument_key: str | None = None,
     ) -> pd.DataFrame:
         """
         Get computed features for a date.
