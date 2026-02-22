@@ -8,14 +8,36 @@
 # When --files is provided: only stage and commit those paths (repo-relative).
 # When --files is omitted: stage all changes (git add -A).
 #
+# Agents MUST use --files with the list of files they changed to avoid
+# committing other agents' partial work in multi-agent sessions.
+#
 # What it does:
 #   1. Runs quality gates FIRST (scripts/quality-gates.sh)
-#   2. Stashes changes, creates branch from main, reapplies, commits
-#   3. Pushes branch, creates PR with auto-merge (squash)
+#      - If quality gates fail, script exits immediately (fail fast)
+#   2. Stashes changes, creates new branch from origin/main (without checking out local main)
+#   3. Restores stashed changes onto new branch
+#   4. Stages changes (--files or -A), commits
+#   5. Pushes branch, creates PR with auto-merge (squash)
+#   6. Stays on PR branch (does NOT checkout main)
 #
-# Prerequisites: gh CLI, Auto-merge enabled on repo
+# Prerequisites:
+#   - gh CLI installed and authenticated (gh auth login)
+#   - Auto-merge enabled on the repo (Settings > General > Allow auto-merge)
+#
+# Notes:
+#   - If quickmerge fails and you fix it: run quickmerge again directly. Do NOT
+#     run quality gates first—quickmerge already runs quality gates and pre-commit fixes.
 
 set -e
+
+# Source Cursor Team Kit enforcement prompts (optional but recommended)
+WORKSPACE_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+if [ -f "$WORKSPACE_ROOT/.cursor/scripts/cursor-team-kit-enforcement.sh" ]; then
+    source "$WORKSPACE_ROOT/.cursor/scripts/cursor-team-kit-enforcement.sh"
+    CURSOR_TEAM_KIT_ENABLED=1
+else
+    CURSOR_TEAM_KIT_ENABLED=0
+fi
 
 COMMIT_MSG="chore: automated update"
 FILES_ARG=""

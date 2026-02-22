@@ -31,6 +31,7 @@ jobs:
           if [ -n "$GH_PAT" ]; then
             git clone https://x-access-token:${GH_PAT}@github.com/IggyIkenna/unified-config-interface.git deps/unified-config-interface
             git clone https://x-access-token:${GH_PAT}@github.com/IggyIkenna/unified-cloud-services.git deps/unified-cloud-services
+            git clone https://x-access-token:${GH_PAT}@github.com/IggyIkenna/unified-events-interface.git deps/unified-events-interface
             echo "Cloned dependencies"
           else
             echo "GH_PAT not set - install from Artifact Registry or local paths"
@@ -41,6 +42,7 @@ jobs:
           if [ -d "deps/unified-config-interface" ]; then
             uv pip install --system -e deps/unified-config-interface
             uv pip install --system -e deps/unified-cloud-services
+            uv pip install --system -e deps/unified-events-interface
           fi
           uv pip install --system -e ".[dev]"
           uv pip install --system ruff==0.15.0
