@@ -64,23 +64,23 @@ uv pip install -e ".[dev]" --quiet
 
 # Step 3: Format
 if [ "$NO_FIX" = false ]; then
-  ruff format .
+  ruff format --line-length 120 .
 else
-  ruff format --check .
+  ruff format --check --line-length 120 .
 fi
 
 # Step 4: Lint
 if [ "$NO_FIX" = false ]; then
-  ruff check --fix .
+  ruff check --fix --line-length 120 .
 else
-  ruff check .
+  ruff check --line-length 120 .
 fi
 
 # ============================================================================
-# Step 2b: TYPE CHECKING (pyright)
+# Step 2b: TYPE CHECKING (basedpyright)
 # ============================================================================
 echo ""
-echo "🔍 TYPE CHECKING (pyright)"
+echo "🔍 TYPE CHECKING (basedpyright)"
 echo "----------------------------------------------------------------------"
 
 # Colors for output
@@ -89,28 +89,23 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m'
 
-# Ensure pyright or basedpyright is available
-if ! command -v pyright &> /dev/null && ! python3 -c "import pyright" &> /dev/null && ! python3 -c "import basedpyright" &> /dev/null; then
-    echo -e "${YELLOW}Installing pyright...${NC}"
-    command -v uv >/dev/null 2>&1 || pip install uv --quiet
-    uv pip install "pyright>=1.1.390" --quiet
-fi
-
-echo -n "Running type checker (pyright)... "
-if command -v pyright &> /dev/null; then
-    PYRIGHT_CMD="pyright"
-elif python3 -m basedpyright --version &> /dev/null 2>&1; then
-    PYRIGHT_CMD="python3 -m basedpyright"
+# Ensure basedpyright is available
+if command -v basedpyright &> /dev/null; then
+    TYPE_CHECKER="basedpyright"
+elif python3 -c "import basedpyright" &> /dev/null; then
+    TYPE_CHECKER="python3 -m basedpyright"
 else
-    PYRIGHT_CMD="python3 -m pyright"
+    uv pip install "basedpyright>=1.20.0" --quiet
+    TYPE_CHECKER="basedpyright"
 fi
 
-if $PYRIGHT_CMD unified_domain_services/ --level warning 2>&1 | tee /tmp/pyright.log | grep -qE "0 errors, 0 warnings"; then
+echo -n "Running type checker (basedpyright)... "
+if $TYPE_CHECKER unified_domain_services/ --level warning 2>&1 | tee /tmp/basedpyright.log | grep -qE "0 errors, 0 warnings"; then
     echo -e "${GREEN}PASS${NC}"
 else
     echo -e "${RED}FAIL${NC}"
     echo -e "${RED}Type errors found:${NC}"
-    grep -E "error|warning" /tmp/pyright.log | head -10
+    grep -E "error|warning" /tmp/basedpyright.log | head -10
     PYRIGHT_STATUS=1
     CODEX_VIOLATIONS=$((CODEX_VIOLATIONS + 1))
 fi
@@ -142,6 +137,131 @@ else
     echo -e "${RED}❌ Quick tests FAILED${NC}"
     TEST_STATUS=1
   fi
+fi
+
+# ============================================================================
+# Step 5.5: CODEX COMPLIANCE (empty fallbacks, imports, Any)
+# ============================================================================
+echo ""
+echo "======================================================================"
+echo "CODEX COMPLIANCE"
+echo "======================================================================"
+
+if command -v rg &> /dev/null; then
+  echo -n "Checking for empty fallback patterns... "
+  # Whitelist: cloud_data_provider.py os.environ.get("_", "") for pytest detection
+  EMPTY_FALLBACKS=$(rg '\.get\([^)]*,\s*""\)' --type py --glob "!tests/**" --glob "!scripts/**" --glob "!**/cloud_data_provider.py" . 2>/dev/null || true)
+  ENV_EMPTY=$(rg 'os\.environ\.get\([^)]*,\s*""\)' --type py --glob "!tests/**" --glob "!scripts/**" --glob "!**/cloud_data_provider.py" . 2>/dev/null || true)
+  if [ -n "$EMPTY_FALLBACKS" ] || [ -n "$ENV_EMPTY" ]; then
+    echo -e "${RED}FAIL${NC}"
+    [ -n "$EMPTY_FALLBACKS" ] && echo "$EMPTY_FALLBACKS" | head -5
+    [ -n "$ENV_EMPTY" ] && echo "$ENV_EMPTY" | head -5
+    CODEX_VIOLATIONS=$((CODEX_VIOLATIONS + 1))
+  else
+    echo -e "${GREEN}PASS${NC}"
+  fi
+
+  echo -n "Checking for imports inside functions... "
+  # Whitelist: __init__.py (circular import prevention), clients.py, cloud_data_provider.py, date_validation.py, instruction_schema.py
+  violations=$(rg "^[[:space:]]+import |^[[:space:]]+from .* import" --type py --glob "!tests/**" --glob "!scripts/**" \
+    --glob "!**/__init__.py" --glob "!**/clients.py" --glob "!**/cloud_data_provider.py" \
+    --glob "!**/date_validation.py" --glob "!**/instruction_schema.py" . 2>/dev/null || true)
+  if [ -n "$violations" ]; then
+    echo -e "${RED}FAIL${NC}"
+    echo "$violations" | head -5
+    CODEX_VIOLATIONS=$((CODEX_VIOLATIONS + 1))
+  else
+    echo -e "${GREEN}PASS${NC}"
+  fi
+
+  echo -n "Checking for Any type usage... "
+  ANY_USAGE=$(rg ": Any|-> Any|\[Any\]" --type py --glob "!tests/**" --glob "!scripts/**" . 2>/dev/null | wc -l | tr -d " " || echo "0")
+  if [ "${ANY_USAGE:-0}" -gt 0 ]; then
+    echo -e "${RED}FAIL${NC}"
+    rg ": Any|-> Any|\[Any\]" --type py --glob "!tests/**" --glob "!scripts/**" . | head -5
+    CODEX_VIOLATIONS=$((CODEX_VIOLATIONS + 1))
+  else
+    echo -e "${GREEN}PASS${NC}"
+  fi
+else
+  echo -e "${YELLOW}ripgrep not found - skipping codex checks${NC}"
+fi
+
+# Check 8f: .gitignore must NOT allow credential JSON (no negation like !central-element-*.json)
+echo -n "Checking .gitignore for credential file negation... "
+if [[ -f ".gitignore" ]] && rg "!central-element|!.*credentials.*\.json" .gitignore --no-heading --no-line-number > /dev/null 2>&1; then
+    echo -e "${RED}FAIL${NC}"
+    echo -e "${YELLOW}Found credential file negation in .gitignore (remove !central-element-*.json; credential JSON must never be committed):${NC}"
+    rg "!central-element|!.*credentials.*\.json" .gitignore --no-heading --line-number
+    CODEX_VIOLATIONS=$((CODEX_VIOLATIONS + 1))
+else
+    echo -e "${GREEN}PASS${NC}"
+fi
+
+# Check 8g: No hardcoded project ID in tests (use test-project placeholder)
+echo -n "Checking for hardcoded project ID in tests... "
+HARDCODED_PROJECT=$(rg "central-element-323112|get_config.*central-element" tests/ 2>/dev/null || true)
+if [[ -n "$HARDCODED_PROJECT" ]]; then
+    echo -e "${RED}FAIL${NC}"
+    echo -e "${YELLOW}Found real project ID in tests (use test-project placeholder):${NC}"
+    rg "central-element-323112|get_config.*central-element" tests/ --no-heading --line-number 2>/dev/null | head -5
+    CODEX_VIOLATIONS=$((CODEX_VIOLATIONS + 1))
+else
+    echo -e "${GREEN}PASS${NC}"
+fi
+
+# Check 8h: No broad except Exception in production (use specific exceptions or @handle_api_errors)
+# Whitelist: cloud_data_provider.py check_if_exists() intentionally catches all exceptions
+echo -n "Checking for broad except Exception in production... "
+PROD_SOURCE_DIR=$(echo "$SOURCE_DIRS" | awk '{print $1}')
+[ -z "$PROD_SOURCE_DIR" ] && PROD_SOURCE_DIR="unified_domain_services/"
+BROAD_EXCEPT=$(rg "except Exception:" --type py --glob "!tests/**" --glob "!**/cloud_data_provider.py" $PROD_SOURCE_DIR 2>/dev/null || true)
+if [[ -n "$BROAD_EXCEPT" ]]; then
+    echo -e "${RED}FAIL${NC}"
+    echo -e "${YELLOW}Found broad except Exception (use @handle_api_errors or specific exceptions):${NC}"
+    echo "$BROAD_EXCEPT" | head -5
+    CODEX_VIOLATIONS=$((CODEX_VIOLATIONS + 1))
+else
+    echo -e "${GREEN}PASS${NC}"
+fi
+
+# Check 9: File size limit (COD-SIZE: max 1500 lines per file)
+echo -n "Checking file size (max 1500 lines)... "
+SIZE_VIOLATIONS=""
+SIZE_WARNINGS=""
+for f in $(find . -name "*.py" ! -path "./.venv/*" ! -path "./deps/*" ! -path "./.git/*" ! -path "./build/*" ! -path "./scripts/*" 2>/dev/null); do
+    lines=$(wc -l < "$f" 2>/dev/null || echo 0)
+    if [[ "$lines" -gt 1500 ]]; then
+        SIZE_VIOLATIONS="${SIZE_VIOLATIONS}\n  $f: $lines lines (max 1500)"
+    elif [[ "$lines" -gt 1200 ]]; then
+        SIZE_WARNINGS="${SIZE_WARNINGS}\n  $f: $lines lines (plan split before 1500)"
+    fi
+done
+if [[ -n "$SIZE_VIOLATIONS" ]]; then
+    echo -e "${RED}FAIL${NC}"
+    echo -e "${YELLOW}Files exceed 1500-line limit (split by SRP per file-splitting-guide.md):${NC}"
+    echo -e "$SIZE_VIOLATIONS"
+    CODEX_VIOLATIONS=$((CODEX_VIOLATIONS + 1))
+else
+    echo -e "${GREEN}PASS${NC}"
+fi
+if [[ -n "$SIZE_WARNINGS" ]]; then
+    echo -e "${YELLOW}Files near limit (plan split):${NC}"
+    echo -e "$SIZE_WARNINGS"
+fi
+
+# Check 10: pip-audit (dependency vulnerability scan) — non-blocking if not installed
+echo -n "Checking dependency vulnerabilities (pip-audit)... "
+if command -v pip-audit &> /dev/null; then
+    if pip-audit 2>/dev/null; then
+        echo -e "${GREEN}PASS${NC}"
+    else
+        echo -e "${YELLOW}pip-audit found vulnerabilities (review and update deps)${NC}"
+    fi
+elif python3 -m pip_audit 2>/dev/null; then
+    echo -e "${GREEN}PASS${NC}"
+else
+    echo -e "${YELLOW}pip-audit not installed (add to dev deps: uv pip install pip-audit)${NC}"
 fi
 
 # ============================================================================
@@ -204,9 +324,9 @@ echo "======================================================================"
 OVERALL_STATUS=0
 
 if [ $PYRIGHT_STATUS -eq 0 ]; then
-    echo -e "Pyright:  ${GREEN}✅ PASSED${NC}"
+    echo -e "basedpyright:  ${GREEN}✅ PASSED${NC}"
 else
-    echo -e "Pyright:  ${RED}❌ FAILED${NC}"
+    echo -e "basedpyright:  ${RED}❌ FAILED${NC}"
     OVERALL_STATUS=1
 fi
 

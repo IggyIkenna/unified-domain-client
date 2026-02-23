@@ -1,6 +1,7 @@
 """
-Domain Clients for Unified Cloud Services
+Domain Clients for Unified Domain Services
 
+Canonical home for domain clients per dependency matrix.
 Convenience wrappers for accessing domain data across all services.
 These clients provide domain-specific query patterns and are useful for:
 - Analytics platforms that need to access multiple domains
@@ -8,54 +9,41 @@ These clients provide domain-specific query patterns and are useful for:
 - Centralized data access patterns
 
 All clients use StandardizedDomainCloudService under the hood.
+Uses unified_cloud_services for: get_storage_client, CloudTarget, unified_config,
+StandardizedDomainCloudService, determine_market_category, get_instruments_bucket_for_category.
+
+Design decisions: .cursor/plans/INSTRUMENTS_DOMAIN_DECISIONS.md
 """
 
-from __future__ import annotations
-
+import io
 import logging
 import re
+import warnings
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import UTC, datetime, timedelta
-from typing import TypedDict, cast
+from typing import Any, TypedDict, Unpack
 
 import pandas as pd
+from unified_cloud_services.core.client_factory import get_storage_client
 from unified_cloud_services.core.cloud_config import CloudTarget
 from unified_cloud_services.core.config import unified_config
-
-from unified_domain_services.standardized_service import (
-    StandardizedDomainCloudService,
+from unified_cloud_services.core.market_category import (
+    determine_market_category,
+    get_instruments_bucket_for_category,
 )
-
-logger = logging.getLogger(__name__)  # logging instance
-
-
-def _is_empty_or_na(val: object) -> bool:
-    """Check if value is None, NaN, or empty (for scalars from DataFrame)."""
-    if val is None:
-        return True
-    if isinstance(val, float) and val != val:  # NaN
-        return True
-    if val == "":
-        return True
-    if isinstance(val, str) and not val.strip():
-        return True
-    return False
+from unified_cloud_services.domain.standardized_service import StandardizedDomainCloudService
 
 
-class InstrumentSummaryStats(TypedDict, total=False):
-    """Type for get_summary_stats return value."""
+class ClientConfig(TypedDict, total=False):
+    """Configuration options for domain clients."""
 
-    total_instruments: int
-    error: str
-    venues: int
-    venue_breakdown: dict[str, int]
-    instrument_types: int
-    type_breakdown: dict[str, int]
-    base_currencies: int
-    quote_currencies: int
-    top_base_currencies: dict[str, int]
-    top_quote_currencies: dict[str, int]
-    ccxt_coverage: dict[str, int | float]
-    data_type_coverage: dict[str, int]
+    project_id: str | None
+    gcs_bucket: str | None
+    bigquery_dataset: str | None
+    feature_type: str  # For FeaturesDomainClient only
+
+
+logger = logging.getLogger(__name__)
 
 
 class InstrumentsDomainClient:
@@ -98,19 +86,20 @@ class InstrumentsDomainClient:
         self,
         date: str | datetime,
         venue: str | None = None,
-        instrument_type: str | list[str] | None = None,
-        base_currency: str | list[str] | None = None,
-        quote_currency: str | list[str] | None = None,
+        instrument_type: str | None = None,
+        base_currency: str | None = None,
+        quote_currency: str | None = None,
         symbol_pattern: str | None = None,
-        instrument_ids: list[str] | str | None = None,
+        instrument_ids: list[str] | None = None,
         venues: list[str] | None = None,
+        category: str | None = None,
+        categories: list[str] | None = None,
+        populate_market_category: bool = True,
     ) -> pd.DataFrame:
         """
         Get instrument definitions for a specific date with filtering.
 
-        Supports both new by-venue folder structure and legacy single-file structure:
-        - New: instrument_availability/by_date/day={date}/venue={venue}/instruments.parquet
-        - Legacy: instrument_availability/by_date/day={date}/instruments.parquet
+        By-venue structure only: instrument_availability/by_date/day={date}/venue={venue}/instruments.parquet
 
         Args:
             date: Date to get instruments for (YYYY-MM-DD string or datetime)
@@ -121,6 +110,10 @@ class InstrumentsDomainClient:
             symbol_pattern: Regex pattern to match symbols
             instrument_ids: List of specific instrument IDs to include
             venues: List of venues to load (more efficient than single venue filter)
+            category: Single market category (CEFI, TRADFI, DEFI) - uses category-specific bucket
+            categories: Multiple categories - loads from each, concatenates. If both category and
+                categories are None, uses default bucket from config.
+            populate_market_category: If True and market_category missing/na, populate via determine_market_category
 
         Returns:
             DataFrame with filtered instrument definitions
@@ -137,9 +130,17 @@ class InstrumentsDomainClient:
             # Determine which venues to load
             venues_to_load = venues or ([venue] if venue else None)
 
-            # By-venue structure ONLY — no legacy single-file fallback.
-            # Expected: instrument_availability/by_date/day={date}/venue={VENUE}/instruments.parquet
-            instruments_df = self._load_instruments_by_venue(date_str, venues_to_load)
+            # Resolve buckets: category-specific or default
+            cats_to_load: list[str] | None = None
+            if category:
+                cats_to_load = [category.upper()]
+            elif categories:
+                cats_to_load = [c.upper() for c in categories]
+
+            if cats_to_load:
+                instruments_df = self._load_from_category_buckets(date_str, cats_to_load, venues_to_load)
+            else:
+                instruments_df = self._load_instruments_by_venue(date_str, venues_to_load)
 
             if instruments_df.empty:
                 bucket = self.cloud_target.gcs_bucket if self.cloud_target else "unknown"
@@ -172,6 +173,9 @@ class InstrumentsDomainClient:
                 instrument_ids,
             )
 
+            if populate_market_category and not filtered_df.empty:
+                filtered_df = self._populate_market_category(filtered_df)
+
             logger.info(f"🔍 Filtered to {len(filtered_df)} instruments")
             return filtered_df
 
@@ -179,9 +183,111 @@ class InstrumentsDomainClient:
             logger.error(f"❌ Failed to load instruments for {date_str}: {e}")
             return pd.DataFrame()
 
+    def _load_from_category_buckets(
+        self,
+        date_str: str,
+        categories: list[str],
+        venues: list[str] | None = None,
+    ) -> pd.DataFrame:
+        """
+        Load instruments from category-specific buckets (instruments-store-{category}-{project_id}).
+
+        Args:
+            date_str: Date string (YYYY-MM-DD)
+            categories: List of categories (CEFI, TRADFI, DEFI)
+            venues: Optional list of specific venues to load
+
+        Returns:
+            DataFrame with instruments from all requested categories
+        """
+        project_id = self.cloud_target.project_id or ""
+        all_dfs: list[pd.DataFrame] = []
+        for cat in categories:
+            bucket_name = get_instruments_bucket_for_category(cat, test_mode=False)
+            df = self._load_from_bucket(bucket_name, date_str, venues, project_id)
+            if not df.empty:
+                all_dfs.append(df)
+        if all_dfs:
+            return pd.concat(all_dfs, ignore_index=True)
+        return pd.DataFrame()
+
+    def _load_from_bucket(
+        self,
+        bucket_name: str,
+        date_str: str,
+        venues: list[str] | None,
+        project_id: str,
+    ) -> pd.DataFrame:
+        """
+        Load instruments from by-venue structure in a specific bucket.
+
+        Args:
+            bucket_name: GCS bucket name
+            date_str: Date string (YYYY-MM-DD)
+            venues: Optional list of specific venues to load
+            project_id: GCP project ID
+
+        Returns:
+            DataFrame with instruments from the bucket
+        """
+        try:
+            client = get_storage_client(project_id=project_id)
+            bucket = client.bucket(bucket_name)
+            base_prefix = f"instrument_availability/by_date/day={date_str}/"
+
+            if venues:
+                venue_folders = [f"{base_prefix}venue={v}/" for v in venues]
+            else:
+                iterator = bucket.list_blobs(prefix=base_prefix, delimiter="/")
+                list(iterator)
+                venue_folders = [p for p in iterator.prefixes if "venue=" in p]
+
+            if not venue_folders:
+                return pd.DataFrame()
+
+            def load_venue_file(venue_prefix: str) -> pd.DataFrame:
+                try:
+                    gcs_path = f"{venue_prefix}instruments.parquet"
+                    data = client.download_bytes(bucket=bucket_name, blob_path=gcs_path)
+                    return pd.read_parquet(io.BytesIO(data))
+                except Exception as e:
+                    logger.debug(f"Could not load {venue_prefix}: {e}")
+                    return pd.DataFrame()
+
+            all_dfs: list[pd.DataFrame] = []
+            with ThreadPoolExecutor(max_workers=min(12, len(venue_folders))) as executor:
+                futures = {executor.submit(load_venue_file, vf): vf for vf in venue_folders}
+                for future in as_completed(futures):
+                    df = future.result()
+                    if not df.empty:
+                        all_dfs.append(df)
+
+            if all_dfs:
+                return pd.concat(all_dfs, ignore_index=True)
+            return pd.DataFrame()
+        except Exception as e:
+            logger.debug(f"Could not load from {bucket_name}: {e}")
+            return pd.DataFrame()
+
+    def _populate_market_category(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Populate market_category column if missing or has na values."""
+        if df.empty:
+            return df
+        if "market_category" not in df.columns or df["market_category"].isna().any():
+            result = df.copy()
+            if "market_category" not in result.columns:
+                result["market_category"] = None
+            mask = result["market_category"].isna()
+            if mask.any():
+                result.loc[mask, "market_category"] = result.loc[mask].apply(
+                    lambda row: determine_market_category(dict(row)), axis=1
+                )
+            return result
+        return df
+
     def _load_instruments_by_venue(self, date_str: str, venues: list[str] | None = None) -> pd.DataFrame:
         """
-        Load instruments from by-venue folder structure.
+        Load instruments from by-venue folder structure (default bucket).
 
         Args:
             date_str: Date string (YYYY-MM-DD)
@@ -190,12 +296,8 @@ class InstrumentsDomainClient:
         Returns:
             DataFrame with instruments from all requested venues
         """
-        from concurrent.futures import ThreadPoolExecutor, as_completed
-
-        from unified_cloud_services.core.client_factory import get_storage_client
-
         try:
-            # Get storage client (cloud-agnostic) and bucket handle
+            # Get GCS client (cloud-agnostic StorageClient with bucket() support)
             client = get_storage_client(project_id=self.cloud_target.project_id)
             bucket = client.bucket(self.cloud_target.gcs_bucket)
 
@@ -203,11 +305,11 @@ class InstrumentsDomainClient:
 
             if venues:
                 # Load specific venues
-                venue_folders: list[str] = [f"{base_prefix}venue={v}/" for v in venues]
+                venue_folders = [f"{base_prefix}venue={v}/" for v in venues]
             else:
-                # List all venue folders via list_blobs with delimiter
+                # List all venue folders
                 iterator = bucket.list_blobs(prefix=base_prefix, delimiter="/")
-                list(iterator)  # Consume to populate .prefixes
+                list(iterator)  # Consume iterator to populate prefixes
                 venue_folders = [p for p in iterator.prefixes if "venue=" in p]
 
             if not venue_folders:
@@ -220,14 +322,13 @@ class InstrumentsDomainClient:
                 """Load instruments for one venue."""
                 try:
                     gcs_path = f"{venue_prefix}instruments.parquet"
-                    result = self.cloud_service.download_from_gcs(gcs_path=gcs_path, format="parquet")
-                    return result if isinstance(result, pd.DataFrame) else pd.DataFrame()
+                    return self.cloud_service.download_from_gcs(gcs_path=gcs_path, format="parquet")
                 except Exception as e:
                     logger.debug(f"Could not load {venue_prefix}: {e}")
                     return pd.DataFrame()
 
             # Parallel load all venue files
-            all_dfs = []
+            all_dfs: list[pd.DataFrame] = []
             with ThreadPoolExecutor(max_workers=min(12, len(venue_folders))) as executor:
                 futures = {executor.submit(load_venue_file, vf): vf for vf in venue_folders}
                 for future in as_completed(futures):
@@ -246,6 +347,76 @@ class InstrumentsDomainClient:
             logger.debug(f"Could not load by-venue structure: {e}")
             return pd.DataFrame()
 
+    def get_aggregated_instruments(
+        self,
+        category: str,
+        date: str | None = None,
+    ) -> pd.DataFrame:
+        """
+        Get all instruments that ever existed (deduplicated, latest per instrument_key).
+
+        Reads from aggregated/aggregated_instruments_{date}.parquet in the category bucket.
+        If date is None, uses the latest available file by date in filename.
+
+        Args:
+            category: Market category (CEFI, TRADFI, DEFI)
+            date: Optional date string (YYYY-MM-DD). If None, uses latest file.
+
+        Returns:
+            DataFrame with aggregated instruments, or empty DataFrame if not found.
+        """
+        cat_upper = category.upper()
+        if cat_upper not in ("CEFI", "TRADFI", "DEFI"):
+            logger.error(f"Unknown category: {category}. Supported: CEFI, TRADFI, DEFI")
+            return pd.DataFrame()
+
+        bucket_name = get_instruments_bucket_for_category(cat_upper, test_mode=False)
+        prefix = "aggregated/"
+
+        try:
+            client = get_storage_client(project_id=self.cloud_target.project_id)
+            blobs = list(client.list_blobs(bucket_name, prefix=prefix))
+
+            # Match aggregated_instruments_YYYY-MM-DD.parquet
+            pattern = re.compile(r"aggregated_instruments_(\d{4}-\d{2}-\d{2})\.parquet")
+            candidates = [(b, pattern.search(b.name)) for b in blobs if pattern.search(b.name)]
+
+            if not candidates:
+                logger.debug(f"No aggregated instruments found in gs://{bucket_name}/{prefix}")
+                return pd.DataFrame()
+
+            if date:
+                # Specific date requested
+                target_blob = None
+                for blob, match in candidates:
+                    if match and match.group(1) == date:
+                        target_blob = blob
+                        break
+                if not target_blob:
+                    logger.debug(f"No aggregated file for date {date} in gs://{bucket_name}/{prefix}")
+                    return pd.DataFrame()
+            else:
+                # Latest by date in filename
+                latest_blob = None
+                latest_date_str = None
+                for blob, match in candidates:
+                    if match:
+                        d = match.group(1)
+                        if latest_date_str is None or d > latest_date_str:
+                            latest_date_str = d
+                            latest_blob = blob
+                target_blob = latest_blob
+
+            if not target_blob:
+                return pd.DataFrame()
+
+            data = client.download_bytes(bucket=bucket_name, blob_path=target_blob.name)
+            return pd.read_parquet(io.BytesIO(data))
+
+        except Exception as e:
+            logger.debug(f"Could not load aggregated instruments for {cat_upper}: {e}")
+            return pd.DataFrame()
+
     def _filter_by_date_availability(self, df: pd.DataFrame, target_date: datetime) -> pd.DataFrame:
         """Filter instruments by date availability."""
         if df.empty:
@@ -256,8 +427,8 @@ class InstrumentsDomainClient:
         # Filter by available_from_datetime
         if "available_from_datetime" in filtered_df.columns:
 
-            def is_available_from(from_datetime_str: object) -> bool:
-                if _is_empty_or_na(from_datetime_str):
+            def is_available_from(from_datetime_str):
+                if pd.isna(from_datetime_str) or not from_datetime_str:
                     return True
                 try:
                     from_date = datetime.fromisoformat(str(from_datetime_str).replace("Z", "+00:00"))
@@ -268,14 +439,13 @@ class InstrumentsDomainClient:
                 except (ValueError, AttributeError):
                     return True
 
-            mask = filtered_df["available_from_datetime"].apply(is_available_from)
-            filtered_df = filtered_df.loc[mask]
+            filtered_df = filtered_df[filtered_df["available_from_datetime"].apply(is_available_from)]
 
         # Filter by available_to_datetime
         if "available_to_datetime" in filtered_df.columns:
 
-            def is_available_to(to_datetime_str: object) -> bool:
-                if _is_empty_or_na(to_datetime_str):
+            def is_available_to(to_datetime_str):
+                if pd.isna(to_datetime_str) or not to_datetime_str:
                     return True
                 try:
                     to_date = datetime.fromisoformat(str(to_datetime_str).replace("Z", "+00:00"))
@@ -286,34 +456,31 @@ class InstrumentsDomainClient:
                 except (ValueError, AttributeError):
                     return True
 
-            mask = filtered_df["available_to_datetime"].apply(is_available_to)
-            filtered_df = filtered_df.loc[mask]
+            filtered_df = filtered_df[filtered_df["available_to_datetime"].apply(is_available_to)]
 
         return filtered_df
 
     def _apply_filters(
         self,
         df: pd.DataFrame,
-        venue: str | list[str] | None = None,
-        instrument_type: str | list[str] | None = None,
-        base_currency: str | list[str] | None = None,
-        quote_currency: str | list[str] | None = None,
+        venue: str | None = None,
+        instrument_type: str | None = None,
+        base_currency: str | None = None,
+        quote_currency: str | None = None,
         symbol_pattern: str | None = None,
-        instrument_ids: list[str] | str | None = None,
+        instrument_ids: list[str] | None = None,
     ) -> pd.DataFrame:
         """Apply comprehensive filtering to instruments DataFrame"""
 
         if venue:
-            venues = (
-                [v.strip().upper() for v in venue.split(",")] if isinstance(venue, str) else [v.upper() for v in venue]
-            )
+            venues = [v.strip().upper() for v in venue.split(",")] if isinstance(venue, str) else [venue.upper()]
             df = df.loc[df["venue"].isin(venues)]
 
         if instrument_type:
             types = (
                 [t.strip().upper() for t in instrument_type.split(",")]
                 if isinstance(instrument_type, str)
-                else [t.upper() for t in instrument_type]
+                else [instrument_type.upper()]
             )
             df = df.loc[df["instrument_type"].isin(types)]
 
@@ -321,7 +488,7 @@ class InstrumentsDomainClient:
             bases = (
                 [b.strip().upper() for b in base_currency.split(",")]
                 if isinstance(base_currency, str)
-                else [b.upper() for b in base_currency]
+                else [base_currency.upper()]
             )
             df = df.loc[df["base_asset"].isin(bases)]
 
@@ -329,7 +496,7 @@ class InstrumentsDomainClient:
             quotes = (
                 [q.strip().upper() for q in quote_currency.split(",")]
                 if isinstance(quote_currency, str)
-                else [q.upper() for q in quote_currency]
+                else [quote_currency.upper()]
             )
             df = df.loc[df["quote_asset"].isin(quotes)]
 
@@ -351,12 +518,8 @@ class InstrumentsDomainClient:
         start_date: str | datetime,
         end_date: str | datetime,
         venue: str | None = None,
-        instrument_type: str | list[str] | None = None,
-        base_currency: str | list[str] | None = None,
-        quote_currency: str | list[str] | None = None,
-        symbol_pattern: str | None = None,
-        instrument_ids: list[str] | str | None = None,
-        venues: list[str] | None = None,
+        instrument_type: str | None = None,
+        **kwargs,
     ) -> pd.DataFrame:
         """
         Get instruments across a date range (union of all dates).
@@ -383,18 +546,11 @@ class InstrumentsDomainClient:
             end_dt = end_date
 
         # Generate date range
-        all_instruments: list[pd.DataFrame] = []
+        all_instruments = []
         current_date = start_dt
         while current_date <= end_dt:
             date_instruments = self.get_instruments_for_date(
-                current_date,
-                venue=venue,
-                instrument_type=instrument_type,
-                base_currency=base_currency,
-                quote_currency=quote_currency,
-                symbol_pattern=symbol_pattern,
-                instrument_ids=instrument_ids,
-                venues=venues,
+                current_date, venue=venue, instrument_type=instrument_type, **kwargs
             )
             if not date_instruments.empty:
                 date_instruments["query_date"] = current_date.strftime("%Y-%m-%d")
@@ -412,7 +568,7 @@ class InstrumentsDomainClient:
         logger.info(f"📊 Date range query: {len(unique_df)} unique instruments across date range")
         return unique_df
 
-    def get_summary_stats(self, date: str | datetime) -> InstrumentSummaryStats:
+    def get_summary_stats(self, date: str | datetime) -> dict[str, Any]:
         """
         Get summary statistics for instruments on a specific date.
 
@@ -427,20 +583,17 @@ class InstrumentsDomainClient:
         if instruments_df.empty:
             return {"total_instruments": 0, "error": "No instruments found"}
 
-        # Calculate statistics (cast dict keys to str for InstrumentSummaryStats)
-        def _to_str_dict(counts: pd.Series) -> dict[str, int]:
-            return {str(k): int(v) for k, v in counts.to_dict().items()}
-
-        stats: InstrumentSummaryStats = {
+        # Calculate statistics
+        stats = {
             "total_instruments": len(instruments_df),
-            "venues": int(instruments_df["venue"].nunique()),
-            "venue_breakdown": _to_str_dict(instruments_df["venue"].value_counts()),
-            "instrument_types": int(instruments_df["instrument_type"].nunique()),
-            "type_breakdown": _to_str_dict(instruments_df["instrument_type"].value_counts()),
-            "base_currencies": int(instruments_df["base_asset"].nunique()),
-            "quote_currencies": int(instruments_df["quote_asset"].nunique()),
-            "top_base_currencies": _to_str_dict(instruments_df["base_asset"].value_counts().head(10)),
-            "top_quote_currencies": _to_str_dict(instruments_df["quote_asset"].value_counts().head(10)),
+            "venues": instruments_df["venue"].nunique(),
+            "venue_breakdown": instruments_df["venue"].value_counts().to_dict(),
+            "instrument_types": instruments_df["instrument_type"].nunique(),
+            "type_breakdown": instruments_df["instrument_type"].value_counts().to_dict(),
+            "base_currencies": instruments_df["base_asset"].nunique(),
+            "quote_currencies": instruments_df["quote_asset"].nunique(),
+            "top_base_currencies": instruments_df["base_asset"].value_counts().head(10).to_dict(),
+            "top_quote_currencies": instruments_df["quote_asset"].value_counts().head(10).to_dict(),
         }
 
         if "ccxt_symbol" in instruments_df.columns:
@@ -471,9 +624,7 @@ class InstrumentsDomainClient:
         logger.info(f"📊 Generated summary stats for {date}: {stats['total_instruments']} instruments")
         return stats
 
-    def get_instrument_details(
-        self, date: str | datetime, instrument_id: str
-    ) -> dict[str, str | int | float | bool | None] | None:
+    def get_instrument_details(self, date: str | datetime, instrument_id: str) -> dict[str, Any] | None:
         """
         Get detailed information for a specific instrument ID.
 
@@ -491,16 +642,11 @@ class InstrumentsDomainClient:
             return None
 
         # Convert to dictionary
-        instrument_data = cast(
-            dict[str, str | int | float | bool | None],
-            instruments_df.iloc[0].to_dict(),
-        )
+        instrument_data = instruments_df.iloc[0].to_dict()
         logger.info(f"✅ Found instrument details for {instrument_id}")
         return instrument_data
 
-    def get_trading_parameters(
-        self, date: str | datetime, instrument_id: str
-    ) -> dict[str, str | int | float | bool | list[str] | None] | None:
+    def get_trading_parameters(self, date: str | datetime, instrument_id: str) -> dict[str, Any] | None:
         """
         Get trading parameters for an instrument (tick_size, min_size, etc.).
 
@@ -515,18 +661,20 @@ class InstrumentsDomainClient:
         if not instrument:
             return None
 
-        trading_params: dict[str, str | int | float | bool | list[str] | None] = {
-            "tick_size": instrument.get("tick_size") or "",  # optional metadata
-            "min_size": instrument.get("min_size") or "",  # optional metadata
+        # Explicit validation - no empty fallbacks for optional fields
+        tick_size = instrument.get("tick_size")
+        min_size = instrument.get("min_size")
+        ccxt_symbol = instrument.get("ccxt_symbol")
+        ccxt_exchange = instrument.get("ccxt_exchange")
+        data_types_val = instrument.get("data_types")
+        trading_params = {
+            "tick_size": tick_size if tick_size is not None else "",
+            "min_size": min_size if min_size is not None else "",
             "contract_size": instrument.get("contract_size"),
-            "ccxt_symbol": instrument.get("ccxt_symbol") or "",  # optional metadata
-            "ccxt_exchange": instrument.get("ccxt_exchange") or "",  # optional metadata
+            "ccxt_symbol": ccxt_symbol if ccxt_symbol is not None else "",
+            "ccxt_exchange": ccxt_exchange if ccxt_exchange is not None else "",
             "inverse": instrument.get("inverse", False),
-            "data_types": (
-                [s.strip() for s in str(instrument.get("data_types")).split(",")]
-                if instrument.get("data_types")
-                else []
-            ),
+            "data_types": (data_types_val.split(",") if data_types_val else []),
         }
 
         logger.info(f"📊 Trading parameters for {instrument_id}: {len(trading_params)} fields")
@@ -718,15 +866,15 @@ class MarketCandleDataDomainClient:
         date_str = date.strftime("%Y-%m-%d")
 
         # Build GCS path
+        base = f"processed_candles/by_date/day={date_str}/timeframe={timeframe}/data_type={data_type}"
         if venue:
-            gcs_path = f"processed_candles/by_date/day={date_str}/timeframe={timeframe}/data_type={data_type}/instrument_type=perpetuals/venue={venue}/{instrument_id}.parquet"
+            gcs_path = f"{base}/instrument_type=perpetuals/venue={venue}/{instrument_id}.parquet"
         else:
-            gcs_path = f"processed_candles/by_date/day={date_str}/timeframe={timeframe}/data_type={data_type}/{instrument_id}.parquet"
+            gcs_path = f"{base}/{instrument_id}.parquet"
 
         try:
             logger.info(f"📥 Loading candles: {gcs_path}")
-            result = self.cloud_service.download_from_gcs(gcs_path=gcs_path, format="parquet")
-            candles_df = result if isinstance(result, pd.DataFrame) else pd.DataFrame()
+            candles_df = self.cloud_service.download_from_gcs(gcs_path=gcs_path, format="parquet")
 
             if candles_df.empty:
                 logger.warning(f"⚠️ No candles found for {instrument_id} on {date_str}")
@@ -872,11 +1020,8 @@ class MarketTickDataDomainClient:
                 }
                 type_folder = type_folder_map.get(inst_type, inst_type)
 
-        # Build GCS path
-        # Path format varies by category (key=value for BigQuery hive partitioning):
-        # - CeFi: raw_tick_data/by_date/day={date}/data_type={type}/instrument_type={type}/{venue}/{instrument_id}.parquet
-        # - TradFi: raw_tick_data/by_date/day={date}/data_type={type}/instrument_type={type}/{venue}/{instrument_id}.parquet
-        # - DeFi: raw_tick_data/by_date/day={date}/data_type={type}/instrument_type={type}/{venue}/{instrument_id}.parquet
+        # Build GCS path (key=value for BigQuery hive partitioning)
+        # Format: raw_tick_data/by_date/day={date}/data_type={type}/instrument_type={type}/{venue}/{id}.parquet
         base_path = f"raw_tick_data/by_date/day={date_str}/data_type={data_type}"
 
         if hour is not None:
@@ -919,8 +1064,7 @@ class MarketTickDataDomainClient:
 
         try:
             logger.info(f"📥 Loading tick data: {gcs_path}")
-            result = self.cloud_service.download_from_gcs(gcs_path=gcs_path, format="parquet")
-            tick_df = result if isinstance(result, pd.DataFrame) else pd.DataFrame()
+            tick_df = self.cloud_service.download_from_gcs(gcs_path=gcs_path, format="parquet")
 
             if tick_df.empty:
                 logger.warning(f"⚠️ No tick data found for {instrument_id} on {date_str}")
@@ -987,11 +1131,9 @@ class MarketDataDomainClient(MarketCandleDataDomainClient):
     """
 
     def __init__(self, *args, **kwargs):
-        import warnings
-
         warnings.warn(
-            "MarketDataDomainClient is deprecated. Use MarketCandleDataDomainClient or MarketTickDataDomainClient instead. "
-            "See docs/CLIENTS_DEPRECATION_GUIDE.md for migration details.",
+            "MarketDataDomainClient is deprecated. Use MarketCandleDataDomainClient or "
+            "MarketTickDataDomainClient. See docs/CLIENTS_DEPRECATION_GUIDE.md.",
             DeprecationWarning,
             stacklevel=2,
         )
@@ -1025,19 +1167,19 @@ class FeaturesDomainClient:
             bigquery_dataset: BigQuery dataset (defaults to env var)
             feature_type: Type of features ('delta_one', 'volatility', 'onchain', 'calendar')
         """
-        # Map feature types to datasets (use getattr for optional config fields)
-        default_dataset = getattr(unified_config, "features_bigquery_dataset", "features")
-        dataset_map: dict[str, str] = {
-            "delta_one": getattr(unified_config, "features_bigquery_dataset", default_dataset),
-            "volatility": getattr(unified_config, "volatility_features_bigquery_dataset", default_dataset),
-            "onchain": getattr(unified_config, "onchain_features_bigquery_dataset", default_dataset),
-            "calendar": getattr(unified_config, "calendar_features_bigquery_dataset", default_dataset),
+        # Map feature types to datasets
+        dataset_map = {
+            "delta_one": unified_config.features_bigquery_dataset,
+            "volatility": unified_config.volatility_features_bigquery_dataset,
+            "onchain": unified_config.onchain_features_bigquery_dataset,
+            "calendar": unified_config.calendar_features_bigquery_dataset,
         }
 
         cloud_target = CloudTarget(
             project_id=project_id or unified_config.gcp_project_id,
             gcs_bucket=gcs_bucket or unified_config.features_gcs_bucket,
-            bigquery_dataset=bigquery_dataset or dataset_map.get(feature_type, default_dataset),
+            bigquery_dataset=bigquery_dataset
+            or dataset_map.get(feature_type, unified_config.features_bigquery_dataset),
         )
 
         self.cloud_service = StandardizedDomainCloudService(domain="features", cloud_target=cloud_target)
@@ -1070,8 +1212,7 @@ class FeaturesDomainClient:
 
         try:
             logger.info(f"📥 Loading {self.feature_type} features: {gcs_path}")
-            result = self.cloud_service.download_from_gcs(gcs_path=gcs_path, format="parquet")
-            features_df = result if isinstance(result, pd.DataFrame) else pd.DataFrame()
+            features_df = self.cloud_service.download_from_gcs(gcs_path=gcs_path, format="parquet")
 
             if features_df.empty:
                 logger.warning(f"⚠️ No features found for {instrument_id} on {date_str}")
@@ -1115,9 +1256,14 @@ class ExecutionDomainClient:
             Instruction types: TRADE, SWAP, LEND, BORROW, STAKE, TRANSFER
         """
         proj = project_id or unified_config.gcp_project_id
+        if not proj:
+            raise ValueError(
+                "GCP_PROJECT_ID must be set in config for ExecutionDomainClient. No hardcoded fallbacks allowed."
+            )
+        exec_bucket = unified_config.execution_gcs_bucket or f"execution-store-{proj}"
         cloud_target = CloudTarget(
             project_id=proj,
-            gcs_bucket=gcs_bucket or getattr(unified_config, "execution_gcs_bucket", f"execution-store-{proj}"),
+            gcs_bucket=gcs_bucket or exec_bucket,
             bigquery_dataset=bigquery_dataset or getattr(unified_config, "execution_bigquery_dataset", "execution"),
         )
 
@@ -1126,7 +1272,7 @@ class ExecutionDomainClient:
 
         logger.info(f"✅ ExecutionDomainClient initialized: bucket={cloud_target.gcs_bucket}")
 
-    def get_backtest_summary(self, run_id: str) -> dict[str, object]:
+    def get_backtest_summary(self, run_id: str) -> dict:
         """
         Load backtest summary JSON.
 
@@ -1141,7 +1287,7 @@ class ExecutionDomainClient:
         try:
             logger.info(f"📥 Loading backtest summary: {gcs_path}")
             summary = self.cloud_service.download_from_gcs(gcs_path=gcs_path, format="json")
-            return cast(dict[str, object], summary) if isinstance(summary, dict) else {}
+            return summary
 
         except Exception as e:
             logger.error(f"❌ Failed to load backtest summary: {e}")
@@ -1161,8 +1307,7 @@ class ExecutionDomainClient:
 
         try:
             logger.info(f"📥 Loading backtest fills: {gcs_path}")
-            result = self.cloud_service.download_from_gcs(gcs_path=gcs_path, format="parquet")
-            fills = result if isinstance(result, pd.DataFrame) else pd.DataFrame()
+            fills = self.cloud_service.download_from_gcs(gcs_path=gcs_path, format="parquet")
 
             if fills.empty:
                 logger.warning(f"⚠️ No fills found for run {run_id}")
@@ -1189,8 +1334,7 @@ class ExecutionDomainClient:
 
         try:
             logger.info(f"📥 Loading backtest orders: {gcs_path}")
-            result = self.cloud_service.download_from_gcs(gcs_path=gcs_path, format="parquet")
-            orders = result if isinstance(result, pd.DataFrame) else pd.DataFrame()
+            orders = self.cloud_service.download_from_gcs(gcs_path=gcs_path, format="parquet")
 
             if orders.empty:
                 logger.warning(f"⚠️ No orders found for run {run_id}")
@@ -1217,8 +1361,7 @@ class ExecutionDomainClient:
 
         try:
             logger.info(f"📥 Loading backtest positions: {gcs_path}")
-            result = self.cloud_service.download_from_gcs(gcs_path=gcs_path, format="parquet")
-            positions = result if isinstance(result, pd.DataFrame) else pd.DataFrame()
+            positions = self.cloud_service.download_from_gcs(gcs_path=gcs_path, format="parquet")
 
             if positions.empty:
                 logger.warning(f"⚠️ No positions found for run {run_id}")
@@ -1252,18 +1395,16 @@ class ExecutionDomainClient:
 
         try:
             if start_time and end_time:
-                logger.info(f"📥 Loading equity curve with time filter: {gcs_path} ({start_time} to {end_time})")
-                result = self.cloud_service.download_from_gcs(gcs_path=gcs_path, format="parquet")
-                full_equity = result if isinstance(result, pd.DataFrame) else pd.DataFrame()
-                if not full_equity.empty and "ts_event" in full_equity.columns:
-                    mask = (full_equity["ts_event"] >= start_time) & (full_equity["ts_event"] <= end_time)
-                    equity = full_equity.loc[mask]
-                else:
-                    equity = full_equity
+                logger.info(f"📥 Streaming equity curve: {gcs_path} ({start_time} to {end_time})")
+                equity = self.cloud_service.download_from_gcs_streaming(
+                    gcs_path=gcs_path,
+                    timestamp_range=(start_time, end_time),
+                    timestamp_column="ts_event",
+                    use_byte_range=True,
+                )
             else:
                 logger.info(f"📥 Loading full equity curve: {gcs_path}")
-                result = self.cloud_service.download_from_gcs(gcs_path=gcs_path, format="parquet")
-                equity = result if isinstance(result, pd.DataFrame) else pd.DataFrame()
+                equity = self.cloud_service.download_from_gcs(gcs_path=gcs_path, format="parquet")
 
             if equity.empty:
                 logger.warning(f"⚠️ No equity data found for run {run_id}")
@@ -1287,20 +1428,16 @@ class ExecutionDomainClient:
             List of run IDs
         """
         try:
-            from unified_cloud_services.core.client_factory import get_storage_client
-
             logger.info(f"📋 Listing backtest runs (prefix='{prefix}')")
 
             client = get_storage_client()
-            blobs = client.list_blobs(
-                bucket=self.cloud_target.gcs_bucket,
-                prefix=f"backtest_results/{prefix}",
-            )
+            bucket = client.bucket(self.cloud_target.gcs_bucket)
+            blobs = bucket.list_blobs(prefix=f"backtest_results/{prefix}")
 
             # Extract unique run IDs
             run_ids = set()
-            for blob_meta in blobs:
-                parts = blob_meta.name.replace("backtest_results/", "").split("/")
+            for blob in blobs:
+                parts = blob.name.replace("backtest_results/", "").split("/")
                 if parts and parts[0]:
                     run_ids.add(parts[0])
 
@@ -1314,44 +1451,44 @@ class ExecutionDomainClient:
 
 
 # Factory functions for creating domain clients
-def create_instruments_client(**kwargs) -> InstrumentsDomainClient:
+def create_instruments_client(**kwargs: Unpack[ClientConfig]) -> InstrumentsDomainClient:
     """Factory function to create InstrumentsDomainClient."""
-    return InstrumentsDomainClient(**kwargs)
+    return InstrumentsDomainClient(**kwargs)  # type: ignore[arg-type]
 
 
-def create_market_candle_data_client(**kwargs) -> MarketCandleDataDomainClient:
+def create_market_candle_data_client(
+    **kwargs: Unpack[ClientConfig],
+) -> MarketCandleDataDomainClient:
     """Factory function to create MarketCandleDataDomainClient."""
-    return MarketCandleDataDomainClient(**kwargs)
+    return MarketCandleDataDomainClient(**kwargs)  # type: ignore[arg-type]
 
 
-def create_market_tick_data_client(**kwargs) -> MarketTickDataDomainClient:
+def create_market_tick_data_client(**kwargs: Unpack[ClientConfig]) -> MarketTickDataDomainClient:
     """Factory function to create MarketTickDataDomainClient."""
-    return MarketTickDataDomainClient(**kwargs)
+    return MarketTickDataDomainClient(**kwargs)  # type: ignore[arg-type]
 
 
-def create_execution_client(**kwargs) -> ExecutionDomainClient:
+def create_execution_client(**kwargs: Unpack[ClientConfig]) -> ExecutionDomainClient:
     """Factory function to create ExecutionDomainClient."""
-    return ExecutionDomainClient(**kwargs)
+    return ExecutionDomainClient(**kwargs)  # type: ignore[arg-type]
 
 
 # Deprecated: Keep for backward compatibility
-def create_market_data_client(**kwargs) -> MarketDataDomainClient:
+def create_market_data_client(**kwargs: Unpack[ClientConfig]) -> MarketDataDomainClient:
     """
     ⚠️ DEPRECATED: Use create_market_candle_data_client() or create_market_tick_data_client() instead.
 
     Factory function to create MarketDataDomainClient (deprecated).
     """
-    import warnings
-
     warnings.warn(
-        "create_market_data_client() is deprecated. Use create_market_candle_data_client() or create_market_tick_data_client() instead. "
-        "See docs/CLIENTS_DEPRECATION_GUIDE.md for migration details.",
+        "create_market_data_client() is deprecated. Use create_market_candle_data_client() or "
+        "create_market_tick_data_client(). See docs/CLIENTS_DEPRECATION_GUIDE.md.",
         DeprecationWarning,
         stacklevel=2,
     )
     return MarketDataDomainClient(**kwargs)
 
 
-def create_features_client(feature_type: str = "delta_one", **kwargs) -> FeaturesDomainClient:
+def create_features_client(feature_type: str = "delta_one", **kwargs: Unpack[ClientConfig]) -> FeaturesDomainClient:
     """Factory function to create FeaturesDomainClient."""
-    return FeaturesDomainClient(feature_type=feature_type, **kwargs)
+    return FeaturesDomainClient(feature_type=feature_type, **kwargs)  # type: ignore[arg-type]
