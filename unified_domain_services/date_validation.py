@@ -26,12 +26,16 @@ Usage:
     if not result.is_valid:
         logger.info(f"Skipping: {result.reason}")
 """
+# pyright: reportAny=false, reportUnknownVariableType=false, reportUnknownMemberType=false, reportExplicitAny=false
+# Reason: YAML config has dynamic nested structure; dict.get() returns cause type inference issues.
+# Documented in QUALITY_GATE_BYPASS_AUDIT.md.
 
 import logging
 import math
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from typing import Any, cast
 
 import yaml
 from unified_cloud_services.domain import (
@@ -69,7 +73,7 @@ class DateValidator:
         Args:
             config_path: Path to expected_start_dates.yaml (auto-detected if None)
         """
-        self._config: dict[str, object] = {}
+        self._config: dict[str, Any] = {}
         self._config_path = config_path
         self._loaded = False
 
@@ -124,14 +128,17 @@ class DateValidator:
         """
         self._load_config()
 
-        service_config = self._config.get(service, {})
+        service_config: dict[str, Any] = self._config.get(service, {})
         if not isinstance(service_config, dict):
             service_config = {}
-        category_config = service_config.get(category, {})
+        category_config: dict[str, Any] = service_config.get(category, {})
+        if not isinstance(category_config, dict):
+            category_config = {}
 
         if venue and "venues" in category_config:
-            return category_config["venues"].get(venue)
-
+            venues_map = category_config["venues"]
+            if isinstance(venues_map, dict):
+                return venues_map.get(venue)
         return category_config.get("category_start")
 
     def get_earliest_valid_feature_date(
@@ -169,10 +176,13 @@ class DateValidator:
                 return venue_date
 
         # Fall back to category-level computed dates
-        earliest_features = self._config.get("earliest_valid_features", {})
+        earliest_features = cast(
+            dict[str, Any],
+            self._config.get("earliest_valid_features", {}),
+        )
         if not isinstance(earliest_features, dict):
             earliest_features = {}
-        timeframe_dates = earliest_features.get(timeframe, {})
+        timeframe_dates = cast(dict[str, Any], earliest_features.get(timeframe, {}))
         if not isinstance(timeframe_dates, dict):
             return None
         return timeframe_dates.get(category)
@@ -194,13 +204,13 @@ class DateValidator:
         """
         self._load_config()
 
-        ml_config = self._config.get("ml-training-service", {})
+        ml_config = cast(dict[str, Any], self._config.get("ml-training-service", {}))
         if not isinstance(ml_config, dict):
             ml_config = {}
-        earliest_ml = ml_config.get("earliest_valid_ml", {})
+        earliest_ml = cast(dict[str, Any], ml_config.get("earliest_valid_ml", {}))
         if not isinstance(earliest_ml, dict):
             earliest_ml = {}
-        timeframe_dates = earliest_ml.get(timeframe, {})
+        timeframe_dates = cast(dict[str, Any], earliest_ml.get(timeframe, {}))
         if not isinstance(timeframe_dates, dict):
             return None
         return timeframe_dates.get(category)

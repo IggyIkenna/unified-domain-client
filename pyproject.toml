@@ -10,7 +10,7 @@ unified-events-interface = { path = "../unified-events-interface" }
 
 [project]
 name = "unified-domain-services"
-version = "0.1.6"
+version = "0.1.8"
 description = "Trading domain services - clients, validation, cloud service wrappers"
 requires-python = ">=3.13,<3.14"
 dependencies = [

@@ -1,4 +1,6 @@
 """Domain validation schemas - config, instruction, instrument key."""
+# pyright: reportUnknownVariableType=false
+# Re-exports inherit types from source modules; instruction_schema has pyarrow/pandas types.
 
 from unified_domain_services.schemas.config_schema import (
     CLOB_VENUES,

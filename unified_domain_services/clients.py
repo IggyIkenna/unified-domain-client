@@ -9,13 +9,15 @@ These clients provide domain-specific query patterns and are useful for:
 
 All clients use StandardizedDomainCloudService under the hood.
 """
+# pyright: reportAny=false, reportExplicitAny=false
+# Storage client (list_blobs, .prefixes) and pandas Series.to_dict() have incomplete stubs.
 
 from __future__ import annotations
 
 import logging
 import re
 from datetime import UTC, datetime, timedelta
-from typing import TypedDict, cast
+from typing import TypedDict, Unpack, cast
 
 import pandas as pd
 from unified_cloud_services.core.cloud_config import CloudTarget
@@ -26,6 +28,23 @@ from unified_domain_services.standardized_service import (
 )
 
 logger = logging.getLogger(__name__)  # logging instance
+
+
+class ClientConfig(TypedDict, total=False):
+    """Configuration options for domain clients (project_id, gcs_bucket, bigquery_dataset)."""
+
+    project_id: str | None
+    gcs_bucket: str | None
+    bigquery_dataset: str | None
+
+
+class FeaturesClientConfig(TypedDict, total=False):
+    """Configuration for FeaturesDomainClient (includes feature_type)."""
+
+    project_id: str | None
+    gcs_bucket: str | None
+    bigquery_dataset: str | None
+    feature_type: str
 
 
 def _is_empty_or_na(val: object) -> bool:
@@ -206,9 +225,12 @@ class InstrumentsDomainClient:
                 venue_folders: list[str] = [f"{base_prefix}venue={v}/" for v in venues]
             else:
                 # List all venue folders via list_blobs with delimiter
+                # Storage client list_blobs returns iterator with .prefixes (incomplete stubs)
                 iterator = bucket.list_blobs(prefix=base_prefix, delimiter="/")
                 list(iterator)  # Consume to populate .prefixes
-                venue_folders = [p for p in iterator.prefixes if "venue=" in p]
+                raw_prefixes = getattr(iterator, "prefixes", None)
+                prefixes: list[str] = list(raw_prefixes) if raw_prefixes else []  # type: ignore[arg-type]
+                venue_folders = [p for p in prefixes if "venue=" in p]
 
             if not venue_folders:
                 logger.debug(f"No venue folders found for {date_str}")
@@ -227,7 +249,7 @@ class InstrumentsDomainClient:
                     return pd.DataFrame()
 
             # Parallel load all venue files
-            all_dfs = []
+            all_dfs: list[pd.DataFrame] = []
             with ThreadPoolExecutor(max_workers=min(12, len(venue_folders))) as executor:
                 futures = {executor.submit(load_venue_file, vf): vf for vf in venue_folders}
                 for future in as_completed(futures):
@@ -429,7 +451,10 @@ class InstrumentsDomainClient:
 
         # Calculate statistics (cast dict keys to str for InstrumentSummaryStats)
         def _to_str_dict(counts: pd.Series) -> dict[str, int]:
-            return {str(k): int(v) for k, v in counts.to_dict().items()}
+            result: dict[str, int] = {}
+            for k, v in counts.to_dict().items():  # type: ignore[reportAny]
+                result[str(k)] = int(v) if isinstance(v, (int, float)) else 0
+            return result
 
         stats: InstrumentSummaryStats = {
             "total_instruments": len(instruments_df),
@@ -559,10 +584,10 @@ class InstrumentsDomainClient:
         # Filter by data type availability
         if "data_types" in instruments_df.columns:
 
-            def has_data_type(data_types_str):
+            def has_data_type(data_types_str: str | object) -> bool:
                 if not data_types_str:
                     return False
-                available_types = [dt.strip() for dt in data_types_str.split(",")]
+                available_types: list[str] = [str(dt).strip() for dt in str(data_types_str).split(",")]
                 return data_type in available_types
 
             filtered_df = instruments_df[instruments_df["data_types"].apply(has_data_type)]
@@ -642,7 +667,7 @@ class InstrumentsDomainClient:
 
         cutoff_date = ref_date + timedelta(days=days_until_expiry)
 
-        def is_expiring_soon(expiry_str):
+        def is_expiring_soon(expiry_str: object) -> bool:
             if not expiry_str:
                 return False
             try:
@@ -762,7 +787,7 @@ class MarketCandleDataDomainClient:
         Returns:
             Combined DataFrame with candles for all dates
         """
-        all_candles = []
+        all_candles: list[pd.DataFrame] = []
         current_date = start_date
 
         while current_date <= end_date:
@@ -954,7 +979,7 @@ class MarketTickDataDomainClient:
         Returns:
             Combined DataFrame with tick data for all dates
         """
-        all_ticks = []
+        all_ticks: list[pd.DataFrame] = []
         current_date = start_date
 
         while current_date <= end_date:
@@ -986,7 +1011,7 @@ class MarketDataDomainClient(MarketCandleDataDomainClient):
     This class is kept for backward compatibility only.
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: object, **kwargs: Unpack[ClientConfig]) -> None:
         import warnings
 
         warnings.warn(
@@ -995,7 +1020,7 @@ class MarketDataDomainClient(MarketCandleDataDomainClient):
             DeprecationWarning,
             stacklevel=2,
         )
-        super().__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)  # pyright: ignore[reportCallIssue]
 
 
 class FeaturesDomainClient:
@@ -1298,7 +1323,7 @@ class ExecutionDomainClient:
             )
 
             # Extract unique run IDs
-            run_ids = set()
+            run_ids: set[str] = set()
             for blob_meta in blobs:
                 parts = blob_meta.name.replace("backtest_results/", "").split("/")
                 if parts and parts[0]:
@@ -1314,28 +1339,28 @@ class ExecutionDomainClient:
 
 
 # Factory functions for creating domain clients
-def create_instruments_client(**kwargs) -> InstrumentsDomainClient:
+def create_instruments_client(**kwargs: Unpack[ClientConfig]) -> InstrumentsDomainClient:
     """Factory function to create InstrumentsDomainClient."""
     return InstrumentsDomainClient(**kwargs)
 
 
-def create_market_candle_data_client(**kwargs) -> MarketCandleDataDomainClient:
+def create_market_candle_data_client(**kwargs: Unpack[ClientConfig]) -> MarketCandleDataDomainClient:
     """Factory function to create MarketCandleDataDomainClient."""
     return MarketCandleDataDomainClient(**kwargs)
 
 
-def create_market_tick_data_client(**kwargs) -> MarketTickDataDomainClient:
+def create_market_tick_data_client(**kwargs: Unpack[ClientConfig]) -> MarketTickDataDomainClient:
     """Factory function to create MarketTickDataDomainClient."""
     return MarketTickDataDomainClient(**kwargs)
 
 
-def create_execution_client(**kwargs) -> ExecutionDomainClient:
+def create_execution_client(**kwargs: Unpack[ClientConfig]) -> ExecutionDomainClient:
     """Factory function to create ExecutionDomainClient."""
     return ExecutionDomainClient(**kwargs)
 
 
 # Deprecated: Keep for backward compatibility
-def create_market_data_client(**kwargs) -> MarketDataDomainClient:
+def create_market_data_client(**kwargs: Unpack[ClientConfig]) -> MarketDataDomainClient:
     """
     ⚠️ DEPRECATED: Use create_market_candle_data_client() or create_market_tick_data_client() instead.
 
@@ -1352,6 +1377,6 @@ def create_market_data_client(**kwargs) -> MarketDataDomainClient:
     return MarketDataDomainClient(**kwargs)
 
 
-def create_features_client(feature_type: str = "delta_one", **kwargs) -> FeaturesDomainClient:
+def create_features_client(feature_type: str = "delta_one", **kwargs: Unpack[ClientConfig]) -> FeaturesDomainClient:
     """Factory function to create FeaturesDomainClient."""
     return FeaturesDomainClient(feature_type=feature_type, **kwargs)

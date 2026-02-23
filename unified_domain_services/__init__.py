@@ -4,7 +4,7 @@ Lightweight imports (schemas, date_filter, date_validation) load immediately.
 Clients/standardized_service/factories/cloud_data_provider use lazy imports.
 StandardizedDomainCloudService re-exports from unified_cloud_services.domain.
 """
-# pyright: reportUnsupportedDunderAll=false
+# pyright: reportUnsupportedDunderAll=false, reportUnknownVariableType=false
 
 from unified_cloud_services.domain import (
     FEATURE_GROUP_LOOKBACK,

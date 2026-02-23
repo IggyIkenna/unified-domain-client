@@ -96,11 +96,13 @@ if ! command -v pyright &> /dev/null && ! python3 -c "import pyright" &> /dev/nu
     uv pip install "pyright>=1.1.390" --quiet
 fi
 
-echo -n "Running type checker (pyright)... "
-if command -v pyright &> /dev/null; then
-    PYRIGHT_CMD="pyright"
-elif python3 -m basedpyright --version &> /dev/null 2>&1; then
+echo -n "Running type checker (basedpyright)... "
+if python3 -m basedpyright --version &> /dev/null 2>&1; then
     PYRIGHT_CMD="python3 -m basedpyright"
+elif command -v pyright &> /dev/null; then
+    PYRIGHT_CMD="pyright"
+elif command -v basedpyright &> /dev/null; then
+    PYRIGHT_CMD="basedpyright"
 else
     PYRIGHT_CMD="python3 -m pyright"
 fi
