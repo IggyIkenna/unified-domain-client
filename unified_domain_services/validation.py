@@ -64,7 +64,7 @@ class DomainValidationService:
         self.config = config or DomainValidationConfig()
 
         # Domain-specific validation flags
-        self.domain_configs = {
+        self.domain_configs: dict[str, dict[str, bool | str | None]] = {
             "market_data": {
                 "validate_candle_count": True,
                 "validate_midnight_boundaries": True,
@@ -139,8 +139,8 @@ class DomainValidationService:
                 total_records=0,
             )
 
-        errors = []
-        warnings = []
+        errors: list[str] = []
+        warnings: list[str] = []
 
         # ML domain: No domain-specific validation
         if self.domain == "ml":
@@ -245,8 +245,8 @@ class DomainValidationService:
         Returns:
             ValidationResult
         """
-        errors = []
-        warnings = []
+        errors: list[str] = []
+        warnings: list[str] = []
 
         # Determine if this is external I/O or internal domain data
         is_external_io = data_type in [
@@ -472,7 +472,7 @@ class DomainValidationService:
 
     def _validate_feature_completeness(self, data: pd.DataFrame) -> ValidationResult:
         """Validate feature completeness for features domain"""
-        warnings = []
+        warnings: list[str] = []
 
         # Check for NaN values in feature columns (excluding metadata columns)
         metadata_cols = [
