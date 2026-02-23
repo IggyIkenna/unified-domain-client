@@ -35,7 +35,7 @@ import math
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
-from typing import Any, cast
+from typing import Any
 
 import yaml
 from unified_cloud_services.domain import (
@@ -128,12 +128,12 @@ class DateValidator:
         """
         self._load_config()
 
-        service_config: dict[str, Any] = self._config.get(service, {})
-        if not isinstance(service_config, dict):
-            service_config = {}
-        category_config: dict[str, Any] = service_config.get(category, {})
-        if not isinstance(category_config, dict):
-            category_config = {}
+        service_config = self._config.get(service)
+        if service_config is None or not isinstance(service_config, dict):
+            return None
+        category_config = service_config.get(category)
+        if category_config is None or not isinstance(category_config, dict):
+            return None
 
         if venue and "venues" in category_config:
             venues_map = category_config["venues"]
@@ -161,14 +161,15 @@ class DateValidator:
         self._load_config()
 
         # Try per-venue dates first
-        features_config = self._config.get("features-delta-one-service", {})
-        if not isinstance(features_config, dict):
-            features_config = {}
-        category_config = features_config.get(category, {})
+        features_config = self._config.get("features-delta-one-service")
+        if features_config is None or not isinstance(features_config, dict):
+            category_config = {}
+        else:
+            category_config = features_config.get(category)
+            if category_config is None or not isinstance(category_config, dict):
+                category_config = {}
 
         timeframe_key = f"venues_{timeframe}"
-        if not isinstance(category_config, dict):
-            category_config = {}
         if venue and timeframe_key in category_config:
             timeframe_venues = category_config[timeframe_key]
             venue_date = timeframe_venues.get(venue) if isinstance(timeframe_venues, dict) else None
@@ -176,14 +177,11 @@ class DateValidator:
                 return venue_date
 
         # Fall back to category-level computed dates
-        earliest_features = cast(
-            dict[str, Any],
-            self._config.get("earliest_valid_features", {}),
-        )
-        if not isinstance(earliest_features, dict):
-            earliest_features = {}
-        timeframe_dates = cast(dict[str, Any], earliest_features.get(timeframe, {}))
-        if not isinstance(timeframe_dates, dict):
+        earliest_features = self._config.get("earliest_valid_features")
+        if earliest_features is None or not isinstance(earliest_features, dict):
+            return None
+        timeframe_dates = earliest_features.get(timeframe)
+        if timeframe_dates is None or not isinstance(timeframe_dates, dict):
             return None
         return timeframe_dates.get(category)
 
@@ -204,14 +202,14 @@ class DateValidator:
         """
         self._load_config()
 
-        ml_config = cast(dict[str, Any], self._config.get("ml-training-service", {}))
-        if not isinstance(ml_config, dict):
-            ml_config = {}
-        earliest_ml = cast(dict[str, Any], ml_config.get("earliest_valid_ml", {}))
-        if not isinstance(earliest_ml, dict):
-            earliest_ml = {}
-        timeframe_dates = cast(dict[str, Any], earliest_ml.get(timeframe, {}))
-        if not isinstance(timeframe_dates, dict):
+        ml_config = self._config.get("ml-training-service")
+        if ml_config is None or not isinstance(ml_config, dict):
+            return None
+        earliest_ml = ml_config.get("earliest_valid_ml")
+        if earliest_ml is None or not isinstance(earliest_ml, dict):
+            return None
+        timeframe_dates = earliest_ml.get(timeframe)
+        if timeframe_dates is None or not isinstance(timeframe_dates, dict):
             return None
         return timeframe_dates.get(category)
 

@@ -74,7 +74,9 @@ class DateFilterService:
             ISO datetime string or None if not configured
         """
         proto_lower = (protocol if protocol is not None else "").lower()
-        defaults = self._protocol_defaults.get(proto_lower, {})
+        defaults = self._protocol_defaults.get(proto_lower)
+        if defaults is None or not isinstance(defaults, dict):
+            return None
         return defaults.get(key)
 
     def set_protocol_default_date(self, protocol: str, key: str, value: str) -> None:
