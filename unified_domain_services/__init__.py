@@ -28,7 +28,7 @@ from unified_domain_services.schemas import (
     CONFIG_SCHEMA,
     DEX_VENUES,
     INSTRUCTION_COLUMNS,
-    INSTRUCTION_SCHEMA,
+    INSTRUCTION_SCHEMA,  # pyright: ignore[reportUnknownVariableType]
     INSTRUMENT_TYPE_FOLDER_MAP,
     OPTIONAL_CONFIG_FIELDS,
     REQUIRED_CONFIG_FIELDS,
@@ -43,7 +43,7 @@ from unified_domain_services.schemas import (
     InstrumentKey,
     validate_config,
     validate_config_file,
-    validate_instruction_dataframe,
+    validate_instruction_dataframe,  # pyright: ignore[reportUnknownVariableType]
     validate_instruction_parquet,
 )
 from unified_domain_services.validation import DomainValidationConfig, DomainValidationService

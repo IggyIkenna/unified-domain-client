@@ -10,7 +10,7 @@ unified-events-interface = { path = "../unified-events-interface" }
 
 [project]
 name = "unified-domain-services"
-version = "0.1.6"
+version = "0.1.8"
 description = "Trading domain services - clients, validation, cloud service wrappers"
 requires-python = ">=3.13,<3.14"
 dependencies = [
@@ -32,7 +32,6 @@ dev = [
     "ruff==0.15.0",
     "pandas-stubs>=2.2.0,<3.0.0",
     "basedpyright>=1.20.0,<2.0.0",
-    "pyright>=1.1.390,<2.0.0",
 ]
 
 [tool.setuptools.packages.find]
@@ -43,14 +42,19 @@ exclude = ["tests*"]
 [tool.ruff]
 line-length = 120
 target-version = "py313"
+# E501 (line too long) enforced at 120 chars
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP"]
+ignore = []  # No global ignores - stricter standards (Feb 2026)
+
+[tool.ruff.lint.per-file-ignores]
+# Allow bare except in scripts only (documented in QUALITY_GATE_BYPASS_AUDIT.md)
+"scripts/*" = ["E722"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 norecursedirs = ["deps", ".venv", ".git", "build", "dist", "__pycache__"]
-
-[tool.ruff.lint]
-select = ["E", "F", "W", "I", "UP"]
-ignore = ["E501"]
 
 [tool.basedpyright]
 exclude = ["build", "dist", "deps"]
