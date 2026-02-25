@@ -10,15 +10,13 @@ Provides convenience methods for querying:
 from __future__ import annotations
 
 import logging
-import warnings
 from datetime import UTC, datetime
-from typing import Unpack
 
 import pandas as pd
 from google.cloud import exceptions as gcs_exceptions
 from unified_cloud_services import CloudTarget, unified_config
 
-from unified_domain_services import ClientConfig, StandardizedDomainCloudService
+from unified_domain_services import StandardizedDomainCloudService
 
 logger = logging.getLogger(__name__)
 
@@ -360,22 +358,3 @@ class MarketTickDataDomainClient:
             return pd.concat(all_ticks, ignore_index=True)
         else:
             return pd.DataFrame()
-
-
-# Deprecated: Keep for backward compatibility
-class MarketDataDomainClient(MarketCandleDataDomainClient):
-    """
-    ⚠️ DEPRECATED: Use MarketCandleDataDomainClient or MarketTickDataDomainClient instead.
-
-    This class is kept for backward compatibility only.
-    """
-
-    def __init__(self, *args: object, **kwargs: Unpack[ClientConfig]) -> None:
-        warnings.warn(
-            "MarketDataDomainClient is deprecated. Use MarketCandleDataDomainClient "
-            "or MarketTickDataDomainClient instead. "
-            "See docs/CLIENTS_DEPRECATION_GUIDE.md for migration details.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        super().__init__(*args, **kwargs)  # pyright: ignore[reportCallIssue]

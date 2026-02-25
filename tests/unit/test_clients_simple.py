@@ -1,6 +1,5 @@
 """Simple unit tests for domain clients - focusing on working functionality."""
 
-import warnings
 from unittest.mock import MagicMock, patch
 
 from unified_domain_services import (
@@ -10,7 +9,6 @@ from unified_domain_services import (
     FeaturesDomainClient,
     InstrumentsDomainClient,
     MarketCandleDataDomainClient,
-    MarketDataDomainClient,
     MarketTickDataDomainClient,
     create_instruments_client,
 )
@@ -148,26 +146,3 @@ class TestClientTypedDicts:
             "feature_type": "volatility",
         }
         assert len(config) == 4
-
-
-class TestMarketDataDomainClientDeprecation:
-    """Test MarketDataDomainClient deprecation behavior."""
-
-    @patch("unified_domain_services.clients.market_data.unified_config")
-    @patch("unified_domain_services.clients.market_data.StandardizedDomainCloudService")
-    def test_initialization_shows_deprecation_warning(self, mock_service: MagicMock, mock_config: MagicMock):
-        """Test MarketDataDomainClient shows deprecation warning on init."""
-        mock_config.gcp_project_id = "p"
-        mock_config.market_data_gcs_bucket = "b"
-        mock_config.market_data_bigquery_dataset = "d"
-
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter("always")
-            client = MarketDataDomainClient()
-
-            # Check that deprecation warning was raised
-            assert len(w) == 1
-            assert issubclass(w[0].category, DeprecationWarning)
-            assert "deprecated" in str(w[0].message).lower()
-
-        assert client is not None

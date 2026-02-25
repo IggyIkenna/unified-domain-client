@@ -11,13 +11,11 @@ from unified_domain_services import (
     FeaturesDomainClient,
     InstrumentsDomainClient,
     MarketCandleDataDomainClient,
-    MarketDataDomainClient,
     MarketTickDataDomainClient,
     create_execution_client,
     create_features_client,
     create_instruments_client,
     create_market_candle_data_client,
-    create_market_data_client,
     create_market_tick_data_client,
 )
 
@@ -30,13 +28,11 @@ __all__ = [
     # Client classes
     "InstrumentsDomainClient",
     "MarketCandleDataDomainClient",
-    "MarketDataDomainClient",  # Deprecated
     "MarketTickDataDomainClient",
     "create_execution_client",
     "create_features_client",
     # Factory functions
     "create_instruments_client",
     "create_market_candle_data_client",
-    "create_market_data_client",  # Deprecated
     "create_market_tick_data_client",
 ]
