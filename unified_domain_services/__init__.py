@@ -4,9 +4,10 @@ Lightweight imports (schemas, date_filter, date_validation) load immediately.
 Clients/standardized_service/factories/cloud_data_provider use lazy imports.
 StandardizedDomainCloudService re-exports from unified_cloud_services.domain.
 """
+
 # pyright: reportUnsupportedDunderAll=false, reportUnknownVariableType=false
 
-from unified_cloud_services.domain import (
+from unified_cloud_services import (
     FEATURE_GROUP_LOOKBACK,
     MAX_LOOKBACK_DAYS_BY_TIMEFRAME,
     TIMEFRAME_SECONDS,
@@ -15,15 +16,7 @@ from unified_cloud_services.domain import (
     validate_timestamp_date_alignment,
 )
 
-from unified_domain_services.date_validation import (
-    DateValidationResult,
-    DateValidator,
-    get_earliest_valid_date,
-    get_validator,
-    should_skip_date,
-)
-from unified_domain_services.instrument_date_filter import DateFilterService
-from unified_domain_services.schemas import (
+from unified_domain_services import (
     CLOB_VENUES,
     CONFIG_SCHEMA,
     DEX_VENUES,
@@ -38,19 +31,27 @@ from unified_domain_services.schemas import (
     ZERO_ALPHA_VENUES,
     ConfigValidationError,
     ConfigValidator,
+    DateFilterService,
+    DateValidationResult,
+    DateValidator,
+    DomainValidationConfig,
+    DomainValidationService,
     InstructionValidationError,
     InstructionValidator,
     InstrumentKey,
+    get_earliest_valid_date,
+    get_validator,
+    should_skip_date,
     validate_config,
     validate_config_file,
     validate_instruction_dataframe,
     validate_instruction_parquet,
 )
-from unified_domain_services.validation import DomainValidationConfig, DomainValidationService
 
 # Lazy: clients, standardized_service, factories, cloud_data_provider
 _LAZY_NAMES = {
     "ExecutionDomainClient",
+    "FeaturesDomainClient",
     "InstrumentsDomainClient",
     "MarketCandleDataDomainClient",
     "MarketDataDomainClient",
@@ -70,6 +71,7 @@ _LAZY_NAMES = {
     "FeaturesDataProvider",
     "InstrumentsDataProvider",
     "MarketDataProvider",
+    "cloud_data_provider",
 }
 
 
@@ -77,8 +79,12 @@ def __getattr__(name: str) -> object:
     """Lazy import for clients/standardized_service/factories."""
     if name not in _LAZY_NAMES:
         raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+    if name == "cloud_data_provider":
+        import unified_domain_services.cloud_data_provider as cloud_data_provider
+
+        return cloud_data_provider
     if name in ("CloudDataProviderBase", "FeaturesDataProvider", "InstrumentsDataProvider", "MarketDataProvider"):
-        from unified_domain_services.cloud_data_provider import (
+        from unified_domain_services import (
             CloudDataProviderBase,
             FeaturesDataProvider,
             InstrumentsDataProvider,
@@ -92,11 +98,11 @@ def __getattr__(name: str) -> object:
             "MarketDataProvider": MarketDataProvider,
         }[name]
     if name == "StandardizedDomainCloudService":
-        from unified_domain_services.standardized_service import StandardizedDomainCloudService
+        from unified_cloud_services import StandardizedDomainCloudService
 
         return StandardizedDomainCloudService
     if name.startswith("create_") and "cloud_service" in name:
-        from unified_domain_services.factories import (
+        from unified_domain_services import (
             create_backtesting_cloud_service,
             create_features_cloud_service,
             create_market_data_cloud_service,
@@ -109,8 +115,9 @@ def __getattr__(name: str) -> object:
             "create_market_data_cloud_service": create_market_data_cloud_service,
             "create_strategy_cloud_service": create_strategy_cloud_service,
         }[name]
-    from unified_domain_services.clients import (
+    from unified_domain_services import (
         ExecutionDomainClient,
+        FeaturesDomainClient,
         InstrumentsDomainClient,
         MarketCandleDataDomainClient,
         MarketDataDomainClient,
@@ -125,6 +132,7 @@ def __getattr__(name: str) -> object:
 
     return {
         "ExecutionDomainClient": ExecutionDomainClient,
+        "FeaturesDomainClient": FeaturesDomainClient,
         "InstrumentsDomainClient": InstrumentsDomainClient,
         "MarketCandleDataDomainClient": MarketCandleDataDomainClient,
         "MarketDataDomainClient": MarketDataDomainClient,
@@ -139,60 +147,61 @@ def __getattr__(name: str) -> object:
 
 
 __all__ = [
-    "DateFilterService",
-    "StandardizedDomainCloudService",
-    "DomainValidationService",
-    "DomainValidationConfig",
-    "TimestampDateValidator",
-    "TimestampAlignmentResult",
-    "validate_timestamp_date_alignment",
-    "DateValidator",
-    "DateValidationResult",
-    "should_skip_date",
-    "get_earliest_valid_date",
-    "get_validator",
-    "FEATURE_GROUP_LOOKBACK",
-    "MAX_LOOKBACK_DAYS_BY_TIMEFRAME",
-    "TIMEFRAME_SECONDS",
-    "create_market_data_cloud_service",
-    "create_features_cloud_service",
-    "create_strategy_cloud_service",
-    "create_backtesting_cloud_service",
-    "InstrumentsDomainClient",
-    "MarketCandleDataDomainClient",
-    "MarketTickDataDomainClient",
-    "ExecutionDomainClient",
-    "MarketDataDomainClient",
-    "create_instruments_client",
-    "create_market_candle_data_client",
-    "create_market_tick_data_client",
-    "create_execution_client",
-    "create_market_data_client",
-    "create_features_client",
-    "CloudDataProviderBase",
-    "FeaturesDataProvider",
-    "InstrumentsDataProvider",
-    "MarketDataProvider",
     # Config and instruction validation schemas
     "CLOB_VENUES",
     "CONFIG_SCHEMA",
-    "ConfigValidator",
-    "ConfigValidationError",
     "DEX_VENUES",
-    "INSTRUMENT_TYPE_FOLDER_MAP",
+    "FEATURE_GROUP_LOOKBACK",
     "INSTRUCTION_COLUMNS",
     "INSTRUCTION_SCHEMA",
-    "InstructionValidator",
-    "InstructionValidationError",
+    "INSTRUMENT_TYPE_FOLDER_MAP",
+    "MAX_LOOKBACK_DAYS_BY_TIMEFRAME",
     "OPTIONAL_CONFIG_FIELDS",
     "REQUIRED_CONFIG_FIELDS",
+    "TIMEFRAME_SECONDS",
     "VALID_ALGORITHMS",
     "VALID_INSTRUCTION_TYPES",
     "VENUE_CATEGORY_MAP",
     "ZERO_ALPHA_VENUES",
+    "CloudDataProviderBase",
+    "ConfigValidationError",
+    "ConfigValidator",
+    "DateFilterService",
+    "DateValidationResult",
+    "DateValidator",
+    "DomainValidationConfig",
+    "DomainValidationService",
+    "ExecutionDomainClient",
+    "FeaturesDataProvider",
+    "FeaturesDomainClient",
+    "InstructionValidationError",
+    "InstructionValidator",
+    "InstrumentKey",
+    "InstrumentsDataProvider",
+    "InstrumentsDomainClient",
+    "MarketCandleDataDomainClient",
+    "MarketDataDomainClient",
+    "MarketDataProvider",
+    "MarketTickDataDomainClient",
+    "StandardizedDomainCloudService",
+    "TimestampAlignmentResult",
+    "TimestampDateValidator",
+    "create_backtesting_cloud_service",
+    "create_execution_client",
+    "create_features_client",
+    "create_features_cloud_service",
+    "create_instruments_client",
+    "create_market_candle_data_client",
+    "create_market_data_client",
+    "create_market_data_cloud_service",
+    "create_market_tick_data_client",
+    "create_strategy_cloud_service",
+    "get_earliest_valid_date",
+    "get_validator",
+    "should_skip_date",
     "validate_config",
     "validate_config_file",
     "validate_instruction_dataframe",
     "validate_instruction_parquet",
-    "InstrumentKey",
+    "validate_timestamp_date_alignment",
 ]

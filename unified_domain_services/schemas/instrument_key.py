@@ -104,10 +104,9 @@ class InstrumentKey:
         elif tardis_exchange == "upbit":
             # Upbit format: Our canonical key has BASE-QUOTE (VET-KRW) but Tardis expects QUOTE-BASE (KRW-VET) uppercase
             symbol_parts = symbol.split("-")
-            if len(symbol_parts) == 2:
-                tardis_symbol_formatted = f"{symbol_parts[1]}-{symbol_parts[0]}"  # VET-KRW → KRW-VET
-            else:
-                tardis_symbol_formatted = symbol  # Fallback
+            tardis_symbol_formatted = (
+                f"{symbol_parts[1]}-{symbol_parts[0]}" if len(symbol_parts) == 2 else symbol
+            )  # VET-KRW → KRW-VET
         elif tardis_exchange == "coinbase":
             # Coinbase format: Our canonical key has BASE-QUOTE (SOL-USD), Tardis expects same format uppercase
             tardis_symbol_formatted = symbol.upper()  # SOL-USD stays SOL-USD

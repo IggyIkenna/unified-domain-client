@@ -2,24 +2,19 @@
 requires = ["setuptools>=65", "wheel"]
 build-backend = "setuptools.build_meta"
 
-[tool.uv.sources]
-# Workspace-level path dependencies (no nested deps/)
-unified-cloud-services = { path = "../unified-cloud-services" }
-unified-config-interface = { path = "../unified-config-interface" }
-unified-events-interface = { path = "../unified-events-interface" }
 
 [project]
 name = "unified-domain-services"
-version = "0.1.8"
+version = "1.0.0"
 description = "Trading domain services - clients, validation, cloud service wrappers"
-requires-python = ">=3.13,<3.14"
+requires-python = ">=3.11,<3.14"
 dependencies = [
     "pandas>=2.3.0,<3.0.0",
     "pyarrow>=23.0.0,<24.0.0",
     "pyyaml>=6.0.1,<7.0.0",
-    "unified-cloud-services>=1.5.0",
-    "unified-config-interface>=0.3.0",
-    "unified-events-interface>=0.1.0",
+    "unified-cloud-services>=2.0.0,<3.0.0",
+    "unified-config-interface>=1.0.0,<2.0.0",
+    "unified-events-interface>=1.0.0,<2.0.0",
 ]
 
 [project.optional-dependencies]
@@ -44,16 +39,27 @@ exclude = ["tests*"]
 line-length = 120
 target-version = "py313"
 
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "UP", "B", "C4", "SIM", "RUF"]
+ignore = ["E501"]  # line too long handled by formatter
+mccabe = {max-complexity = 10}
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space" 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-norecursedirs = ["deps", ".venv", ".git", "build", "dist", "__pycache__"]
-
-[tool.ruff.lint]
-select = ["E", "F", "W", "I", "UP"]
-ignore = ["E501"]
+python_files = ["test_*.py"]
+addopts = [
+    "--cov=unified_domain_services",
+    "--cov-report=term-missing",
+    "--cov-fail-under=35",
+    "--timeout=300",
+]
 
 [tool.basedpyright]
 exclude = ["build", "dist", "deps"]
+typeCheckingMode = "standard"
 # Treat pyright warnings as errors (codex strict type checking)
 reportAny = "error"
 reportUnknownArgumentType = "error"
@@ -61,3 +67,16 @@ reportUnknownMemberType = "error"
 reportOptionalMemberAccess = "error"
 reportOptionalSubscript = "error"
 reportGeneralTypeIssues = "error"
+
+
+[tool.coverage.report]
+fail_under = 35  # Minimum coverage
+show_missing = true
+skip_covered = false
+precision = 1
+exclude_lines = [
+    "pragma: no cover",
+    "if TYPE_CHECKING:",
+    "@abstractmethod",
+    "raise NotImplementedError",
+]

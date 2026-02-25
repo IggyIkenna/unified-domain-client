@@ -7,7 +7,7 @@ import pandas as pd
 import pyarrow as pa
 import pytest
 
-from unified_domain_services.schemas.instruction_schema import (
+from unified_domain_services import (
     INSTRUCTION_SCHEMA,
     LEGACY_SIGNAL_ID_COLUMN,
     InstructionValidationError,

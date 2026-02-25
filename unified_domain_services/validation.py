@@ -24,7 +24,7 @@ import logging
 from dataclasses import dataclass
 
 import pandas as pd
-from unified_cloud_services.models.validation import ValidationResult
+from unified_cloud_services import ValidationResult
 
 logger = logging.getLogger(__name__)
 
@@ -198,11 +198,14 @@ class DomainValidationService:
                     errors.extend(ordering_result.errors or [])
 
             # UTC alignment for orders only
-            if data_type == "orders" and self.domain_config["validate_utc_for_type"] == "orders":
-                if self.config.validate_utc_for_orders:
-                    utc_result = self._validate_utc_alignment(data, column="timestamp_out")
-                    if not utc_result.valid:
-                        errors.extend(utc_result.errors or [])
+            if (
+                data_type == "orders"
+                and self.domain_config["validate_utc_for_type"] == "orders"
+                and self.config.validate_utc_for_orders
+            ):
+                utc_result = self._validate_utc_alignment(data, column="timestamp_out")
+                if not utc_result.valid:
+                    errors.extend(utc_result.errors or [])
 
         elif self.domain == "execution":
             # Timestamp ordering validation only (no UTC alignment)

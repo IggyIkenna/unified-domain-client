@@ -13,8 +13,8 @@ def test_import_unified_domain_services():
 
     # Heavy exports (clients, standardized_service) require gcs_operations - skip if unavailable
     try:
-        _ = getattr(unified_domain_services, "StandardizedDomainCloudService")
-        _ = getattr(unified_domain_services, "create_market_data_cloud_service")
+        _ = unified_domain_services.StandardizedDomainCloudService
+        _ = unified_domain_services.create_market_data_cloud_service
     except ModuleNotFoundError:
         pass  # gcs_operations not in UCS - lazy load fails when accessed
 

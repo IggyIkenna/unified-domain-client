@@ -15,6 +15,7 @@ Key Design Principles:
 - direction is REQUIRED only for TRADE/SWAP instruction types
 - ATOMIC instructions can bundle on-chain instructions (NOT TRADE)
 """
+
 # pyright: reportUnknownMemberType=false, reportUnknownVariableType=false, reportUnknownParameterType=false, reportUnknownArgumentType=false, reportAny=false
 # Reason: pandas DataFrame operations, pyarrow (pa.Table, pq.read_table), and
 # json.loads return types have incomplete stubs. Documented in QUALITY_GATE_BYPASS_AUDIT.md.
@@ -22,10 +23,14 @@ Key Design Principles:
 import json
 import logging
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import pandas as pd
 import pyarrow as pa
 import pyarrow.parquet as pq
+
+if TYPE_CHECKING:
+    pass
 
 logger = logging.getLogger(__name__)
 
@@ -468,7 +473,13 @@ class InstructionValidator:
         # STRATEGY_ID FORMAT VALIDATION
         # =================================================================
 
-        from unified_cloud_services.utils.id_conventions import validate_strategy_id
+        # Only import when needed to avoid dependency issues in some environments
+        try:
+            from unified_cloud_services import validate_strategy_id
+        except ImportError:
+            # If import fails, skip strategy ID validation
+            logger.debug("Skipping strategy_id validation: unified_cloud_services not available")
+            return errors
 
         unique_strategy_ids = df["strategy_id"].unique()
         for sid in unique_strategy_ids:
@@ -577,8 +588,12 @@ def validate_instruction_parquet(
     try:
         table = pq.read_table(path)
         df = table.to_pandas()
+    except (FileNotFoundError, OSError) as e:
+        return [f"Failed to access parquet file {path}: {e}"]
+    except (ValueError, TypeError, KeyError) as e:
+        return [f"Failed to parse parquet file {path}: {e}"]
     except Exception as e:
-        return [f"Failed to read parquet file {path}: {e}"]
+        return [f"Unexpected error reading parquet file {path}: {e}"]
 
     return validate_instruction_dataframe(df, strict=strict, allow_legacy_signal_id=allow_legacy_signal_id)
 

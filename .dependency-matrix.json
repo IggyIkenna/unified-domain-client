@@ -1,0 +1,20 @@
+{
+  "name": "unified-domain-services",
+  "dependencies": [
+    {
+      "name": "unified-cloud-services",
+      "path": "../unified-cloud-services",
+      "required": true
+    },
+    {
+      "name": "unified-config-interface",
+      "path": "../unified-config-interface",
+      "required": true
+    },
+    {
+      "name": "unified-events-interface",
+      "path": "../unified-events-interface",
+      "required": true
+    }
+  ]
+}

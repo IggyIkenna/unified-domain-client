@@ -26,23 +26,16 @@ Usage:
     if not result.is_valid:
         logger.info(f"Skipping: {result.reason}")
 """
-# pyright: reportAny=false, reportUnknownVariableType=false, reportUnknownMemberType=false, reportExplicitAny=false
-# Reason: YAML config has dynamic nested structure; dict.get() returns cause type inference issues.
-# Documented in QUALITY_GATE_BYPASS_AUDIT.md.
 
 import logging
 import math
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
-from typing import Any
+from typing import cast
 
 import yaml
-from unified_cloud_services.domain import (
-    FEATURE_GROUP_LOOKBACK,
-    MAX_LOOKBACK_DAYS_BY_TIMEFRAME,
-)
-from unified_cloud_services.utils.timeframe import TIMEFRAME_TO_SECONDS
+from unified_cloud_services import FEATURE_GROUP_LOOKBACK, MAX_LOOKBACK_DAYS_BY_TIMEFRAME, TIMEFRAME_SECONDS
 
 logger = logging.getLogger(__name__)
 
@@ -73,7 +66,7 @@ class DateValidator:
         Args:
             config_path: Path to expected_start_dates.yaml (auto-detected if None)
         """
-        self._config: dict[str, Any] = {}
+        self._config: dict[str, object] = {}
         self._config_path = config_path
         self._loaded = False
 
@@ -98,7 +91,8 @@ class DateValidator:
 
         if self._config_path and self._config_path.exists():
             with open(self._config_path) as f:
-                self._config = yaml.safe_load(f) or {}
+                loaded = cast(object, yaml.safe_load(f))
+                self._config = cast(dict[str, object], loaded) if isinstance(loaded, dict) else {}
             logger.debug(f"Loaded date validation config from {self._config_path}")
         else:
             logger.error(
@@ -128,18 +122,23 @@ class DateValidator:
         """
         self._load_config()
 
-        service_config = self._config.get(service)
-        if service_config is None or not isinstance(service_config, dict):
+        service_config_raw = self._config.get(service)
+        if service_config_raw is None or not isinstance(service_config_raw, dict):
             return None
-        category_config = service_config.get(category)
-        if category_config is None or not isinstance(category_config, dict):
+        service_config = cast(dict[str, object], service_config_raw)
+        category_config_raw = service_config.get(category)
+        if category_config_raw is None or not isinstance(category_config_raw, dict):
             return None
+        category_config = cast(dict[str, object], category_config_raw)
 
         if venue and "venues" in category_config:
-            venues_map = category_config["venues"]
-            if isinstance(venues_map, dict):
-                return venues_map.get(venue)
-        return category_config.get("category_start")
+            venues_map_raw = category_config["venues"]
+            if isinstance(venues_map_raw, dict):
+                venues_map = cast(dict[str, object], venues_map_raw)
+                v = venues_map.get(venue)
+                return v if isinstance(v, str) else None
+        v = category_config.get("category_start")
+        return v if isinstance(v, str) else None
 
     def get_earliest_valid_feature_date(
         self,
@@ -161,29 +160,37 @@ class DateValidator:
         self._load_config()
 
         # Try per-venue dates first
-        features_config = self._config.get("features-delta-one-service")
-        if features_config is None or not isinstance(features_config, dict):
-            category_config = {}
+        features_config_raw = self._config.get("features-delta-one-service")
+        if features_config_raw is None or not isinstance(features_config_raw, dict):
+            category_config: dict[str, object] = {}
         else:
-            category_config = features_config.get(category)
-            if category_config is None or not isinstance(category_config, dict):
+            features_config = cast(dict[str, object], features_config_raw)
+            category_config_raw = features_config.get(category)
+            if category_config_raw is None or not isinstance(category_config_raw, dict):
                 category_config = {}
+            else:
+                category_config = cast(dict[str, object], category_config_raw)
 
         timeframe_key = f"venues_{timeframe}"
         if venue and timeframe_key in category_config:
-            timeframe_venues = category_config[timeframe_key]
-            venue_date = timeframe_venues.get(venue) if isinstance(timeframe_venues, dict) else None
-            if venue_date:
-                return venue_date
+            timeframe_venues_raw = category_config[timeframe_key]
+            if isinstance(timeframe_venues_raw, dict):
+                timeframe_venues = cast(dict[str, object], timeframe_venues_raw)
+                venue_date = timeframe_venues.get(venue)
+                if isinstance(venue_date, str):
+                    return venue_date
 
         # Fall back to category-level computed dates
-        earliest_features = self._config.get("earliest_valid_features")
-        if earliest_features is None or not isinstance(earliest_features, dict):
+        earliest_features_raw = self._config.get("earliest_valid_features")
+        if earliest_features_raw is None or not isinstance(earliest_features_raw, dict):
             return None
-        timeframe_dates = earliest_features.get(timeframe)
-        if timeframe_dates is None or not isinstance(timeframe_dates, dict):
+        earliest_features = cast(dict[str, object], earliest_features_raw)
+        timeframe_dates_raw = earliest_features.get(timeframe)
+        if timeframe_dates_raw is None or not isinstance(timeframe_dates_raw, dict):
             return None
-        return timeframe_dates.get(category)
+        timeframe_dates = cast(dict[str, object], timeframe_dates_raw)
+        v = timeframe_dates.get(category)
+        return v if isinstance(v, str) else None
 
     def get_earliest_valid_ml_date(
         self,
@@ -202,16 +209,20 @@ class DateValidator:
         """
         self._load_config()
 
-        ml_config = self._config.get("ml-training-service")
-        if ml_config is None or not isinstance(ml_config, dict):
+        ml_config_raw = self._config.get("ml-training-service")
+        if ml_config_raw is None or not isinstance(ml_config_raw, dict):
             return None
-        earliest_ml = ml_config.get("earliest_valid_ml")
-        if earliest_ml is None or not isinstance(earliest_ml, dict):
+        ml_config = cast(dict[str, object], ml_config_raw)
+        earliest_ml_raw = ml_config.get("earliest_valid_ml")
+        if earliest_ml_raw is None or not isinstance(earliest_ml_raw, dict):
             return None
-        timeframe_dates = earliest_ml.get(timeframe)
-        if timeframe_dates is None or not isinstance(timeframe_dates, dict):
+        earliest_ml = cast(dict[str, object], earliest_ml_raw)
+        timeframe_dates_raw = earliest_ml.get(timeframe)
+        if timeframe_dates_raw is None or not isinstance(timeframe_dates_raw, dict):
             return None
-        return timeframe_dates.get(category)
+        timeframe_dates = cast(dict[str, object], timeframe_dates_raw)
+        v = timeframe_dates.get(category)
+        return v if isinstance(v, str) else None
 
     def calculate_lookback_days(
         self,
@@ -233,7 +244,7 @@ class DateValidator:
         else:
             max_lookback = max(FEATURE_GROUP_LOOKBACK.values())
 
-        seconds_per_period = TIMEFRAME_TO_SECONDS.get(timeframe, 86400)
+        seconds_per_period = TIMEFRAME_SECONDS.get(timeframe, 86400)
         total_seconds = max_lookback * seconds_per_period
 
         # Round up to days

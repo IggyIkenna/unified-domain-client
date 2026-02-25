@@ -1,6 +1,8 @@
 # unified-domain-services
 
-Trading domain services library: clients, validation, cloud service wrappers, and `StandardizedDomainCloudService`.
+Domain clients **canonical** library: InstrumentsDomainClient, ExecutionDomainClient, validation, and cloud service wrappers.
+
+**Scope:** Domain clients are the single source of truth. **InstrumentsDomainClient** is the only canonical reader for instruments (see `unified-trading-codex/02-data/instruments-and-api-keys-standard.md`). Depends on UCS, UCI, UEI.
 
 ## Install
 
@@ -20,6 +22,8 @@ uv pip install -e ".[dev]"
 
 ```python
 from unified_domain_services import (
+    InstrumentsDomainClient,
+    ExecutionDomainClient,
     StandardizedDomainCloudService,
     create_market_data_cloud_service,
     validate_timestamp_date_alignment,

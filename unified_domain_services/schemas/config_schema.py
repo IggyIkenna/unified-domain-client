@@ -27,8 +27,6 @@ from unified_config_interface import (
 __all__ = [
     "CLOB_VENUES",
     "CONFIG_SCHEMA",
-    "ConfigValidationError",
-    "ConfigValidator",
     "DEX_VENUES",
     "INSTRUMENT_TYPE_FOLDER_MAP",
     "OPTIONAL_CONFIG_FIELDS",
@@ -37,6 +35,8 @@ __all__ = [
     "VALID_INSTRUCTION_TYPES",
     "VENUE_CATEGORY_MAP",
     "ZERO_ALPHA_VENUES",
+    "ConfigValidationError",
+    "ConfigValidator",
     "validate_config",
     "validate_config_file",
 ]

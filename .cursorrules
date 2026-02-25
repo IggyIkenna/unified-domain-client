@@ -33,6 +33,30 @@ All workspace rules from `../.cursorrules` apply.
 - cloudbuild.yaml (publish to Artifact Registry)
 - pre-commit: bump-library-version, ruff, pre-commit-hooks
 
+## Imports: Top of File Only + External Import Standards
+
+```python
+import asyncio
+import pandas as pd
+
+def my_function():
+ # Use imports
+```
+
+NEVER: imports inside functions, try-except fallback implementations
+
+**External Import Standards:** For external dependencies (unified libraries), use top-level imports only:
+
+```python
+# ✅ CORRECT
+from unified_config_service import ConfigValidator
+from unified_events_interface import setup_events
+
+# ❌ WRONG - exposes internal structure, breaks with upstream refactoring
+from unified_config_service.validators.schema import ConfigValidator
+from unified_events_interface.core.logging import setup_events
+```
+
 ---
 
 ## SSOT Alignment Validation
@@ -79,3 +103,57 @@ If drift detected, update related sources:
 See: `.cursor/rules/ssot-alignment-enforcement.mdc` for complete alignment rules.
 
 **Last alignment validation**: Run `validate-alignment.py --check-drift` before every commit.
+
+## External Import Standards
+
+**CRITICAL: Always use top-level imports for external unified libraries**
+
+### Required Import Pattern
+
+```python
+# ✅ CORRECT - Top-level imports only
+from unified_config_interface import UnifiedCloudConfig, ConfigValidator
+from unified_events_interface import setup_events, log_event
+from unified_domain_services import InstrumentsDomainClient
+from unified_cloud_services import get_storage_client
+from unified_market_interface import get_market_client
+from execution_algo_library import TWAP, VWAP
+
+# ❌ WRONG - Never use deep/nested imports for external libraries
+from unified_config_interface.core.config import UnifiedCloudConfig
+from unified_events_interface.logging.events import log_event
+from unified_domain_services.clients.instruments import InstrumentsDomainClient
+```
+
+### Auto-Fix Violations
+
+```bash
+# Check for violations
+python3 .cursor/scripts/check-import-patterns.py
+
+# Auto-fix all violations
+python3 .cursor/scripts/check-import-patterns.py --fix
+
+# Fix through quality gates
+bash scripts/quality-gates.sh --fix
+
+# Fix specific directory
+python3 .cursor/scripts/check-import-patterns.py --fix src/
+```
+
+### Why This Matters
+
+1. **Refactoring Flexibility**: Allows upstream packages to reorganize without breaking consumers
+2. **Cleaner APIs**: Makes it clear what's publicly available
+3. **Easier Discovery**: Developers can easily find available classes/functions
+4. **Reduced Coupling**: Avoids coupling to internal implementation details
+
+### Enforcement
+
+- Quality gates will fail if deep imports are detected
+- Pre-commit hooks prevent committing violations
+- Use `--fix` flag with quality gates or import checker to auto-correct
+
+### Reference
+
+See: [External Import Standards](../unified-trading-codex/06-coding-standards/external-import-standards.md)

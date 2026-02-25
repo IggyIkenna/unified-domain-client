@@ -1660,7 +1660,7 @@ wheels = [
 
 [[package]]
 name = "unified-cloud-services"
-version = "1.5.16"
+version = "1.5.17"
 source = { directory = "../unified-cloud-services" }
 dependencies = [
     { name = "fsspec" },
@@ -1722,7 +1722,7 @@ requires-dist = [
     { name = "unified-config-interface", marker = "extra == 'split-libraries'", specifier = ">=0.1.0" },
     { name = "unified-events-interface", marker = "extra == 'split-libraries'", specifier = ">=0.1.0" },
     { name = "unified-market-interface", marker = "extra == 'split-libraries'", specifier = ">=0.1.0" },
-    { name = "unified-order-interface", marker = "extra == 'split-libraries'", specifier = ">=0.1.0" },
+    { name = "unified-trade-execution-interface", marker = "extra == 'split-libraries'", specifier = ">=0.1.0" },
     { name = "web3", specifier = ">=6.0.0,<7.0.0" },
 ]
 provides-extras = ["aws", "gcp", "databento", "split-libraries", "all", "dev"]
@@ -1749,6 +1749,7 @@ requires-dist = [
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=9.0.1,<10.0.0" },
     { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = ">=1.0.0,<2.0.0" },
     { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=7.0.0,<8.0.0" },
+    { name = "pytest-mock", marker = "extra == 'dev'", specifier = ">=3.12.0,<4.0.0" },
     { name = "pytest-timeout", marker = "extra == 'dev'", specifier = ">=2.2.0,<3.0.0" },
     { name = "pytest-xdist", marker = "extra == 'dev'", specifier = ">=3.5.0,<4.0.0" },
     { name = "python-dateutil", specifier = ">=2.8.2,<3.0.0" },
@@ -1760,7 +1761,7 @@ provides-extras = ["aws", "dev"]
 
 [[package]]
 name = "unified-domain-services"
-version = "0.1.6"
+version = "0.1.8"
 source = { editable = "." }
 dependencies = [
     { name = "pandas" },
