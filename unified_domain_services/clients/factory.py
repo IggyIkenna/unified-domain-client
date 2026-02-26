@@ -9,14 +9,11 @@ from __future__ import annotations
 
 from typing import Unpack
 
-from unified_domain_services import (
-    ClientConfig,
-    ExecutionDomainClient,
-    FeaturesDomainClient,
-    InstrumentsDomainClient,
-    MarketCandleDataDomainClient,
-    MarketTickDataDomainClient,
-)
+from unified_domain_services.clients.base import ClientConfig
+from unified_domain_services.clients.execution import ExecutionDomainClient
+from unified_domain_services.clients.features import FeaturesDomainClient
+from unified_domain_services.clients.instruments import InstrumentsDomainClient
+from unified_domain_services.clients.market_data import MarketCandleDataDomainClient, MarketTickDataDomainClient
 
 
 def create_instruments_client(**kwargs: Unpack[ClientConfig]) -> InstrumentsDomainClient:

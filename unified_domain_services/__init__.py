@@ -15,13 +15,10 @@ from unified_cloud_services import (
     TimestampDateValidator,
     validate_timestamp_date_alignment,
 )
-
-from unified_domain_services import (
+from unified_config_interface import (
     CLOB_VENUES,
     CONFIG_SCHEMA,
     DEX_VENUES,
-    INSTRUCTION_COLUMNS,
-    INSTRUCTION_SCHEMA,
     INSTRUMENT_TYPE_FOLDER_MAP,
     OPTIONAL_CONFIG_FIELDS,
     REQUIRED_CONFIG_FIELDS,
@@ -31,22 +28,28 @@ from unified_domain_services import (
     ZERO_ALPHA_VENUES,
     ConfigValidationError,
     ConfigValidator,
-    DateFilterService,
+    validate_config,
+    validate_config_file,
+)
+
+from unified_domain_services.date_validation import (
     DateValidationResult,
     DateValidator,
-    DomainValidationConfig,
-    DomainValidationService,
-    InstructionValidationError,
-    InstructionValidator,
-    InstrumentKey,
     get_earliest_valid_date,
     get_validator,
     should_skip_date,
-    validate_config,
-    validate_config_file,
+)
+from unified_domain_services.instrument_date_filter import DateFilterService
+from unified_domain_services.schemas.instruction_schema import (
+    INSTRUCTION_COLUMNS,
+    INSTRUCTION_SCHEMA,
+    InstructionValidationError,
+    InstructionValidator,
     validate_instruction_dataframe,
     validate_instruction_parquet,
 )
+from unified_domain_services.schemas.instrument_key import InstrumentKey
+from unified_domain_services.validation import DomainValidationConfig, DomainValidationService
 
 # Lazy: clients, standardized_service, factories, cloud_data_provider
 _LAZY_NAMES = {
@@ -82,7 +85,7 @@ def __getattr__(name: str) -> object:
 
         return cloud_data_provider
     if name in ("CloudDataProviderBase", "FeaturesDataProvider", "InstrumentsDataProvider", "MarketDataProvider"):
-        from unified_domain_services import (
+        from unified_domain_services.cloud_data_provider import (
             CloudDataProviderBase,
             FeaturesDataProvider,
             InstrumentsDataProvider,
@@ -100,7 +103,7 @@ def __getattr__(name: str) -> object:
 
         return StandardizedDomainCloudService
     if name.startswith("create_") and "cloud_service" in name:
-        from unified_domain_services import (
+        from unified_domain_services.factories import (
             create_backtesting_cloud_service,
             create_features_cloud_service,
             create_market_data_cloud_service,
@@ -113,7 +116,7 @@ def __getattr__(name: str) -> object:
             "create_market_data_cloud_service": create_market_data_cloud_service,
             "create_strategy_cloud_service": create_strategy_cloud_service,
         }[name]
-    from unified_domain_services import (
+    from unified_domain_services.clients import (
         ExecutionDomainClient,
         FeaturesDomainClient,
         InstrumentsDomainClient,

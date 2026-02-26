@@ -22,9 +22,9 @@ from typing import TypedDict, cast
 
 import pandas as pd
 from google.cloud import exceptions as gcs_exceptions
-from unified_cloud_services import CloudTarget, get_storage_client, unified_config
+from unified_cloud_services import CloudTarget, StandardizedDomainCloudService, get_storage_client, unified_config
 
-from unified_domain_services import StandardizedDomainCloudService, _is_empty_or_na
+from unified_domain_services.clients.base import _is_empty_or_na
 
 logger = logging.getLogger(__name__)
 

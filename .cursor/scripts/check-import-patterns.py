@@ -86,6 +86,12 @@ class ImportChecker:
                     package = match.group(1)
                     module_path = match.group(2)
 
+                    # Skip: same-package internal imports (avoids circular import)
+                    # e.g. unified_domain_services/__init__.py importing from unified_domain_services.clients
+                    file_str = str(file_path)
+                    if f"/{package}/" in file_str or f"\\{package}\\" in file_str:
+                        continue
+
                     # Extract what's being imported
                     import_match = FROM_IMPORT_PATTERN.match(line)
                     if import_match:
