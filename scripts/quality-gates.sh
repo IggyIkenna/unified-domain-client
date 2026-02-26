@@ -139,6 +139,11 @@ TEST_STATUS=0
 CODEX_STATUS=0
 CONFIG_STATUS=0
 
+# Helpers (rollout injection fix)
+log_success() { echo -e "${GREEN}✅ $1${NC}"; }
+log_fail() { echo -e "${RED}❌ $1${NC}"; }
+log_warn() { echo -e "${YELLOW}⚠️  $1${NC}"; }
+
 # Source directories (default: check all)
 SOURCE_DIRS="unified_domain_services/ tests/"
 

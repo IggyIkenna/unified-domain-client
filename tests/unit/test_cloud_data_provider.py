@@ -22,7 +22,8 @@ class TestCloudDataProviderBase:
         )
 
         class ConcreteProvider(CloudDataProviderBase):
-            pass
+            def get_provider_id(self) -> str:
+                return "test"
 
         provider = ConcreteProvider(domain="test", cloud_target=target)
 
@@ -40,7 +41,8 @@ class TestCloudDataProviderBase:
         )
 
         class ConcreteProvider(CloudDataProviderBase):
-            pass
+            def get_provider_id(self) -> str:
+                return "test"
 
         provider = ConcreteProvider(domain="test", cloud_target=target)
 
