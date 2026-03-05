@@ -1,26 +1,26 @@
-# unified-domain-services - Dependencies
+# unified-domain-client - Dependencies
 
 ## Library Dependencies
 
 | Library | Why | Import |
 |---------|-----|--------|
-| unified-cloud-services | StorageClient, validation, lookback constants | `from unified_cloud_services.core.validation import ...` |
+| unified-trading-services | StorageClient, validation, lookback constants | `from unified_trading_services.core.validation import ...` |
 
 ## Install Order (CI/Cloud Build)
 
-1. unified-cloud-services (from Artifact Registry)
-2. unified-domain-services (self)
+1. unified-trading-services (from Artifact Registry)
+2. unified-domain-client (self)
 
 ## Local Development
 
 ```bash
-uv pip install -e ../unified-cloud-services
+uv pip install -e ../unified-trading-services
 uv pip install -e ".[dev]"
 ```
 
 ## Cloud Build
 
-Resolves unified-cloud-services from Artifact Registry via pip.conf (`unified-libraries`).
+Resolves unified-trading-services from Artifact Registry via pip.conf (`unified-libraries`).
 
 ## Public API (for downstream services)
 
