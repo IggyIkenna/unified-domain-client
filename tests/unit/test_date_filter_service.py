@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 
 import pytest
 
-from unified_domain_services import DateFilterService
+from unified_domain_client import DateFilterService
 
 
 class TestDateFilterService:

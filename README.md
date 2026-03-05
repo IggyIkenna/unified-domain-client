@@ -1,4 +1,4 @@
-# unified-domain-services
+# unified-domain-client
 
 Trading domain services library: clients, validation, cloud service wrappers, and `StandardizedDomainCloudService`.
 
@@ -6,7 +6,7 @@ Trading domain services library: clients, validation, cloud service wrappers, an
 
 ```bash
 # From Artifact Registry (Cloud Build)
-pip install unified-domain-services
+pip install unified-domain-client
 
 # Local development
 uv pip install -e ".[dev]"
@@ -14,18 +14,30 @@ uv pip install -e ".[dev]"
 
 ## Dependencies
 
-- unified-cloud-services>=1.5.0
+- unified-trading-services>=1.5.0
 
 ## Usage
 
 ```python
-from unified_domain_services import (
+from unified_domain_client import (
     StandardizedDomainCloudService,
     create_market_data_cloud_service,
     validate_timestamp_date_alignment,
     DateValidator,
 )
 ```
+
+## Sports Domain Clients
+
+Sports domain clients are available in `unified_domain_client/sports/`:
+
+- **SportsFeaturesDomainClient** — sports feature vectors
+- **SportsFixturesDomainClient** — fixture and match data
+- **SportsOddsDomainClient** — raw odds from bookmakers
+- **SportsMappingsDomainClient** — cross-provider entity mappings
+- **SportsTickDataDomainClient** — sports tick data access
+
+Five `DataSetSpec` entries: `sports_features`, `sports_fixtures`, `sports_raw_odds`, `sports_mappings`, `sports_tick_data`.
 
 ## Quality Gates
 

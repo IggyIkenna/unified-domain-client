@@ -1,13 +1,13 @@
 """Config schema and validation - re-exported from unified-config-interface.
 
 Canonical implementation lives in unified-config-interface. This module
-provides backward compatibility for callers importing from unified_domain_services.
+provides backward compatibility for callers importing from unified_domain_client.
 
 Re-exports all config schema symbols from UCI so domain services and downstream
-callers can import from unified_domain_services.schemas.config_schema if needed.
+callers can import from unified_domain_client.schemas.config_schema if needed.
 """
 
-from unified_config_interface import (
+from unified_api_contracts import (
     CLOB_VENUES,
     CONFIG_SCHEMA,
     DEX_VENUES,
@@ -18,6 +18,8 @@ from unified_config_interface import (
     VALID_INSTRUCTION_TYPES,
     VENUE_CATEGORY_MAP,
     ZERO_ALPHA_VENUES,
+)
+from unified_config_interface import (
     ConfigValidationError,
     ConfigValidator,
     validate_config,

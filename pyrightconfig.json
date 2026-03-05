@@ -1,0 +1,17 @@
+{
+  "include": ["unified_domain_client"],
+  "exclude": ["build", "dist", "deps", "tests"],
+  "venvPath": "..",
+  "venv": ".venv-workspace",
+  "extraPaths": ["../unified-api-contracts", "../unified-cloud-interface", "../unified-config-interface", "../unified-internal-contracts", "../unified-events-interface", "../unified-trading-library"],
+  "reportMissingTypeStubs": false,
+  "typeCheckingMode": "strict",
+  "reportMissingImports": "warning",
+  "reportUnknownVariableType": "error",
+  "reportUnknownMemberType": "error",
+  "reportUnknownArgumentType": "error",
+  "reportOptionalMemberAccess": "error",
+  "reportOptionalSubscript": "error",
+  "reportGeneralTypeIssues": "error",
+  "reportAny": "error"
+}

@@ -1,1 +1,1 @@
-"""Tests for unified-domain-services."""
+"""Tests for unified-domain-client."""
