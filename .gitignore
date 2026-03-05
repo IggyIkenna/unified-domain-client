@@ -1,20 +1,39 @@
-# Python
+
+# Security - Never commit credentials
+*-credentials.json
+*-service-account.json
+workspace-dev-sa-key.json
+service-account*.json
+credentials*.json
+*secret*.json
+central-element-323112-*.json
+.env
+.env.local
+.env.*.local
+**/secrets/
+**/credentials/
+.DS_Store
+*.backup
 __pycache__/
-*.py[cod]
-*.egg-info/
-.eggs/
-build/
-dist/
+*.pyc
+.pytest_cache/
+.mypy_cache/
+.hypothesis/
+.ruff_cache/
+.cache/
+data/
+# Python venvs
 .venv/
 venv/
-.pytest_cache/
-.ruff_cache/
-
-# Env
-.env
-
-# Local deps (CI clones to deps/; local: symlinks)
-deps/
-*.bak
+.venv-workspace/
+# Node / UI
+node_modules/
+.next/
+dist/
+build/
+.turbo/
+# Coverage
+coverage/
+.nyc_output/
+logs/
 .coverage
-pyrightconfig.json

@@ -4,7 +4,7 @@ DateFilterService - Uniform date filtering for instruments.
 Provides protocol-specific default dates and filters instruments by
 available_from_datetime / available_to_datetime for point-in-time correctness.
 
-Belongs in unified-domain-services: domain validation logic.
+Belongs in unified-domain-client: domain validation logic.
 """
 
 import logging
@@ -24,7 +24,7 @@ def _to_utc(dt: datetime) -> datetime:
 
 def _parse_iso_datetime(s: str | None) -> datetime | None:
     """Parse ISO datetime string to UTC-aware datetime."""
-    if not s or not isinstance(s, str) or not s.strip():
+    if not s or not s.strip():
         return None
     try:
         s_clean = s.strip().replace("Z", "+00:00")
@@ -73,7 +73,7 @@ class DateFilterService:
         Returns:
             ISO datetime string or None if not configured
         """
-        proto_lower = (protocol if protocol is not None else "").lower()
+        proto_lower = protocol.lower()
         defaults = self._protocol_defaults.get(proto_lower, {})
         return defaults.get(key)
 
@@ -86,7 +86,7 @@ class DateFilterService:
             key: Date key (e.g., available_from)
             value: ISO datetime string (e.g., 2024-01-01T00:00:00Z)
         """
-        proto_lower = (protocol if protocol is not None else "").lower()
+        proto_lower = protocol.lower()
         if proto_lower not in self._protocol_defaults:
             self._protocol_defaults[proto_lower] = {}
         self._protocol_defaults[proto_lower][key] = value
@@ -117,9 +117,6 @@ class DateFilterService:
         result: dict[str, InstrumentData] = {}
 
         for inst_key, inst_data in instruments.items():
-            if not isinstance(inst_data, dict):
-                continue
-
             available_from_str = inst_data.get("available_from_datetime")
             available_to_str = inst_data.get("available_to_datetime")
 

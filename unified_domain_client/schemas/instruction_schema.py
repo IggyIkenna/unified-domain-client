@@ -26,6 +26,7 @@ from pathlib import Path
 import pandas as pd
 import pyarrow as pa
 import pyarrow.parquet as pq
+from unified_config_interface import validate_strategy_id
 
 logger = logging.getLogger(__name__)
 
@@ -263,7 +264,7 @@ class InstructionValidator:
         # Validate a DataFrame
         errors = validator.validate(df)
         if errors:
-            logger.info(f"Validation errors: {errors}")
+            logger.info("Validation errors: %s", errors)
 
         # Validate a parquet file
         errors = validator.validate_file("instructions.parquet")
@@ -299,13 +300,37 @@ class InstructionValidator:
             return ["Input must be a pandas DataFrame or pyarrow Table"]
 
         # Handle legacy signal_id -> instruction_id migration
+        df = self._handle_legacy_signal_id(df, errors)
+
+        # Check required columns (stop early if missing)
+        for col in REQUIRED_COLUMNS:
+            if col not in df.columns:
+                errors.append(f"Missing required column: {col}")
+        if errors:
+            return errors
+
+        # Run all sub-validators
+        self._validate_instruction_types(df, errors)
+        self._validate_direction(df, errors)
+        self._validate_atomic_instructions(df, errors)
+        self._validate_quantity(df, errors)
+        self._validate_benchmark_price(df, errors)
+        self._validate_instruction_id(df, errors)
+        self._validate_timestamp_type(df, errors)
+        self._validate_strategy_id_format(df, errors)
+        self._validate_instrument_id_format(df, errors)
+        self._validate_optional_fields(df, errors)
+
+        return errors
+
+    def _handle_legacy_signal_id(self, df: pd.DataFrame, errors: list[str]) -> pd.DataFrame:
+        """Handle legacy signal_id -> instruction_id migration."""
         set(df.columns)
         has_instruction_id = "instruction_id" in df.columns
         has_legacy_signal_id = LEGACY_SIGNAL_ID_COLUMN in df.columns
 
         if not has_instruction_id and has_legacy_signal_id:
             if self.allow_legacy_signal_id:
-                # Treat signal_id as instruction_id
                 df = df.rename(columns={LEGACY_SIGNAL_ID_COLUMN: "instruction_id"})
                 logger.warning(
                     "DEPRECATED: signal_id column found. Use instruction_id instead. "
@@ -314,20 +339,10 @@ class InstructionValidator:
             else:
                 errors.append("signal_id is DEPRECATED. Use instruction_id instead.")
 
-        # Check required columns
-        for col in REQUIRED_COLUMNS:
-            if col not in df.columns:
-                errors.append(f"Missing required column: {col}")
+        return df
 
-        if errors:
-            # Stop early if required columns missing
-            return errors
-
-        # =================================================================
-        # INSTRUCTION_TYPE VALIDATION (NOW MANDATORY)
-        # =================================================================
-
-        # Check instruction_type values
+    def _validate_instruction_types(self, df: pd.DataFrame, errors: list[str]) -> None:
+        """Validate instruction_type values are present and valid."""
         null_type_count = df["instruction_type"].isna().sum()
         if null_type_count > 0:
             errors.append(f"instruction_type is REQUIRED but has {null_type_count} null values")
@@ -344,75 +359,76 @@ class InstructionValidator:
             deprecated_count = deprecated_mask.sum()
             deprecated_types = df[deprecated_mask]["instruction_type"].unique().tolist()
             logger.warning(
-                f"DEPRECATED instruction types found: {deprecated_types} "
-                f"({deprecated_count} instructions). WITHDRAW is deprecated - "
-                f"balance changes are handled by strategy layer. Use UNSTAKE for staking withdrawals."
+                "DEPRECATED instruction types found: %s (%s instructions). "
+                "WITHDRAW is deprecated - balance changes are handled by strategy layer. "
+                "Use UNSTAKE for staking withdrawals.",
+                deprecated_types,
+                deprecated_count,
             )
 
-        # =================================================================
-        # DIRECTION VALIDATION (REQUIRED FOR TRADE/SWAP)
-        # =================================================================
-
+    def _validate_direction(self, df: pd.DataFrame, errors: list[str]) -> None:
+        """Validate direction values for TRADE/SWAP instructions."""
         trade_swap_mask = df["instruction_type"].isin(DIRECTION_REQUIRED_TYPES)
-        if trade_swap_mask.any():
-            trade_swap_df = df[trade_swap_mask]
+        if not trade_swap_mask.any():
+            return
 
-            if "direction" not in df.columns:
-                errors.append(f"direction column REQUIRED for TRADE/SWAP instructions ({trade_swap_mask.sum()} rows)")
-            else:
-                # Check for missing direction in TRADE/SWAP rows
-                missing_direction = trade_swap_df[trade_swap_df["direction"].isna()]
-                if len(missing_direction) > 0:
-                    errors.append(f"{len(missing_direction)} TRADE/SWAP instructions missing direction")
+        trade_swap_df = df[trade_swap_mask]
 
-                # Check direction values are valid (-1 or 1, NOT 0)
-                non_null_trade_swap = trade_swap_df[trade_swap_df["direction"].notna()]
-                invalid_dirs = non_null_trade_swap[~non_null_trade_swap["direction"].isin(VALID_DIRECTIONS)]
-                if len(invalid_dirs) > 0:
-                    bad_vals = invalid_dirs["direction"].unique().tolist()
-                    errors.append(
-                        f"TRADE/SWAP direction must be -1 (sell) or 1 (buy), "
-                        f"got: {bad_vals}. Note: 0 is no longer valid."
-                    )
+        if "direction" not in df.columns:
+            errors.append(f"direction column REQUIRED for TRADE/SWAP instructions ({trade_swap_mask.sum()} rows)")
+            return
 
-        # =================================================================
-        # ATOMIC INSTRUCTION VALIDATION
-        # =================================================================
+        # Check for missing direction in TRADE/SWAP rows
+        missing_direction = trade_swap_df[trade_swap_df["direction"].isna()]
+        if len(missing_direction) > 0:
+            errors.append(f"{len(missing_direction)} TRADE/SWAP instructions missing direction")
 
+        # Check direction values are valid (-1 or 1, NOT 0)
+        non_null_trade_swap = trade_swap_df[trade_swap_df["direction"].notna()]
+        invalid_dirs = non_null_trade_swap[~non_null_trade_swap["direction"].isin(VALID_DIRECTIONS)]
+        if len(invalid_dirs) > 0:
+            bad_vals = invalid_dirs["direction"].unique().tolist()
+            errors.append(
+                f"TRADE/SWAP direction must be -1 (sell) or 1 (buy), got: {bad_vals}. Note: 0 is no longer valid."
+            )
+
+    def _validate_atomic_instructions(self, df: pd.DataFrame, errors: list[str]) -> None:
+        """Validate ATOMIC instruction nested_instructions JSON content."""
         atomic_mask = df["instruction_type"] == "ATOMIC"
-        if atomic_mask.any():
-            atomic_df = df[atomic_mask]
+        if not atomic_mask.any():
+            return
 
-            if "nested_instructions" not in df.columns:
-                errors.append("ATOMIC instructions require nested_instructions column")
-            else:
-                for idx, row in atomic_df.iterrows():
-                    nested_json = row.get("nested_instructions")
-                    if not nested_json or pd.isna(nested_json):
-                        errors.append(f"ATOMIC instruction at index {idx} has empty nested_instructions")
+        atomic_df = df[atomic_mask]
+
+        if "nested_instructions" not in df.columns:
+            errors.append("ATOMIC instructions require nested_instructions column")
+            return
+
+        for idx, row in atomic_df.iterrows():
+            nested_json = row.get("nested_instructions")
+            if not nested_json or pd.isna(nested_json):
+                errors.append(f"ATOMIC instruction at index {idx} has empty nested_instructions")
+                continue
+
+            try:
+                nested_raw: object = json.loads(str(nested_json))
+                nested: list[object] = list(nested_raw) if isinstance(nested_raw, list) else []
+                for i, ni in enumerate(nested):
+                    if not isinstance(ni, dict):
                         continue
+                    ni_type = ni.get("instruction_type")
+                    if ni_type not in ATOMIC_COMPATIBLE_TYPES:
+                        errors.append(
+                            f"ATOMIC instruction at index {idx} contains invalid "
+                            f"nested type '{ni_type}' at position {i}. "
+                            f"ATOMIC can only contain on-chain types: {ATOMIC_COMPATIBLE_TYPES}. "
+                            f"TRADE is NOT allowed (it's CeFi/off-chain)."
+                        )
+            except json.JSONDecodeError as e:
+                errors.append(f"ATOMIC instruction at index {idx} has invalid JSON: {e}")
 
-                    try:
-                        nested_raw: object = json.loads(str(nested_json))
-                        nested: list[object] = list(nested_raw) if isinstance(nested_raw, list) else []
-                        for i, ni in enumerate(nested):
-                            if not isinstance(ni, dict):
-                                continue
-                            ni_type = ni.get("instruction_type")
-                            if ni_type not in ATOMIC_COMPATIBLE_TYPES:
-                                errors.append(
-                                    f"ATOMIC instruction at index {idx} contains invalid "
-                                    f"nested type '{ni_type}' at position {i}. "
-                                    f"ATOMIC can only contain on-chain types: {ATOMIC_COMPATIBLE_TYPES}. "
-                                    f"TRADE is NOT allowed (it's CeFi/off-chain)."
-                                )
-                    except json.JSONDecodeError as e:
-                        errors.append(f"ATOMIC instruction at index {idx} has invalid JSON: {e}")
-
-        # =================================================================
-        # QUANTITY VALIDATION (NOW REQUIRED)
-        # =================================================================
-
+    def _validate_quantity(self, df: pd.DataFrame, errors: list[str]) -> None:
+        """Validate quantity is present and positive."""
         null_qty_count = df["quantity"].isna().sum()
         if null_qty_count > 0:
             errors.append(f"quantity is REQUIRED but has {null_qty_count} null values")
@@ -421,12 +437,10 @@ class InstructionValidator:
         if invalid_qty.sum() > 0:
             errors.append(f"quantity must be > 0: {invalid_qty.sum()} invalid values")
 
-        # =================================================================
-        # BENCHMARK_PRICE VALIDATION (REQUIRED, > 0)
-        # =================================================================
-
+    def _validate_benchmark_price(self, df: pd.DataFrame, errors: list[str]) -> None:
+        """Validate benchmark_price is present and positive."""
         # Check for zero values
-        zero_count = (df["benchmark_price"] == 0.0).sum()
+        zero_count = (df["benchmark_price"].abs() < 1e-12).sum()
         if zero_count > 0:
             errors.append(
                 f"benchmark_price contains {zero_count} zero values. "
@@ -443,10 +457,8 @@ class InstructionValidator:
         if nan_count > 0:
             errors.append(f"benchmark_price contains {nan_count} NaN values. benchmark_price must be > 0.")
 
-        # =================================================================
-        # INSTRUCTION_ID VALIDATION
-        # =================================================================
-
+    def _validate_instruction_id(self, df: pd.DataFrame, errors: list[str]) -> None:
+        """Validate instruction_id is present and unique."""
         null_id_count = df["instruction_id"].isna().sum()
         if null_id_count > 0:
             errors.append(f"instruction_id is REQUIRED but has {null_id_count} null values")
@@ -457,19 +469,13 @@ class InstructionValidator:
             if dup_count > 0:
                 errors.append(f"instruction_id must be unique: {dup_count} duplicates found")
 
-        # =================================================================
-        # TIMESTAMP VALIDATION
-        # =================================================================
-
+    def _validate_timestamp_type(self, df: pd.DataFrame, errors: list[str]) -> None:
+        """Validate timestamp column dtype is int64."""
         if not df["timestamp"].dtype.name.startswith("int"):
             errors.append(f"timestamp column must be int64 (nanoseconds), got {df['timestamp'].dtype}")
 
-        # =================================================================
-        # STRATEGY_ID FORMAT VALIDATION
-        # =================================================================
-
-        from unified_cloud_services.utils.id_conventions import validate_strategy_id
-
+    def _validate_strategy_id_format(self, df: pd.DataFrame, errors: list[str]) -> None:
+        """Validate strategy_id format matches expected pattern."""
         unique_strategy_ids = df["strategy_id"].unique()
         for sid in unique_strategy_ids:
             if sid and not validate_strategy_id(str(sid)):
@@ -478,19 +484,15 @@ class InstructionValidator:
                     f"Expected: {{CATEGORY}}_{{ASSET}}_{{description}}_{{MODE}}_{{TIMEFRAME}}_V{{N}}"
                 )
 
-        # =================================================================
-        # INSTRUMENT_ID FORMAT VALIDATION
-        # =================================================================
-
+    def _validate_instrument_id_format(self, df: pd.DataFrame, errors: list[str]) -> None:
+        """Validate instrument_id format matches VENUE:TYPE:SYMBOL pattern."""
         unique_inst_ids = df["instrument_id"].unique()
         for inst_id in unique_inst_ids:
             if inst_id and str(inst_id).count(":") < 2:
                 errors.append(f"Invalid instrument_id format: {inst_id}. Expected: VENUE:TYPE:SYMBOL")
 
-        # =================================================================
-        # OPTIONAL FIELD VALIDATION
-        # =================================================================
-
+    def _validate_optional_fields(self, df: pd.DataFrame, errors: list[str]) -> None:
+        """Validate optional fields (confidence, urgency, price bounds, chains)."""
         # Validate confidence/urgency are in [0, 1]
         bounded_cols = ["confidence", "urgency"]
         for col in bounded_cols:
@@ -519,8 +521,6 @@ class InstructionValidator:
                 invalid_seq = has_chain & (df["chain_sequence"] <= 0)
                 if invalid_seq.sum() > 0:
                     errors.append(f"chain_sequence must be > 0: {invalid_seq.sum()} invalid values")
-
-        return errors
 
     def validate_or_raise(self, df: pd.DataFrame | pa.Table) -> None:
         """
@@ -577,7 +577,7 @@ def validate_instruction_parquet(
     try:
         table = pq.read_table(path)
         df = table.to_pandas()
-    except Exception as e:
+    except (OSError, PermissionError, ValueError) as e:
         return [f"Failed to read parquet file {path}: {e}"]
 
     return validate_instruction_dataframe(df, strict=strict, allow_legacy_signal_id=allow_legacy_signal_id)

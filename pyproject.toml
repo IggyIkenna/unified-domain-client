@@ -1,63 +1,113 @@
 [build-system]
-requires = ["setuptools>=65", "wheel"]
+requires = [
+    "setuptools>=65",
+    "wheel",
+]
 build-backend = "setuptools.build_meta"
 
-[tool.uv.sources]
-# Workspace-level path dependencies (no nested deps/)
-unified-cloud-services = { path = "../unified-cloud-services" }
-unified-config-interface = { path = "../unified-config-interface" }
-unified-events-interface = { path = "../unified-events-interface" }
+[tool.uv.sources.unified-api-contracts]
+path = "../unified-api-contracts"
 
-[project]
-name = "unified-domain-services"
-version = "0.1.8"
-description = "Trading domain services - clients, validation, cloud service wrappers"
-requires-python = ">=3.13,<3.14"
-dependencies = [
-    "pandas>=2.3.0,<3.0.0",
-    "pyarrow>=23.0.0,<24.0.0",
-    "pyyaml>=6.0.1,<7.0.0",
-    "unified-cloud-services>=1.5.0",
-    "unified-config-interface>=0.3.0",
-    "unified-events-interface>=0.1.0",
-]
 
-[project.optional-dependencies]
-dev = [
-    "pytest>=9.0.1,<10.0.0",
-    "pytest-cov>=7.0.0,<8.0.0",
-    "pytest-asyncio>=1.0.0,<2.0.0",
-    "pytest-timeout>=2.2.0,<3.0.0",
-    "pytest-xdist>=3.5.0,<4.0.0",
-    "ruff==0.15.0",
-    "pandas-stubs>=2.2.0,<3.0.0",
-    "basedpyright>=1.20.0,<2.0.0",
-    "pyright>=1.1.390,<2.0.0",
-]
+[tool.uv.sources.unified-cloud-interface]
+path = "../unified-cloud-interface"
+
+[tool.uv.sources.unified-config-interface]
+path = "../unified-config-interface"
+
+[tool.uv.sources.unified-events-interface]
+path = "../unified-events-interface"
+
+[tool.uv.sources.unified-trading-library]
+path = "../unified-trading-library"
 
 [tool.setuptools.packages.find]
-where = ["."]
-include = ["unified_domain_services*"]
-exclude = ["tests*"]
+where = [
+    ".",
+]
+include = [
+    "unified_domain_client",
+    "unified_domain_client.*",
+]
+exclude = [
+    "tests*",
+]
 
 [tool.ruff]
 line-length = 120
 target-version = "py313"
 
-[tool.pytest.ini_options]
-testpaths = ["tests"]
-norecursedirs = ["deps", ".venv", ".git", "build", "dist", "__pycache__"]
-
 [tool.ruff.lint]
-select = ["E", "F", "W", "I", "UP"]
-ignore = ["E501"]
+select = [
+    "E",
+    "F",
+    "W",
+    "I",
+    "UP",
+    "G",
+]
+ignore = [
+    "E501",
+]
+
+[tool.pytest.ini_options]
+testpaths = [
+    "tests",
+]
+norecursedirs = [
+    "deps",
+    ".venv",
+    ".git",
+    "build",
+    "dist",
+    "__pycache__",
+]
 
 [tool.basedpyright]
-exclude = ["build", "dist", "deps"]
-# Treat pyright warnings as errors (codex strict type checking)
+exclude = [
+    "build",
+    "dist",
+    "deps",
+]
 reportAny = "error"
 reportUnknownArgumentType = "error"
 reportUnknownMemberType = "error"
 reportOptionalMemberAccess = "error"
 reportOptionalSubscript = "error"
 reportGeneralTypeIssues = "error"
+reportMissingTypeStubs = false
+extraPaths = ["../unified-config-interface", "../unified-internal-contracts", "../unified-events-interface", "../unified-cloud-interface", "../unified-trading-library"]
+
+[tool.coverage.report]
+fail_under = 70
+
+[project]
+name = "unified-domain-client"
+version = "0.1.12"
+description = "Trading domain services - clients, validation, cloud service wrappers"
+requires-python = ">=3.13,<3.14"
+dependencies = [
+    "pandas>=2.3.0,<3.0.0",
+    "pyarrow>=23.0.0,<24.0.0",
+    "pyyaml>=6.0.1,<7.0.0",
+    "unified-api-contracts>=0.1.0",
+    "unified-cloud-interface[gcp]>=0.1.0",
+    "unified-config-interface>=0.3.0",
+    "unified-events-interface>=0.1.0",
+    "unified-trading-library>=0.4.0,<1.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=9.0.1,<10.0.0",
+    "pytest-cov>=7.0.0,<8.0.0",
+    "pytest-asyncio>=0.25.0,<2.0.0",
+    "pytest-timeout>=2.4.0,<3.0.0",
+    "pytest-xdist>=3.6.0,<4.0.0",
+    "ruff==0.15.0",
+    "pandas-stubs>=2.2.0,<3.0.0",
+    "basedpyright>=1.21.0,<2.0.0",
+    "pyright>=1.1.390,<2.0.0",
+    "pip-audit>=2.7.0,<3.0.0",
+    "bandit>=1.7.0,<2.0.0",
+]

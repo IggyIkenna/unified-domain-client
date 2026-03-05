@@ -5,7 +5,8 @@ from unittest.mock import MagicMock, patch
 
 import pandas as pd
 import pytest
-from unified_cloud_services.core.cloud_config import CloudTarget
+
+from unified_domain_client.cloud_target import CloudTarget
 
 
 class TestCloudDataProviderBase:
@@ -21,14 +22,10 @@ class TestCloudDataProviderBase:
             bigquery_location="asia-northeast1",
         )
 
-    @patch("unified_domain_services.cloud_data_provider.StandardizedDomainCloudService")
-    @patch("unified_domain_services.cloud_data_provider.unified_config")
-    @patch("unified_domain_services.cloud_data_provider.get_config")
-    def test_init_with_cloud_target(
-        self, mock_get_config: MagicMock, mock_unified_config: MagicMock, mock_service: MagicMock
-    ):
+    @patch("unified_domain_client.cloud_data_provider.StandardizedDomainCloudService")
+    def test_init_with_cloud_target(self, mock_service: MagicMock):
         """Test initialization with explicit CloudTarget."""
-        from unified_domain_services.cloud_data_provider import CloudDataProviderBase
+        from unified_domain_client.cloud_data_provider import CloudDataProviderBase
 
         class ConcreteProvider(CloudDataProviderBase):
             pass
@@ -44,17 +41,18 @@ class TestCloudDataProviderBase:
         assert provider.cloud_target == target
         mock_service.assert_called_once()
 
-    @patch("unified_domain_services.cloud_data_provider.StandardizedDomainCloudService")
-    @patch("unified_domain_services.cloud_data_provider.unified_config")
-    @patch("unified_domain_services.cloud_data_provider.get_config")
-    def test_init_raises_without_project(
-        self, mock_get_config: MagicMock, mock_unified_config: MagicMock, mock_service: MagicMock
-    ):
+    @patch("unified_domain_client.cloud_data_provider.StandardizedDomainCloudService")
+    @patch("unified_domain_client.cloud_data_provider.UnifiedCloudConfig")
+    def test_init_raises_without_project(self, mock_config_cls: MagicMock, mock_service: MagicMock):
         """Test initialization raises when GCP_PROJECT_ID not set."""
-        from unified_domain_services.cloud_data_provider import CloudDataProviderBase
+        from unified_domain_client.cloud_data_provider import CloudDataProviderBase
 
-        mock_unified_config.gcp_project_id = ""
-        mock_get_config.side_effect = lambda k, d="": d
+        mock_config_instance = MagicMock()
+        mock_config_instance.gcp_project_id = ""
+        mock_config_instance.gcs_bucket = ""
+        mock_config_instance.bigquery_dataset = ""
+        mock_config_instance.bigquery_location = ""
+        mock_config_cls.return_value = mock_config_instance
 
         class ConcreteProvider(CloudDataProviderBase):
             pass
@@ -62,20 +60,18 @@ class TestCloudDataProviderBase:
         with pytest.raises(ValueError, match="GCP_PROJECT_ID must be set"):
             ConcreteProvider(domain="test")
 
-    @patch("unified_domain_services.cloud_data_provider.StandardizedDomainCloudService")
-    @patch("unified_domain_services.cloud_data_provider.unified_config")
-    @patch("unified_domain_services.cloud_data_provider.get_config")
-    def test_init_with_project_id(
-        self, mock_get_config: MagicMock, mock_unified_config: MagicMock, mock_service: MagicMock
-    ):
+    @patch("unified_domain_client.cloud_data_provider.StandardizedDomainCloudService")
+    @patch("unified_domain_client.cloud_data_provider.UnifiedCloudConfig")
+    def test_init_with_project_id(self, mock_config_cls: MagicMock, mock_service: MagicMock):
         """Test initialization with explicit project_id."""
-        from unified_domain_services.cloud_data_provider import CloudDataProviderBase
+        from unified_domain_client.cloud_data_provider import CloudDataProviderBase
 
-        mock_get_config.side_effect = lambda k, d="": {
-            "GCS_BUCKET": "b",
-            "BIGQUERY_DATASET": "d",
-            "BIGQUERY_LOCATION": "loc",
-        }.get(k, d)
+        mock_config_instance = MagicMock()
+        mock_config_instance.gcp_project_id = ""
+        mock_config_instance.gcs_bucket = "b"
+        mock_config_instance.bigquery_dataset = "d"
+        mock_config_instance.bigquery_location = "loc"
+        mock_config_cls.return_value = mock_config_instance
 
         class ConcreteProvider(CloudDataProviderBase):
             pass
@@ -83,10 +79,10 @@ class TestCloudDataProviderBase:
         provider = ConcreteProvider(domain="test", project_id="my-project")
         assert provider.cloud_target.project_id == "my-project"
 
-    @patch("unified_domain_services.cloud_data_provider.StandardizedDomainCloudService")
-    def test_download_from_gcs_returns_empty_on_404(self, mock_service):
+    @patch("unified_domain_client.cloud_data_provider.StandardizedDomainCloudService")
+    def test_download_from_gcs_returns_empty_on_404(self, mock_service: MagicMock):
         """Test download_from_gcs returns empty DataFrame on 404."""
-        from unified_domain_services.cloud_data_provider import CloudDataProviderBase
+        from unified_domain_client.cloud_data_provider import CloudDataProviderBase
 
         target = CloudTarget(
             project_id="p",
@@ -95,7 +91,7 @@ class TestCloudDataProviderBase:
             bigquery_location="loc",
         )
         mock_instance = MagicMock()
-        mock_instance.download_from_gcs.side_effect = Exception("404 Not Found")
+        mock_instance.download_from_gcs.side_effect = OSError("404 Not Found")
         mock_service.return_value = mock_instance
 
         class ConcreteProvider(CloudDataProviderBase):
@@ -108,10 +104,10 @@ class TestCloudDataProviderBase:
         assert isinstance(result, pd.DataFrame)
         assert result.empty
 
-    @patch("unified_domain_services.cloud_data_provider.StandardizedDomainCloudService")
-    def test_download_from_gcs_returns_data(self, mock_service):
+    @patch("unified_domain_client.cloud_data_provider.StandardizedDomainCloudService")
+    def test_download_from_gcs_returns_data(self, mock_service: MagicMock):
         """Test download_from_gcs returns DataFrame when successful."""
-        from unified_domain_services.cloud_data_provider import CloudDataProviderBase
+        from unified_domain_client.cloud_data_provider import CloudDataProviderBase
 
         target = CloudTarget(
             project_id="p",
@@ -132,10 +128,10 @@ class TestCloudDataProviderBase:
         assert not result.empty
         assert len(result) == 2
 
-    @patch("unified_domain_services.cloud_data_provider.StandardizedDomainCloudService")
-    def test_download_from_gcs_handles_no_such_object(self, mock_service):
+    @patch("unified_domain_client.cloud_data_provider.StandardizedDomainCloudService")
+    def test_download_from_gcs_handles_no_such_object(self, mock_service: MagicMock):
         """Test download_from_gcs returns empty on 404/No such object."""
-        from unified_domain_services.cloud_data_provider import CloudDataProviderBase
+        from unified_domain_client.cloud_data_provider import CloudDataProviderBase
 
         target = CloudTarget(
             project_id="p",
@@ -144,7 +140,7 @@ class TestCloudDataProviderBase:
             bigquery_location="loc",
         )
         mock_instance = MagicMock()
-        mock_instance.download_from_gcs.side_effect = Exception("No such object: gs://b/path")
+        mock_instance.download_from_gcs.side_effect = OSError("No such object: gs://b/path")
         mock_service.return_value = mock_instance
 
         class ConcreteProvider(CloudDataProviderBase):
@@ -154,10 +150,10 @@ class TestCloudDataProviderBase:
         result = provider.download_from_gcs("path")
         assert result.empty
 
-    @patch("unified_domain_services.cloud_data_provider.StandardizedDomainCloudService")
-    def test_download_from_gcs_handles_no_such_object_variant(self, mock_service):
+    @patch("unified_domain_client.cloud_data_provider.StandardizedDomainCloudService")
+    def test_download_from_gcs_handles_no_such_object_variant(self, mock_service: MagicMock):
         """Test download_from_gcs returns empty on Not Found variant."""
-        from unified_domain_services.cloud_data_provider import CloudDataProviderBase
+        from unified_domain_client.cloud_data_provider import CloudDataProviderBase
 
         target = CloudTarget(
             project_id="p",
@@ -166,7 +162,7 @@ class TestCloudDataProviderBase:
             bigquery_location="loc",
         )
         mock_instance = MagicMock()
-        mock_instance.download_from_gcs.side_effect = Exception("Not Found")
+        mock_instance.download_from_gcs.side_effect = OSError("Not Found")
         mock_service.return_value = mock_instance
 
         class ConcreteProvider(CloudDataProviderBase):
@@ -176,10 +172,10 @@ class TestCloudDataProviderBase:
         result = provider.download_from_gcs("path")
         assert result.empty
 
-    @patch("unified_domain_services.cloud_data_provider.StandardizedDomainCloudService")
-    def test_check_gcs_exists_true(self, mock_service):
+    @patch("unified_domain_client.cloud_data_provider.StandardizedDomainCloudService")
+    def test_check_gcs_exists_true(self, mock_service: MagicMock):
         """Test check_gcs_exists returns True when data exists."""
-        from unified_domain_services.cloud_data_provider import CloudDataProviderBase
+        from unified_domain_client.cloud_data_provider import CloudDataProviderBase
 
         target = CloudTarget(
             project_id="p",
@@ -197,10 +193,10 @@ class TestCloudDataProviderBase:
         provider = ConcreteProvider(domain="test", cloud_target=target)
         assert provider.check_gcs_exists("path") is True
 
-    @patch("unified_domain_services.cloud_data_provider.StandardizedDomainCloudService")
-    def test_check_gcs_exists_false(self, mock_service):
+    @patch("unified_domain_client.cloud_data_provider.StandardizedDomainCloudService")
+    def test_check_gcs_exists_false(self, mock_service: MagicMock):
         """Test check_gcs_exists returns False when empty."""
-        from unified_domain_services.cloud_data_provider import CloudDataProviderBase
+        from unified_domain_client.cloud_data_provider import CloudDataProviderBase
 
         target = CloudTarget(
             project_id="p",
@@ -222,22 +218,17 @@ class TestCloudDataProviderBase:
 class TestInstrumentsDataProvider:
     """Test InstrumentsDataProvider."""
 
-    @patch("unified_domain_services.cloud_data_provider._resolve_instruments_bucket_cefi")
-    @patch("unified_domain_services.cloud_data_provider.unified_config")
-    @patch("unified_domain_services.cloud_data_provider.get_config")
-    @patch("unified_domain_services.cloud_data_provider.StandardizedDomainCloudService")
+    @patch("unified_domain_client.cloud_data_provider._resolve_instruments_bucket_cefi")
+    @patch("unified_domain_client.cloud_data_provider.StandardizedDomainCloudService")
     def test_get_instruments_for_date(
         self,
         mock_service: MagicMock,
-        mock_get_config: MagicMock,
-        mock_unified_config: MagicMock,
         mock_resolve: MagicMock,
     ):
         """Test get_instruments_for_date filters by venue and instrument_type."""
-        from unified_domain_services.cloud_data_provider import InstrumentsDataProvider
+        from unified_domain_client.cloud_data_provider import InstrumentsDataProvider
 
         mock_resolve.return_value = "instruments-bucket"
-        mock_get_config.return_value = "instruments"
         target = CloudTarget(
             project_id="p",
             gcs_bucket="instruments-bucket",
@@ -270,17 +261,12 @@ class TestInstrumentsDataProvider:
 class TestMarketDataProvider:
     """Test MarketDataProvider."""
 
-    @patch("unified_domain_services.cloud_data_provider.get_config")
-    @patch("unified_domain_services.cloud_data_provider.StandardizedDomainCloudService")
-    def test_get_candles_builds_query(self, mock_service: MagicMock, mock_get_config: MagicMock):
+    @patch("unified_domain_client.cloud_data_provider.StandardizedDomainCloudService")
+    def test_get_candles_builds_query(self, mock_service: MagicMock):
         """Test get_candles builds correct BigQuery query."""
 
-        from unified_domain_services.cloud_data_provider import MarketDataProvider
+        from unified_domain_client.cloud_data_provider import MarketDataProvider
 
-        mock_get_config.side_effect = lambda k, d="": {
-            "MARKET_DATA_GCS_BUCKET": "b",
-            "MARKET_DATA_BIGQUERY_DATASET": "d",
-        }.get(k, d)
         target = CloudTarget(
             project_id="p",
             gcs_bucket="b",

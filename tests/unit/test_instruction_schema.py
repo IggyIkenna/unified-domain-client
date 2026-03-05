@@ -7,7 +7,7 @@ import pandas as pd
 import pyarrow as pa
 import pytest
 
-from unified_domain_services.schemas.instruction_schema import (
+from unified_domain_client.schemas.instruction_schema import (
     INSTRUCTION_SCHEMA,
     LEGACY_SIGNAL_ID_COLUMN,
     InstructionValidationError,
@@ -38,7 +38,7 @@ def _minimal_valid_df() -> pd.DataFrame:
 class TestInstructionValidator:
     """Test InstructionValidator."""
 
-    @patch("unified_cloud_services.utils.id_conventions.validate_strategy_id")
+    @patch("unified_config_interface.id_conventions.validate_strategy_id")
     def test_validate_rejects_non_dataframe(self, mock_validate: MagicMock):
         """Test validate rejects non-DataFrame input."""
         mock_validate.return_value = True
@@ -46,7 +46,7 @@ class TestInstructionValidator:
         result = validator.validate([1, 2, 3])
         assert result == ["Input must be a pandas DataFrame or pyarrow Table"]
 
-    @patch("unified_cloud_services.utils.id_conventions.validate_strategy_id")
+    @patch("unified_config_interface.id_conventions.validate_strategy_id")
     def test_validate_rejects_missing_required_columns(self, mock_validate: MagicMock):
         """Test validate rejects missing required columns."""
         mock_validate.return_value = True
@@ -55,7 +55,7 @@ class TestInstructionValidator:
         result = validator.validate(df)
         assert any("Missing required column" in e for e in result)
 
-    @patch("unified_cloud_services.utils.id_conventions.validate_strategy_id")
+    @patch("unified_config_interface.id_conventions.validate_strategy_id")
     def test_validate_rejects_invalid_instruction_type(self, mock_validate: MagicMock):
         """Test validate rejects invalid instruction_type."""
         mock_validate.return_value = True
@@ -65,7 +65,7 @@ class TestInstructionValidator:
         result = validator.validate(df)
         assert any("Invalid instruction_type" in e for e in result)
 
-    @patch("unified_cloud_services.utils.id_conventions.validate_strategy_id")
+    @patch("unified_config_interface.id_conventions.validate_strategy_id")
     def test_validate_rejects_zero_quantity(self, mock_validate: MagicMock):
         """Test validate rejects quantity <= 0."""
         mock_validate.return_value = True
@@ -75,7 +75,7 @@ class TestInstructionValidator:
         result = validator.validate(df)
         assert any("quantity" in e for e in result)
 
-    @patch("unified_cloud_services.utils.id_conventions.validate_strategy_id")
+    @patch("unified_config_interface.id_conventions.validate_strategy_id")
     def test_validate_rejects_zero_benchmark_price(self, mock_validate: MagicMock):
         """Test validate rejects benchmark_price <= 0."""
         mock_validate.return_value = True
@@ -85,7 +85,7 @@ class TestInstructionValidator:
         result = validator.validate(df)
         assert any("benchmark_price" in e for e in result)
 
-    @patch("unified_cloud_services.utils.id_conventions.validate_strategy_id")
+    @patch("unified_config_interface.id_conventions.validate_strategy_id")
     def test_validate_accepts_valid_trade(self, mock_validate: MagicMock):
         """Test validate accepts valid TRADE instruction."""
         mock_validate.return_value = True
@@ -94,7 +94,7 @@ class TestInstructionValidator:
         result = validator.validate(df)
         assert result == []
 
-    @patch("unified_cloud_services.utils.id_conventions.validate_strategy_id")
+    @patch("unified_config_interface.id_conventions.validate_strategy_id")
     def test_validate_accepts_pyarrow_table(self, mock_validate: MagicMock):
         """Test validate accepts pyarrow Table."""
         mock_validate.return_value = True
@@ -104,7 +104,7 @@ class TestInstructionValidator:
         result = validator.validate(table)
         assert result == []
 
-    @patch("unified_cloud_services.utils.id_conventions.validate_strategy_id")
+    @patch("unified_config_interface.id_conventions.validate_strategy_id")
     def test_validate_or_raise_raises_on_errors(self, mock_validate: MagicMock):
         """Test validate_or_raise raises InstructionValidationError."""
         mock_validate.return_value = True
@@ -118,7 +118,7 @@ class TestInstructionValidator:
 class TestValidateInstructionDataframe:
     """Test validate_instruction_dataframe function."""
 
-    @patch("unified_cloud_services.utils.id_conventions.validate_strategy_id")
+    @patch("unified_config_interface.id_conventions.validate_strategy_id")
     def test_convenience_function(self, mock_validate: MagicMock):
         """Test validate_instruction_dataframe convenience function."""
         mock_validate.return_value = True

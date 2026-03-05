@@ -1,5 +1,5 @@
-# Cloud Build for unified-domain-services
-# Depends on: unified-cloud-services (from Artifact Registry)
+# Cloud Build for unified-domain-client
+# Depends on: unified-trading-library (from Artifact Registry)
 # Trigger: push to main → auto-publish to Artifact Registry
 
 steps:
@@ -22,9 +22,25 @@ steps:
       - '-c'
       - |
         pip install uv
-        pip install ruff==0.15.0
+        uv pip install ruff==0.15.0
         ruff check .
         ruff format --check .
+
+  # Step 1.5: Run tests
+  - name: 'python:3.13-slim'
+    id: 'run-tests'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        set -e
+        pip install uv keyrings.google-artifactregistry-auth
+        mkdir -p /root/.config/pip
+        echo "[global]
+        extra-index-url = https://asia-northeast1-python.pkg.dev/$PROJECT_ID/unified-libraries/simple/" > /root/.config/pip/pip.conf
+        uv pip install --system -e ".[dev]"
+        python -m pytest tests/ -v --tb=short
+    waitFor: ['lint']
 
   - name: 'python:3.13-slim'
     id: 'build-wheel'
@@ -37,11 +53,10 @@ steps:
         mkdir -p /root/.config/pip
         echo "[global]
         extra-index-url = https://asia-northeast1-python.pkg.dev/$PROJECT_ID/unified-libraries/simple/" > /root/.config/pip/pip.conf
-        uv pip install --system unified-cloud-services
         uv pip install --system -e ".[dev]"
         python -m build --wheel --outdir dist/
         ls -lh dist/
-    waitFor: ['lint']
+    waitFor: ['run-tests']
 
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:alpine'
     id: 'store-metadata'
@@ -54,7 +69,7 @@ steps:
         WHEEL_FILE=$$(ls dist/*.whl)
         VERSION=$$(echo $$WHEEL_FILE | sed -n 's/.*-\([0-9.]*\)-.*/\1/p')
         echo "{\"version\":\"$$VERSION\",\"commit\":\"$COMMIT_SHA\"}" > /tmp/build-metadata.json
-        gsutil cp /tmp/build-metadata.json gs://$PROJECT_ID-build-metadata/unified-domain-services/versions/$$VERSION.json || true
+        gsutil cp /tmp/build-metadata.json gs://$PROJECT_ID-build-metadata/unified-domain-client/versions/$$VERSION.json || true
     waitFor: ['build-wheel']
 
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:alpine'
@@ -71,13 +86,13 @@ steps:
         VERSION=$$(echo $$WHEEL_FILE | sed -n 's/.*-\([0-9.]*\)-.*/\1/p')
 
         EXISTING_VERSIONS=$$(gcloud artifacts versions list \
-          --package=unified-domain-services \
+          --package=unified-domain-client \
           --repository=unified-libraries \
           --location=asia-northeast1 \
           --format="value(VERSION)" 2>/dev/null || echo "")
 
         if echo "$$EXISTING_VERSIONS" | grep -qx "$$VERSION"; then
-          if gsutil cp gs://$PROJECT_ID-build-metadata/unified-domain-services/versions/$$VERSION.json /tmp/existing-metadata.json 2>/dev/null; then
+          if gsutil cp gs://$PROJECT_ID-build-metadata/unified-domain-client/versions/$$VERSION.json /tmp/existing-metadata.json 2>/dev/null; then
             EXISTING_COMMIT=$$(jq -r '.commit' /tmp/existing-metadata.json)
             if [ "$$EXISTING_COMMIT" = "$COMMIT_SHA" ]; then
               echo "✓ Version $$VERSION already published from commit $COMMIT_SHA (idempotent)"
@@ -89,7 +104,7 @@ steps:
         fi
 
         python3 -m twine upload --repository-url https://asia-northeast1-python.pkg.dev/$PROJECT_ID/unified-libraries/ --non-interactive dist/*.whl
-        echo "✓ Published unified-domain-services $$VERSION"
+        echo "✓ Published unified-domain-client $$VERSION"
     waitFor: ['store-metadata']
 
 options:

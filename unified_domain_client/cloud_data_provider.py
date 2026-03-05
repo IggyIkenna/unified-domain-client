@@ -12,16 +12,15 @@ Domains supported:
 """
 
 import logging
-import os
+import sys
 from abc import ABC
 from datetime import UTC, datetime
 
 import pandas as pd
-from unified_cloud_services.core.cloud_config import CloudTarget
-from unified_cloud_services.core.config import get_config, unified_config
-from unified_cloud_services.core.market_category import get_bucket_for_category
+from unified_config_interface import UnifiedCloudConfig
 
-from unified_domain_services.standardized_service import (
+from unified_domain_client.cloud_target import CloudTarget
+from unified_domain_client.standardized_service import (
     StandardizedDomainCloudService,
 )
 
@@ -65,14 +64,15 @@ class CloudDataProviderBase(ABC):
 
         # Build cloud target from parameters or defaults
         if cloud_target is None:
-            proj = project_id or unified_config.gcp_project_id
+            config = UnifiedCloudConfig()
+            proj = project_id or config.gcp_project_id
             if not proj:
                 raise ValueError("GCP_PROJECT_ID must be set in config or environment. No hardcoded fallbacks allowed.")
             cloud_target = CloudTarget(
                 project_id=proj,
-                gcs_bucket=gcs_bucket or get_config("GCS_BUCKET", f"{domain}-store"),
-                bigquery_dataset=bigquery_dataset or get_config("BIGQUERY_DATASET", domain),
-                bigquery_location=bigquery_location or get_config("BIGQUERY_LOCATION", "asia-northeast1"),
+                gcs_bucket=gcs_bucket or config.gcs_bucket or f"{domain}-store",
+                bigquery_dataset=bigquery_dataset or config.bigquery_dataset or domain,
+                bigquery_location=bigquery_location or config.bigquery_location or "asia-northeast1",
             )
 
         # Create domain cloud service
@@ -83,20 +83,18 @@ class CloudDataProviderBase(ABC):
         self.cloud_target = cloud_target
 
         logger.info(
-            f"✅ CloudDataProviderBase initialized: "
-            f"domain={domain}, project={cloud_target.project_id}, "
-            f"bucket={cloud_target.gcs_bucket}, dataset={cloud_target.bigquery_dataset}"
+            "✅ CloudDataProviderBase initialized: domain=%s, project=%s, bucket=%s, dataset=%s",
+            domain,
+            cloud_target.project_id,
+            cloud_target.gcs_bucket,
+            cloud_target.bigquery_dataset,
         )
 
     @property
     def is_test_mode(self) -> bool:
         """Check if running in test mode."""
-        environment = get_config("ENVIRONMENT", "development").lower()
-        return (
-            environment in ["test", "testing"]
-            or "pytest" in os.environ.get("_", "")
-            or get_config("PYTEST_CURRENT_TEST", "") != ""
-        )
+        config = UnifiedCloudConfig()
+        return config.is_testing or "pytest" in sys.modules
 
     def download_from_gcs(
         self,
@@ -116,7 +114,7 @@ class CloudDataProviderBase(ABC):
             DataFrame with downloaded data
         """
         try:
-            logger.info(f"📥 Loading from GCS: {self.cloud_target.gcs_bucket}/{gcs_path}")
+            logger.info("📥 Loading from GCS: %s/%s", self.cloud_target.gcs_bucket, gcs_path)
             result = self.cloud_service.download_from_gcs(
                 gcs_path=gcs_path,
                 format=format,
@@ -125,21 +123,21 @@ class CloudDataProviderBase(ABC):
             df = result if isinstance(result, pd.DataFrame) else pd.DataFrame()
 
             if df.empty:
-                logger.warning(f"⚠️ No data found at {gcs_path}")
+                logger.warning("⚠️ No data found at %s", gcs_path)
             else:
-                logger.info(f"✅ Loaded {len(df)} rows from GCS")
+                logger.info("✅ Loaded %s rows from GCS", len(df))
 
             return df
 
-        except Exception as e:
+        except (ConnectionError, TimeoutError, OSError, ValueError) as e:
             error_msg = str(e)
             # Handle 404/Not Found gracefully
             if "404" in error_msg or "Not Found" in error_msg or "No such object" in error_msg:
-                logger.info(f"ℹ️ No data found (404): {gcs_path}")
+                logger.info("ℹ️ No data found (404): %s", gcs_path)
                 return pd.DataFrame()
 
             if log_errors:
-                logger.error(f"❌ Failed to load from GCS: {e}")
+                logger.error("❌ Failed to load from GCS: %s", e)
             return pd.DataFrame()
 
     def download_from_category_bucket(
@@ -160,8 +158,12 @@ class CloudDataProviderBase(ABC):
             DataFrame with downloaded data
         """
         try:
-            # Get bucket for category
-            category_bucket = get_bucket_for_category(category, test_mode=self.is_test_mode)
+            # Get bucket for category - use config-based approach
+            config = UnifiedCloudConfig()
+            try:
+                category_bucket = config.get_bucket(self.domain, category)
+            except ValueError:
+                category_bucket = f"{self.domain}-{category.lower()}"
 
             # Create cloud service for category bucket
             category_target = CloudTarget(
@@ -175,7 +177,7 @@ class CloudDataProviderBase(ABC):
                 cloud_target=category_target,
             )
 
-            logger.info(f"📥 Loading {category} data from: {category_bucket}/{gcs_path}")
+            logger.info("📥 Loading %s data from: %s/%s", category, category_bucket, gcs_path)
             result = category_service.download_from_gcs(
                 gcs_path=gcs_path,
                 format=format,
@@ -184,19 +186,19 @@ class CloudDataProviderBase(ABC):
             df = result if isinstance(result, pd.DataFrame) else pd.DataFrame()
 
             if df.empty:
-                logger.warning(f"⚠️ No {category} data found at {category_bucket}/{gcs_path}")
+                logger.warning("⚠️ No %s data found at %s/%s", category, category_bucket, gcs_path)
             else:
-                logger.info(f"✅ Loaded {len(df)} {category} rows from GCS")
+                logger.info("✅ Loaded %s %s rows from GCS", len(df), category)
 
             return df
 
-        except Exception as e:
+        except (ConnectionError, TimeoutError, OSError, ValueError) as e:
             error_msg = str(e)
             if "404" in error_msg or "Not Found" in error_msg or "No such object" in error_msg:
-                logger.info(f"ℹ️ No {category} data found (404): {gcs_path}")
+                logger.info("ℹ️ No %s data found (404): %s", category, gcs_path)
                 return pd.DataFrame()
 
-            logger.error(f"❌ Failed to load {category} data from GCS: {e}")
+            logger.error("❌ Failed to load %s data from GCS: %s", category, e)
             return pd.DataFrame()
 
     def query_bigquery(
@@ -220,11 +222,11 @@ class CloudDataProviderBase(ABC):
                 query=query,
                 parameters=parameters or {},
             )
-            logger.info(f"✅ Query returned {len(result)} rows")
+            logger.info("✅ Query returned %s rows", len(result))
             return result
 
-        except Exception as e:
-            logger.error(f"❌ BigQuery query failed: {e}")
+        except (ConnectionError, TimeoutError, OSError, ValueError) as e:
+            logger.error("❌ BigQuery query failed: %s", e)
             return pd.DataFrame()
 
     def upload_to_gcs(
@@ -245,17 +247,17 @@ class CloudDataProviderBase(ABC):
             True if successful
         """
         try:
-            logger.info(f"📤 Uploading {len(df)} rows to GCS: {gcs_path}")
+            logger.info("📤 Uploading %s rows to GCS: %s", len(df), gcs_path)
             self.cloud_service.upload_to_gcs(
                 data=df,
                 gcs_path=gcs_path,
                 format=format,
             )
-            logger.info(f"✅ Upload complete: {gcs_path}")
+            logger.info("✅ Upload complete: %s", gcs_path)
             return True
 
-        except Exception as e:
-            logger.error(f"❌ Failed to upload to GCS: {e}")
+        except (ConnectionError, TimeoutError, OSError, ValueError) as e:
+            logger.error("❌ Failed to upload to GCS: %s", e)
             return False
 
     def check_gcs_exists(self, gcs_path: str) -> bool:
@@ -271,19 +273,20 @@ class CloudDataProviderBase(ABC):
         try:
             df = self.download_from_gcs(gcs_path, log_errors=False)
             return not df.empty
-        except Exception:
+        except (ConnectionError, TimeoutError, OSError, ValueError):
             return False
 
 
 def _resolve_instruments_bucket_cefi() -> str:
     """Resolve instruments CEFI bucket from config. Fails if not configured."""
-    bucket = get_config("INSTRUMENTS_GCS_BUCKET_CEFI", "")
+    config = UnifiedCloudConfig()
+    bucket = config.instruments_gcs_bucket
     if bucket:
         return bucket
-    proj = unified_config.gcp_project_id
+    proj = config.gcp_project_id
     if not proj:
         raise ValueError(
-            "INSTRUMENTS_GCS_BUCKET_CEFI or GCP_PROJECT_ID must be set in config. No hardcoded fallbacks allowed."
+            "INSTRUMENTS_GCS_BUCKET or GCP_PROJECT_ID must be set in config. No hardcoded fallbacks allowed."
         )
     return f"instruments-store-cefi-{proj}"
 
@@ -292,11 +295,12 @@ class InstrumentsDataProvider(CloudDataProviderBase):
     """Data provider for instruments domain."""
 
     def __init__(self, cloud_target: CloudTarget | None = None):
+        config = UnifiedCloudConfig()
         super().__init__(
             domain="instruments",
             cloud_target=cloud_target,
             gcs_bucket=_resolve_instruments_bucket_cefi(),
-            bigquery_dataset=get_config("INSTRUMENTS_BIGQUERY_DATASET", "instruments"),
+            bigquery_dataset=config.instruments_bigquery_dataset,
         )
 
     def get_instruments_for_date(
@@ -364,11 +368,12 @@ class MarketDataProvider(CloudDataProviderBase):
     """Data provider for market_data domain."""
 
     def __init__(self, cloud_target: CloudTarget | None = None):
+        config = UnifiedCloudConfig()
         super().__init__(
             domain="market_data",
             cloud_target=cloud_target,
-            gcs_bucket=get_config("MARKET_DATA_GCS_BUCKET", "market-data-tick"),
-            bigquery_dataset=get_config("MARKET_DATA_BIGQUERY_DATASET", "market_data_hft"),
+            gcs_bucket=config.market_data_gcs_bucket,
+            bigquery_dataset=config.market_data_bigquery_dataset,
         )
 
     def get_candles(
@@ -421,7 +426,7 @@ class MarketDataProvider(CloudDataProviderBase):
             "end_time": end_date.isoformat(),
         }
 
-        if limit and isinstance(limit, int) and limit > 0:
+        if limit is not None and limit > 0:
             query += " LIMIT @limit"
             params["limit"] = limit
 
@@ -432,11 +437,12 @@ class FeaturesDataProvider(CloudDataProviderBase):
     """Data provider for features domain."""
 
     def __init__(self, cloud_target: CloudTarget | None = None):
+        config = UnifiedCloudConfig()
         super().__init__(
             domain="features",
             cloud_target=cloud_target,
-            gcs_bucket=get_config("FEATURES_GCS_BUCKET", "features-store"),
-            bigquery_dataset=get_config("FEATURES_BIGQUERY_DATASET", "features"),
+            gcs_bucket=config.features_gcs_bucket,
+            bigquery_dataset=config.bigquery_dataset,
         )
 
     def get_features_for_date(

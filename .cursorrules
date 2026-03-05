@@ -1,4 +1,4 @@
-# unified-domain-services: Per-Repo Rules
+# unified-domain-client: Per-Repo Rules
 
 ## Service-Specific Context
 
@@ -16,13 +16,13 @@ All workspace rules from `../.cursorrules` apply.
 
 ### Dependencies
 
-- unified-cloud-services>=1.5.0 (foundation)
+- unified-trading-services>=1.5.0 (foundation)
 - Re-exports: TimestampDateValidator, validate_timestamp_date_alignment, lookback constants from UCS
 - Domain clients: Instruments, MarketData, MarketTickData, Execution, Features
 
 ### Architecture
 
-- **Cloud-agnostic**: Uses unified-cloud-services abstractions (get_storage_client, etc.)
+- **Cloud-agnostic**: Uses unified-trading-services abstractions (get_storage_client, etc.)
 - **StandardizedDomainCloudService**: Canonical cloud service for batch/live domain operations
 - **Factories**: create_market_data_cloud_service, create_features_cloud_service, etc.
 
