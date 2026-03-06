@@ -12,7 +12,6 @@ import pandas as pd
 from unified_cloud_interface import get_storage_client
 from unified_config_interface import UnifiedCloudConfig
 
-from unified_domain_client.cloud_target import CloudTarget
 from unified_domain_client.paths import build_bucket, build_path
 from unified_domain_client.standardized_service import StandardizedDomainCloudService
 
@@ -24,7 +23,6 @@ class _ExecClientConfig(TypedDict, total=False):
 
     project_id: NotRequired[str | None]
     gcs_bucket: NotRequired[str | None]
-    bigquery_dataset: NotRequired[str | None]
 
 
 class ExecutionDomainClient:
@@ -37,15 +35,11 @@ class ExecutionDomainClient:
         bigquery_dataset: str | None = None,
     ) -> None:
         proj = project_id or UnifiedCloudConfig().gcp_project_id
-        cloud_target = CloudTarget(
-            project_id=proj,
-            gcs_bucket=gcs_bucket or UnifiedCloudConfig().execution_gcs_bucket,
-            bigquery_dataset=bigquery_dataset or "execution",
-        )
-        self.cloud_service = StandardizedDomainCloudService(domain="execution", cloud_target=cloud_target)
-        self.cloud_target = cloud_target
+        bucket = gcs_bucket or UnifiedCloudConfig().execution_gcs_bucket
+        self.cloud_service = StandardizedDomainCloudService(domain="execution", bucket=bucket)
         self._project_id = proj
-        logger.info("ExecutionDomainClient initialized: bucket=%s", cloud_target.gcs_bucket)
+        self._bucket = bucket
+        logger.info("ExecutionDomainClient initialized: bucket=%s", bucket)
 
     # ---------------------------------------------------------------------- #
     # Fills and orders
@@ -151,7 +145,7 @@ class ExecutionDomainClient:
         try:
             client = get_storage_client()
             blobs = client.list_blobs(
-                bucket=self.cloud_target.gcs_bucket,
+                bucket=self._bucket,
                 prefix=f"backtest_results/{prefix}",
             )
             run_ids: set[str] = set()

@@ -8,7 +8,6 @@ import pandas as pd
 from unified_cloud_interface import get_storage_client
 from unified_config_interface import UnifiedCloudConfig
 
-from unified_domain_client.cloud_target import CloudTarget
 from unified_domain_client.paths import build_bucket, build_path
 from unified_domain_client.standardized_service import StandardizedDomainCloudService
 
@@ -25,12 +24,7 @@ class SportsOddsDomainClient:
     ) -> None:
         self._project_id = project_id or UnifiedCloudConfig().gcp_project_id
         bucket = gcs_bucket or build_bucket("sports_raw_odds", project_id=self._project_id)
-        cloud_target = CloudTarget(
-            project_id=self._project_id,
-            gcs_bucket=bucket,
-            bigquery_dataset="sports_raw_odds",
-        )
-        self.cloud_service = StandardizedDomainCloudService(domain="sports", cloud_target=cloud_target)
+        self.cloud_service = StandardizedDomainCloudService(domain="sports", bucket=bucket)
 
     def read_odds(self, provider: str, league: str, date: str) -> pd.DataFrame:
         """Read raw odds data for a specific provider, league, and date.

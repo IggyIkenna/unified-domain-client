@@ -19,7 +19,6 @@ from datetime import UTC, datetime
 import pandas as pd
 from unified_config_interface import UnifiedCloudConfig
 
-from unified_domain_client.cloud_target import CloudTarget
 from unified_domain_client.standardized_service import (
     StandardizedDomainCloudService,
 )
@@ -43,51 +42,41 @@ class CloudDataProviderBase(ABC):
     def __init__(
         self,
         domain: str,
-        cloud_target: CloudTarget | None = None,
+        bucket: str = "",
         project_id: str | None = None,
         gcs_bucket: str | None = None,
         bigquery_dataset: str | None = None,
         bigquery_location: str | None = None,
+        cloud_target: object | None = None,
     ):
         """
         Initialize cloud data provider.
 
         Args:
             domain: Domain name (e.g., 'instruments', 'market_data', 'features', 'ml')
-            cloud_target: Optional CloudTarget configuration (auto-detects if not provided)
-            project_id: GCP project ID (overrides cloud_target)
-            gcs_bucket: GCS bucket name (overrides cloud_target)
-            bigquery_dataset: BigQuery dataset name (overrides cloud_target)
-            bigquery_location: BigQuery location (overrides cloud_target)
+            bucket: Cloud storage bucket name (preferred)
+            project_id: GCP project ID (used for bucket resolution if bucket not set)
+            gcs_bucket: Alternate bucket arg — used if bucket not set
+            bigquery_dataset: Ignored — kept for backward compatibility
+            bigquery_location: Ignored — kept for backward compatibility
+            cloud_target: Ignored — kept for backward compatibility
         """
         self.domain = domain
+        config = UnifiedCloudConfig()
 
-        # Build cloud target from parameters or defaults
-        if cloud_target is None:
-            config = UnifiedCloudConfig()
-            proj = project_id or config.gcp_project_id
-            if not proj:
-                raise ValueError("GCP_PROJECT_ID must be set in config or environment. No hardcoded fallbacks allowed.")
-            cloud_target = CloudTarget(
-                project_id=proj,
-                gcs_bucket=gcs_bucket or config.gcs_bucket or f"{domain}-store",
-                bigquery_dataset=bigquery_dataset or config.bigquery_dataset or domain,
-                bigquery_location=bigquery_location or config.bigquery_location or "asia-northeast1",
-            )
+        resolved_bucket = bucket or gcs_bucket or config.gcs_bucket or f"{domain}-store"
+        self.bucket: str = resolved_bucket
 
         # Create domain cloud service
         self.cloud_service = StandardizedDomainCloudService(
             domain=domain,
-            cloud_target=cloud_target,
+            bucket=resolved_bucket,
         )
-        self.cloud_target = cloud_target
 
         logger.info(
-            "✅ CloudDataProviderBase initialized: domain=%s, project=%s, bucket=%s, dataset=%s",
+            "✅ CloudDataProviderBase initialized: domain=%s, bucket=%s",
             domain,
-            cloud_target.project_id,
-            cloud_target.gcs_bucket,
-            cloud_target.bigquery_dataset,
+            resolved_bucket,
         )
 
     @property
@@ -114,7 +103,7 @@ class CloudDataProviderBase(ABC):
             DataFrame with downloaded data
         """
         try:
-            logger.info("📥 Loading from GCS: %s/%s", self.cloud_target.gcs_bucket, gcs_path)
+            logger.info("📥 Loading from GCS: %s/%s", self.bucket, gcs_path)
             result = self.cloud_service.download_from_gcs(
                 gcs_path=gcs_path,
                 format=format,
@@ -148,15 +137,9 @@ class CloudDataProviderBase(ABC):
         except ValueError:
             category_bucket = f"{self.domain}-{category.lower()}"
 
-        category_target = CloudTarget(
-            project_id=self.cloud_target.project_id,
-            gcs_bucket=category_bucket,
-            bigquery_dataset=self.cloud_target.bigquery_dataset,
-            bigquery_location=self.cloud_target.bigquery_location,
-        )
         category_service = StandardizedDomainCloudService(
             domain=self.domain,
-            cloud_target=category_target,
+            bucket=category_bucket,
         )
         return category_bucket, category_service
 
@@ -289,11 +272,10 @@ def _resolve_instruments_bucket_cefi() -> str:
 class InstrumentsDataProvider(CloudDataProviderBase):
     """Data provider for instruments domain."""
 
-    def __init__(self, cloud_target: CloudTarget | None = None):
+    def __init__(self, cloud_target: object | None = None):
         config = UnifiedCloudConfig()
         super().__init__(
             domain="instruments",
-            cloud_target=cloud_target,
             gcs_bucket=_resolve_instruments_bucket_cefi(),
             bigquery_dataset=config.instruments_bigquery_dataset,
         )
@@ -362,11 +344,10 @@ class InstrumentsDataProvider(CloudDataProviderBase):
 class MarketDataProvider(CloudDataProviderBase):
     """Data provider for market_data domain."""
 
-    def __init__(self, cloud_target: CloudTarget | None = None):
+    def __init__(self, cloud_target: object | None = None):
         config = UnifiedCloudConfig()
         super().__init__(
             domain="market_data",
-            cloud_target=cloud_target,
             gcs_bucket=config.market_data_gcs_bucket,
             bigquery_dataset=config.market_data_bigquery_dataset,
         )
@@ -382,8 +363,8 @@ class MarketDataProvider(CloudDataProviderBase):
         """Build BigQuery query and params for candle data retrieval."""
         table_suffix = timeframe.replace("h", "h").replace("m", "m").replace("s", "s")
         table_name = f"candles_{table_suffix}_trades"
-        dataset = self.cloud_target.bigquery_dataset
-        project_id = self.cloud_target.project_id
+        dataset = self.domain
+        project_id = ""
 
         query = f"""
         SELECT *
@@ -435,11 +416,10 @@ class MarketDataProvider(CloudDataProviderBase):
 class FeaturesDataProvider(CloudDataProviderBase):
     """Data provider for features domain."""
 
-    def __init__(self, cloud_target: CloudTarget | None = None):
+    def __init__(self, cloud_target: object | None = None):
         config = UnifiedCloudConfig()
         super().__init__(
             domain="features",
-            cloud_target=cloud_target,
             gcs_bucket=config.features_gcs_bucket,
             bigquery_dataset=config.bigquery_dataset,
         )

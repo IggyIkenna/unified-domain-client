@@ -1,4 +1,4 @@
-"""Base writer classes for GCS data upload."""
+"""Base writer classes for cloud storage data upload."""
 
 import io
 import json
@@ -8,7 +8,6 @@ from abc import ABC, abstractmethod
 import pandas as pd
 from unified_cloud_interface import upload_to_storage
 
-from unified_domain_client.cloud_target import CloudTarget
 from unified_domain_client.paths import PathRegistry
 
 logger = logging.getLogger(__name__)
@@ -27,22 +26,22 @@ class BaseDataWriter(ABC):
 
 
 class BaseWriter:
-    """Base class for writing data to GCS."""
+    """Base class for writing data to cloud storage."""
 
-    def __init__(self, cloud_target: CloudTarget) -> None:
-        self.cloud_target = cloud_target
+    def __init__(self, bucket: str) -> None:
+        self.bucket = bucket
 
     def write_parquet(self, df: pd.DataFrame, gcs_path: str) -> str:
-        """Write DataFrame as parquet to GCS path (relative to bucket)."""
+        """Write DataFrame as parquet to storage path (relative to bucket)."""
         buf = io.BytesIO()
         df.to_parquet(buf, index=False)
         buf.seek(0)
-        return upload_to_storage(self.cloud_target.gcs_bucket, gcs_path.lstrip("/"), buf.read())
+        return upload_to_storage(self.bucket, gcs_path.lstrip("/"), buf.read())
 
     def write_json(self, data: dict[str, object], gcs_path: str) -> str:
-        """Write dict as JSON to GCS path."""
+        """Write dict as JSON to storage path."""
         raw = json.dumps(data, default=str).encode("utf-8")
-        return upload_to_storage(self.cloud_target.gcs_bucket, gcs_path.lstrip("/"), raw)
+        return upload_to_storage(self.bucket, gcs_path.lstrip("/"), raw)
 
 
 class MarketDataWriter(BaseWriter):

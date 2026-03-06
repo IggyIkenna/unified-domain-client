@@ -9,7 +9,6 @@ import pandas as pd
 from unified_cloud_interface import get_storage_client
 from unified_config_interface import UnifiedCloudConfig
 
-from unified_domain_client.cloud_target import CloudTarget
 from unified_domain_client.paths import build_bucket, build_path
 from unified_domain_client.standardized_service import StandardizedDomainCloudService
 
@@ -26,8 +25,7 @@ class MLModelsDomainClient:
     ) -> None:
         self._project_id = project_id or UnifiedCloudConfig().gcp_project_id
         bucket = gcs_bucket or build_bucket("ml_models", project_id=self._project_id)
-        cloud_target = CloudTarget(project_id=self._project_id, gcs_bucket=bucket, bigquery_dataset="ml")
-        self.cloud_service = StandardizedDomainCloudService(domain="ml_models", cloud_target=cloud_target)
+        self.cloud_service = StandardizedDomainCloudService(domain="ml_models", bucket=bucket)
         self._bucket = bucket
 
     def get_model(self, model_id: str, training_period: str) -> bytes:
@@ -81,8 +79,7 @@ class MLPredictionsDomainClient:
     ) -> None:
         self._project_id = project_id or UnifiedCloudConfig().gcp_project_id
         bucket = gcs_bucket or build_bucket("ml_predictions", project_id=self._project_id)
-        cloud_target = CloudTarget(project_id=self._project_id, gcs_bucket=bucket, bigquery_dataset="ml")
-        self.cloud_service = StandardizedDomainCloudService(domain="ml_predictions", cloud_target=cloud_target)
+        self.cloud_service = StandardizedDomainCloudService(domain="ml_predictions", bucket=bucket)
         self._bucket = bucket
 
     def get_predictions(self, date: str, mode: str) -> pd.DataFrame:

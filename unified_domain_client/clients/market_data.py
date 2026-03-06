@@ -12,7 +12,6 @@ import pandas as pd
 from unified_config_interface import UnifiedCloudConfig
 
 from unified_domain_client.clients.base import BaseDataClient
-from unified_domain_client.cloud_target import CloudTarget
 from unified_domain_client.paths import build_bucket, build_path
 from unified_domain_client.standardized_service import StandardizedDomainCloudService
 
@@ -122,14 +121,10 @@ class MarketCandleDataDomainClient:
         gcs_bucket: str | None = None,
         bigquery_dataset: str | None = None,
     ) -> None:
-        cloud_target = CloudTarget(
-            project_id=project_id or UnifiedCloudConfig().gcp_project_id,
-            gcs_bucket=gcs_bucket or UnifiedCloudConfig().market_data_gcs_bucket,
-            bigquery_dataset=bigquery_dataset or UnifiedCloudConfig().market_data_bigquery_dataset,
-        )
-        self.cloud_service = StandardizedDomainCloudService(domain="market_data", cloud_target=cloud_target)
-        self.cloud_target = cloud_target
-        logger.info("MarketCandleDataDomainClient initialized: bucket=%s", cloud_target.gcs_bucket)
+        bucket = gcs_bucket or UnifiedCloudConfig().market_data_gcs_bucket
+        self.cloud_service = StandardizedDomainCloudService(domain="market_data", bucket=bucket)
+        self._bucket = bucket
+        logger.info("MarketCandleDataDomainClient initialized: bucket=%s", bucket)
 
     def get_candles(
         self,
@@ -197,14 +192,46 @@ class MarketTickDataDomainClient:
         gcs_bucket: str | None = None,
         bigquery_dataset: str | None = None,
     ) -> None:
-        cloud_target = CloudTarget(
-            project_id=project_id or UnifiedCloudConfig().gcp_project_id,
-            gcs_bucket=gcs_bucket or UnifiedCloudConfig().market_data_gcs_bucket,
-            bigquery_dataset=bigquery_dataset or UnifiedCloudConfig().market_data_bigquery_dataset,
-        )
-        self.cloud_service = StandardizedDomainCloudService(domain="market_data", cloud_target=cloud_target)
-        self.cloud_target = cloud_target
-        logger.info("MarketTickDataDomainClient initialized: bucket=%s", cloud_target.gcs_bucket)
+        bucket = gcs_bucket or UnifiedCloudConfig().market_data_gcs_bucket
+        self.cloud_service = StandardizedDomainCloudService(domain="market_data", bucket=bucket)
+        self._bucket = bucket
+        logger.info("MarketTickDataDomainClient initialized: bucket=%s", bucket)
+
+    def _build_tick_gcs_path(
+        self,
+        date_str: str,
+        instrument_id: str,
+        data_type: str,
+        hour: int | None,
+        venue: str | None,
+        instrument_type_folder: str | None,
+    ) -> str:
+        """Build GCS path for tick data file."""
+        type_folder = instrument_type_folder
+        if not type_folder:
+            parts = instrument_id.split(":")
+            if len(parts) >= 2:
+                type_folder = _INSTRUMENT_TYPE_FOLDER_MAP.get(parts[1].lower(), parts[1].lower())
+
+        base_path = f"raw_tick_data/by_date/day={date_str}/data_type={data_type}"
+        if hour is not None:
+            base_path = f"{base_path}/hour={hour:02d}"
+
+        needs_venue = type_folder in {
+            "etf", "equities", "futures_chain", "options_chain", "indices",
+            "pool", "lst", "a_token", "debt_token", "perpetuals", "spot",
+        }
+        extracted_venue = venue
+        if not extracted_venue and needs_venue:
+            parts = instrument_id.split(":")
+            if parts:
+                extracted_venue = parts[0]
+
+        if type_folder:
+            if needs_venue and extracted_venue:
+                return f"{base_path}/instrument_type={type_folder}/venue={extracted_venue}/{instrument_id}.parquet"
+            return f"{base_path}/instrument_type={type_folder}/{instrument_id}.parquet"
+        return f"{base_path}/{instrument_id}.parquet"
 
     def get_tick_data(
         self,
@@ -217,44 +244,9 @@ class MarketTickDataDomainClient:
     ) -> pd.DataFrame:
         """Get raw tick data for a specific date and instrument."""
         date_str = date.strftime("%Y-%m-%d")
-
-        type_folder = instrument_type_folder
-        if not type_folder:
-            parts = instrument_id.split(":")
-            if len(parts) >= 2:
-                type_folder = _INSTRUMENT_TYPE_FOLDER_MAP.get(parts[1].lower(), parts[1].lower())
-
-        base_path = f"raw_tick_data/by_date/day={date_str}/data_type={data_type}"
-        if hour is not None:
-            base_path = f"{base_path}/hour={hour:02d}"
-
-        needs_venue = type_folder in {
-            "etf",
-            "equities",
-            "futures_chain",
-            "options_chain",
-            "indices",
-            "pool",
-            "lst",
-            "a_token",
-            "debt_token",
-            "perpetuals",
-            "spot",
-        }
-        extracted_venue = venue
-        if not extracted_venue and needs_venue:
-            parts = instrument_id.split(":")
-            if parts:
-                extracted_venue = parts[0]
-
-        if type_folder:
-            if needs_venue and extracted_venue:
-                gcs_path = f"{base_path}/instrument_type={type_folder}/venue={extracted_venue}/{instrument_id}.parquet"
-            else:
-                gcs_path = f"{base_path}/instrument_type={type_folder}/{instrument_id}.parquet"
-        else:
-            gcs_path = f"{base_path}/{instrument_id}.parquet"
-
+        gcs_path = self._build_tick_gcs_path(
+            date_str, instrument_id, data_type, hour, venue, instrument_type_folder
+        )
         try:
             result = self.cloud_service.download_from_gcs(gcs_path=gcs_path, format="parquet")
             return result if isinstance(result, pd.DataFrame) else pd.DataFrame()
@@ -293,7 +285,6 @@ class _ClientConfig(TypedDict, total=False):
 
     project_id: NotRequired[str | None]
     gcs_bucket: NotRequired[str | None]
-    bigquery_dataset: NotRequired[str | None]
 
 
 class MarketDataDomainClient(MarketCandleDataDomainClient):

@@ -9,7 +9,6 @@ import pandas as pd
 from unified_cloud_interface import get_storage_client
 from unified_config_interface import UnifiedCloudConfig
 
-from unified_domain_client.cloud_target import CloudTarget
 from unified_domain_client.paths import build_bucket, build_path
 from unified_domain_client.standardized_service import StandardizedDomainCloudService
 
@@ -26,8 +25,7 @@ class RiskDomainClient:
     ) -> None:
         self._project_id = project_id or UnifiedCloudConfig().gcp_project_id
         bucket = gcs_bucket or build_bucket("risk_metrics", project_id=self._project_id)
-        cloud_target = CloudTarget(project_id=self._project_id, gcs_bucket=bucket, bigquery_dataset="risk")
-        self.cloud_service = StandardizedDomainCloudService(domain="risk", cloud_target=cloud_target)
+        self.cloud_service = StandardizedDomainCloudService(domain="risk", bucket=bucket)
         self._bucket = bucket
 
     def get_risk_metrics(self, date: str, risk_type: str) -> pd.DataFrame:

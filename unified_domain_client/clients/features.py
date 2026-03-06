@@ -8,7 +8,6 @@ import pandas as pd
 from unified_cloud_interface import get_storage_client
 from unified_config_interface import UnifiedCloudConfig
 
-from unified_domain_client.cloud_target import CloudTarget
 from unified_domain_client.paths import build_bucket, build_path
 from unified_domain_client.standardized_service import StandardizedDomainCloudService
 
@@ -28,12 +27,7 @@ class FeaturesDeltaOneDomainClient:
         self._category = category
         self._project_id = project_id or UnifiedCloudConfig().gcp_project_id
         bucket = gcs_bucket or build_bucket("delta_one_features", project_id=self._project_id, category=category)
-        cloud_target = CloudTarget(
-            project_id=self._project_id,
-            gcs_bucket=bucket,
-            bigquery_dataset=bigquery_dataset or "features",
-        )
-        self.cloud_service = StandardizedDomainCloudService(domain="features", cloud_target=cloud_target)
+        self.cloud_service = StandardizedDomainCloudService(domain="features", bucket=bucket)
 
     def get_features(
         self,
@@ -83,12 +77,7 @@ class FeaturesCalendarDomainClient:
     ) -> None:
         self._project_id = project_id or UnifiedCloudConfig().gcp_project_id
         bucket = gcs_bucket or build_bucket("calendar_features", project_id=self._project_id)
-        cloud_target = CloudTarget(
-            project_id=self._project_id,
-            gcs_bucket=bucket,
-            bigquery_dataset=bigquery_dataset or "features",
-        )
-        self.cloud_service = StandardizedDomainCloudService(domain="features", cloud_target=cloud_target)
+        self.cloud_service = StandardizedDomainCloudService(domain="features", bucket=bucket)
 
     def get_features(self, date: str, category: str = "cefi") -> pd.DataFrame:
         """Get calendar features for a specific date.
@@ -131,12 +120,7 @@ class FeaturesOnchainDomainClient:
     ) -> None:
         self._project_id = project_id or UnifiedCloudConfig().gcp_project_id
         bucket = gcs_bucket or build_bucket("onchain_features", project_id=self._project_id)
-        cloud_target = CloudTarget(
-            project_id=self._project_id,
-            gcs_bucket=bucket,
-            bigquery_dataset=bigquery_dataset or "features",
-        )
-        self.cloud_service = StandardizedDomainCloudService(domain="features", cloud_target=cloud_target)
+        self.cloud_service = StandardizedDomainCloudService(domain="features", bucket=bucket)
 
     def get_features(self, date: str, feature_group: str) -> pd.DataFrame:
         """Get on-chain features for a specific date and feature group."""
@@ -179,12 +163,7 @@ class FeaturesVolatilityDomainClient:
         self._category = category
         self._project_id = project_id or UnifiedCloudConfig().gcp_project_id
         bucket = gcs_bucket or build_bucket("volatility_features", project_id=self._project_id, category=category)
-        cloud_target = CloudTarget(
-            project_id=self._project_id,
-            gcs_bucket=bucket,
-            bigquery_dataset=bigquery_dataset or "features",
-        )
-        self.cloud_service = StandardizedDomainCloudService(domain="features", cloud_target=cloud_target)
+        self.cloud_service = StandardizedDomainCloudService(domain="features", bucket=bucket)
 
     def get_features(self, date: str, underlying: str, feature_group: str) -> pd.DataFrame:
         """Get volatility features for a specific date, underlying, and feature group."""

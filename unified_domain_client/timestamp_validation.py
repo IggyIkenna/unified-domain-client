@@ -37,6 +37,25 @@ class TimestampDateValidator:
         self.alignment_threshold: float = alignment_threshold
         self.timestamp_unit: str = timestamp_unit
 
+    def _resolve_timestamp_col(self, df: pd.DataFrame, requested: str) -> str | None:
+        """Return the effective timestamp column name, or None if not found."""
+        if requested in df.columns:
+            return requested
+        for alt in ["timestamp", "ts_event", "ts_init", "time", "datetime"]:
+            if alt in df.columns:
+                return alt
+        return None
+
+    def _parse_timestamps(self, series: "pd.Series[object]") -> "pd.Series[object]":
+        """Convert a numeric/string timestamp series to UTC datetime series."""
+        if self.timestamp_unit == "ns":
+            return pd.to_datetime(series, unit="ns", utc=True, errors="coerce")
+        if self.timestamp_unit == "us":
+            return pd.to_datetime(series, unit="us", utc=True, errors="coerce")
+        if self.timestamp_unit == "ms":
+            return pd.to_datetime(series, unit="ms", utc=True, errors="coerce")
+        return pd.to_datetime(series, utc=True, errors="coerce")
+
     def validate(
         self,
         df: pd.DataFrame,
@@ -47,29 +66,11 @@ class TimestampDateValidator:
         if df.empty:
             return TimestampAlignmentResult(valid=True, alignment_percentage=100.0, errors=[])
 
-        col = timestamp_col
-        if col not in df.columns:
-            for alt in ["timestamp", "ts_event", "ts_init", "time", "datetime"]:
-                if alt in df.columns:
-                    col = alt
-                    break
-            else:
-                return TimestampAlignmentResult(
-                    valid=False,
-                    alignment_percentage=0.0,
-                    errors=["No timestamp column found"],
-                )
+        col = self._resolve_timestamp_col(df, timestamp_col)
+        if col is None:
+            return TimestampAlignmentResult(valid=False, alignment_percentage=0.0, errors=["No timestamp column found"])
 
-        ts = df[col]
-        if self.timestamp_unit == "ns":
-            dt = pd.to_datetime(ts, unit="ns", utc=True, errors="coerce")
-        elif self.timestamp_unit == "us":
-            dt = pd.to_datetime(ts, unit="us", utc=True, errors="coerce")
-        elif self.timestamp_unit == "ms":
-            dt = pd.to_datetime(ts, unit="ms", utc=True, errors="coerce")
-        else:
-            dt = pd.to_datetime(ts, utc=True, errors="coerce")
-
+        dt = self._parse_timestamps(df[col])
         dates = dt.dt.date
         expected_str = expected_date.isoformat()
         aligned = (dates.astype(str) == expected_str).sum()
@@ -81,13 +82,7 @@ class TimestampDateValidator:
         errors: list[str] = []
         if not valid:
             errors.append(f"Only {pct:.1f}% of timestamps align with {expected_str}. Found dates: {actual_dates}")
-
-        return TimestampAlignmentResult(
-            valid=valid,
-            alignment_percentage=pct,
-            errors=errors,
-            actual_dates_found=actual_dates,
-        )
+        return TimestampAlignmentResult(valid=valid, alignment_percentage=pct, errors=errors, actual_dates_found=actual_dates)
 
 
 def validate_timestamp_date_alignment(
