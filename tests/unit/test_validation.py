@@ -67,7 +67,6 @@ class TestDomainValidationService:
         assert result.valid is True
         assert result.validation_type == "domain_validation_ml"
 
-
     def test_validate_for_domain_execution_with_timestamp(self):
         """Test execution domain validates timestamp ordering."""
         svc = DomainValidationService(domain="execution")
@@ -115,20 +114,24 @@ class TestDomainValidationService:
     def test_validate_timestamp_semantics_external_io_with_columns(self):
         """Test timestamp semantics for external I/O with both required columns."""
         svc = DomainValidationService(domain="market_data")
-        df = pd.DataFrame({
-            "timestamp": [1000000, 2000000],
-            "local_timestamp": [1100000, 2100000],
-        })
+        df = pd.DataFrame(
+            {
+                "timestamp": [1000000, 2000000],
+                "local_timestamp": [1100000, 2100000],
+            }
+        )
         result = svc.validate_timestamp_semantics(df, data_type="trades")
         assert result.valid is True
 
     def test_validate_timestamp_semantics_external_io_local_before_exchange(self):
         """Test timestamp semantics warns when local_timestamp < timestamp."""
         svc = DomainValidationService(domain="market_data")
-        df = pd.DataFrame({
-            "timestamp": [2000000, 3000000],
-            "local_timestamp": [1000000, 4000000],  # first row: local < exchange
-        })
+        df = pd.DataFrame(
+            {
+                "timestamp": [2000000, 3000000],
+                "local_timestamp": [1000000, 4000000],  # first row: local < exchange
+            }
+        )
         result = svc.validate_timestamp_semantics(df, data_type="fills")
         # Should still be valid=True (warning, not error)
         assert result.valid is True
@@ -137,11 +140,13 @@ class TestDomainValidationService:
     def test_validate_timestamp_semantics_internal_domain_with_all_columns(self):
         """Test timestamp semantics for internal domain with all columns."""
         svc = DomainValidationService(domain="strategy")
-        df = pd.DataFrame({
-            "timestamp": [1000000],
-            "timestamp_in": [900000],
-            "timestamp_out": [1100000],
-        })
+        df = pd.DataFrame(
+            {
+                "timestamp": [1000000],
+                "timestamp_in": [900000],
+                "timestamp_out": [1100000],
+            }
+        )
         result = svc.validate_timestamp_semantics(df, data_type="orders")
         assert result.valid is True
 
@@ -155,11 +160,13 @@ class TestDomainValidationService:
     def test_validate_timestamp_semantics_internal_timestamp_ordering_warning(self):
         """Test timestamp semantics warns when timestamp_out < timestamp."""
         svc = DomainValidationService(domain="strategy")
-        df = pd.DataFrame({
-            "timestamp": [2000000],
-            "timestamp_in": [1000000],
-            "timestamp_out": [500000],  # out < timestamp (bad)
-        })
+        df = pd.DataFrame(
+            {
+                "timestamp": [2000000],
+                "timestamp_in": [1000000],
+                "timestamp_out": [500000],  # out < timestamp (bad)
+            }
+        )
         result = svc.validate_timestamp_semantics(df, data_type="orders")
         assert any("timestamp_out < timestamp" in str(w) for w in (result.warnings or []))
 
@@ -228,6 +235,7 @@ class TestDomainValidationService:
     def test_feature_completeness_high_nan_warning(self):
         """Test _validate_feature_completeness warns for >10% NaN columns."""
         import numpy as np
+
         svc = DomainValidationService(domain="features")
         # 5 rows, feature_1 has 4 NaN (80%)
         df = pd.DataFrame({"feature_1": [1.0, np.nan, np.nan, np.nan, np.nan]})

@@ -6,7 +6,7 @@ import logging
 
 import pandas as pd
 
-from unified_domain_client.readers.base import BaseDataReader
+from .base import BaseDataReader
 
 logger = logging.getLogger(__name__)
 

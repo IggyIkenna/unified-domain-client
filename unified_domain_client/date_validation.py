@@ -9,15 +9,15 @@ Philosophy:
 - This enables clean backfill operations without artificial failures
 - Provides clear data availability timeline for downstream services
 
-Usage example (import from unified_domain_client top-level)::
+Usage: import DateValidator and should_skip_date from unified_domain_client (top-level).
 
-    from unified_domain_client import DateValidator, should_skip_date
+Quick check::
 
-    # Quick check
     if should_skip_date("2023-05-23", "CEFI", "BINANCE-FUTURES", "24h"):
         logger.info("Skipping date - insufficient lookback")
 
-    # Full validator
+Full validator::
+
     validator = DateValidator()
     result = validator.check_date("2023-05-23", "CEFI", "BINANCE-FUTURES", "24h")
     if not result.is_valid:
@@ -36,7 +36,7 @@ from typing import TypedDict
 
 import yaml
 
-from unified_domain_client.lookback_constants import (
+from .lookback_constants import (
     FEATURE_GROUP_LOOKBACK,
     MAX_LOOKBACK_DAYS_BY_TIMEFRAME,
     TIMEFRAME_TO_SECONDS,

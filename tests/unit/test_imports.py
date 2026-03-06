@@ -410,38 +410,53 @@ def test_sports_clients_instantiate_with_mocks():
     """Test sports clients can be instantiated with mocked deps."""
     from unittest.mock import patch
 
-    with patch("unified_domain_client.sports.features_client.UnifiedCloudConfig") as mock_cfg, \
-         patch("unified_domain_client.sports.features_client.StandardizedDomainCloudService"):
+    with (
+        patch("unified_domain_client.sports.features_client.UnifiedCloudConfig") as mock_cfg,
+        patch("unified_domain_client.sports.features_client.StandardizedDomainCloudService"),
+    ):
         mock_cfg.return_value.gcp_project_id = "test-project"
         from unified_domain_client.sports.features_client import SportsFeaturesDomainClient
+
         client = SportsFeaturesDomainClient(project_id="test-project", gcs_bucket="test-bucket")
         assert client is not None
 
-    with patch("unified_domain_client.sports.fixtures_client.UnifiedCloudConfig") as mock_cfg, \
-         patch("unified_domain_client.sports.fixtures_client.StandardizedDomainCloudService"):
+    with (
+        patch("unified_domain_client.sports.fixtures_client.UnifiedCloudConfig") as mock_cfg,
+        patch("unified_domain_client.sports.fixtures_client.StandardizedDomainCloudService"),
+    ):
         mock_cfg.return_value.gcp_project_id = "test-project"
         from unified_domain_client.sports.fixtures_client import SportsFixturesDomainClient
+
         client2 = SportsFixturesDomainClient(project_id="test-project", gcs_bucket="test-bucket")
         assert client2 is not None
 
-    with patch("unified_domain_client.sports.mappings_client.UnifiedCloudConfig") as mock_cfg, \
-         patch("unified_domain_client.sports.mappings_client.StandardizedDomainCloudService"):
+    with (
+        patch("unified_domain_client.sports.mappings_client.UnifiedCloudConfig") as mock_cfg,
+        patch("unified_domain_client.sports.mappings_client.StandardizedDomainCloudService"),
+    ):
         mock_cfg.return_value.gcp_project_id = "test-project"
         from unified_domain_client.sports.mappings_client import SportsMappingsDomainClient
+
         client3 = SportsMappingsDomainClient(project_id="test-project", gcs_bucket="test-bucket")
         assert client3 is not None
 
-    with patch("unified_domain_client.sports.odds_client.UnifiedCloudConfig") as mock_cfg, \
-         patch("unified_domain_client.sports.odds_client.StandardizedDomainCloudService"):
+    with (
+        patch("unified_domain_client.sports.odds_client.UnifiedCloudConfig") as mock_cfg,
+        patch("unified_domain_client.sports.odds_client.StandardizedDomainCloudService"),
+    ):
         mock_cfg.return_value.gcp_project_id = "test-project"
         from unified_domain_client.sports.odds_client import SportsOddsDomainClient
+
         client4 = SportsOddsDomainClient(project_id="test-project", gcs_bucket="test-bucket")
         assert client4 is not None
 
-    with patch("unified_domain_client.sports.tick_data_client.UnifiedCloudConfig") as mock_cfg, \
-         patch("unified_domain_client.sports.tick_data_client.StandardizedDomainCloudService"):
+    with (
+        patch("unified_domain_client.sports.tick_data_client.UnifiedCloudConfig") as mock_cfg,
+        patch("unified_domain_client.sports.tick_data_client.StandardizedDomainCloudService"),
+    ):
         mock_cfg.return_value.gcp_project_id = "test-project"
         from unified_domain_client.sports.tick_data_client import SportsTickDataDomainClient
+
         client5 = SportsTickDataDomainClient(project_id="test-project", gcs_bucket="test-bucket")
         assert client5 is not None
 
@@ -711,6 +726,7 @@ def test_should_skip_date_no_config():
     try:
         with patch.object(dv, "get_validator") as mock_get_validator:
             from unified_domain_client.date_validation import DateValidator
+
             v = DateValidator(config_path=Path("/nonexistent/path.yaml"))
             mock_get_validator.return_value = v
             result = dv.should_skip_date("2024-01-15", "CEFI")
@@ -753,6 +769,7 @@ earliest_valid_features:
 
     try:
         from pathlib import Path
+
         validator = DateValidator(config_path=Path(tmp_path))
         # Date after earliest valid — should be valid
         result = validator.check_date("2024-06-01", "CEFI")
@@ -765,4 +782,3 @@ earliest_valid_features:
         assert result2.days_until_valid > 0
     finally:
         os.unlink(tmp_path)
-

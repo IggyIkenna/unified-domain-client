@@ -113,8 +113,10 @@ def test_sports_features_read_features_returns_empty_on_error():
 
     from unified_domain_client.sports.features_client import SportsFeaturesDomainClient
 
-    with patch("unified_domain_client.sports.features_client.UnifiedCloudConfig") as mock_cfg, \
-         patch("unified_domain_client.sports.features_client.StandardizedDomainCloudService"):
+    with (
+        patch("unified_domain_client.sports.features_client.UnifiedCloudConfig") as mock_cfg,
+        patch("unified_domain_client.sports.features_client.StandardizedDomainCloudService"),
+    ):
         mock_cfg.return_value.gcp_project_id = "test-project"
         client = SportsFeaturesDomainClient(project_id="test-project", gcs_bucket="sports-bucket")
 
@@ -133,8 +135,10 @@ def test_sports_features_write_features():
 
     from unified_domain_client.sports.features_client import SportsFeaturesDomainClient
 
-    with patch("unified_domain_client.sports.features_client.UnifiedCloudConfig") as mock_cfg, \
-         patch("unified_domain_client.sports.features_client.StandardizedDomainCloudService"):
+    with (
+        patch("unified_domain_client.sports.features_client.UnifiedCloudConfig") as mock_cfg,
+        patch("unified_domain_client.sports.features_client.StandardizedDomainCloudService"),
+    ):
         mock_cfg.return_value.gcp_project_id = "test-project"
         client = SportsFeaturesDomainClient(project_id="test-project", gcs_bucket="sports-bucket")
 
@@ -154,8 +158,10 @@ def test_sports_fixtures_read_fixtures_returns_empty_on_error():
 
     from unified_domain_client.sports.fixtures_client import SportsFixturesDomainClient
 
-    with patch("unified_domain_client.sports.fixtures_client.UnifiedCloudConfig") as mock_cfg, \
-         patch("unified_domain_client.sports.fixtures_client.StandardizedDomainCloudService"):
+    with (
+        patch("unified_domain_client.sports.fixtures_client.UnifiedCloudConfig") as mock_cfg,
+        patch("unified_domain_client.sports.fixtures_client.StandardizedDomainCloudService"),
+    ):
         mock_cfg.return_value.gcp_project_id = "test-project"
         client = SportsFixturesDomainClient(project_id="test-project", gcs_bucket="sports-bucket")
 
@@ -174,8 +180,10 @@ def test_sports_odds_read_odds_returns_empty_on_error():
 
     from unified_domain_client.sports.odds_client import SportsOddsDomainClient
 
-    with patch("unified_domain_client.sports.odds_client.UnifiedCloudConfig") as mock_cfg, \
-         patch("unified_domain_client.sports.odds_client.StandardizedDomainCloudService"):
+    with (
+        patch("unified_domain_client.sports.odds_client.UnifiedCloudConfig") as mock_cfg,
+        patch("unified_domain_client.sports.odds_client.StandardizedDomainCloudService"),
+    ):
         mock_cfg.return_value.gcp_project_id = "test-project"
         client = SportsOddsDomainClient(project_id="test-project", gcs_bucket="sports-bucket")
 
@@ -194,8 +202,10 @@ def test_sports_tick_data_read_ticks_returns_empty_on_error():
 
     from unified_domain_client.sports.tick_data_client import SportsTickDataDomainClient
 
-    with patch("unified_domain_client.sports.tick_data_client.UnifiedCloudConfig") as mock_cfg, \
-         patch("unified_domain_client.sports.tick_data_client.StandardizedDomainCloudService"):
+    with (
+        patch("unified_domain_client.sports.tick_data_client.UnifiedCloudConfig") as mock_cfg,
+        patch("unified_domain_client.sports.tick_data_client.StandardizedDomainCloudService"),
+    ):
         mock_cfg.return_value.gcp_project_id = "test-project"
         client = SportsTickDataDomainClient(project_id="test-project", gcs_bucket="sports-bucket")
 
@@ -214,8 +224,10 @@ def test_sports_mappings_read_mappings_returns_empty_on_error():
 
     from unified_domain_client.sports.mappings_client import SportsMappingsDomainClient
 
-    with patch("unified_domain_client.sports.mappings_client.UnifiedCloudConfig") as mock_cfg, \
-         patch("unified_domain_client.sports.mappings_client.StandardizedDomainCloudService"):
+    with (
+        patch("unified_domain_client.sports.mappings_client.UnifiedCloudConfig") as mock_cfg,
+        patch("unified_domain_client.sports.mappings_client.StandardizedDomainCloudService"),
+    ):
         mock_cfg.return_value.gcp_project_id = "test-project"
         client = SportsMappingsDomainClient(project_id="test-project", gcs_bucket="sports-bucket")
 
@@ -535,9 +547,11 @@ def test_sports_features_get_available_dates_returns_empty_on_error():
 
     from unified_domain_client.sports.features_client import SportsFeaturesDomainClient
 
-    with patch("unified_domain_client.sports.features_client.UnifiedCloudConfig") as mock_cfg, \
-         patch("unified_domain_client.sports.features_client.StandardizedDomainCloudService"), \
-         patch("unified_domain_client.sports.features_client.get_storage_client") as mock_storage:
+    with (
+        patch("unified_domain_client.sports.features_client.UnifiedCloudConfig") as mock_cfg,
+        patch("unified_domain_client.sports.features_client.StandardizedDomainCloudService"),
+        patch("unified_domain_client.sports.features_client.get_storage_client") as mock_storage,
+    ):
         mock_cfg.return_value.gcp_project_id = "test-project"
         mock_storage.side_effect = OSError("not found")
         client = SportsFeaturesDomainClient(project_id="test-project", gcs_bucket="sports-bucket")
@@ -553,8 +567,10 @@ def test_sports_fixtures_write_fixtures():
 
     from unified_domain_client.sports.fixtures_client import SportsFixturesDomainClient
 
-    with patch("unified_domain_client.sports.fixtures_client.UnifiedCloudConfig") as mock_cfg, \
-         patch("unified_domain_client.sports.fixtures_client.StandardizedDomainCloudService"):
+    with (
+        patch("unified_domain_client.sports.fixtures_client.UnifiedCloudConfig") as mock_cfg,
+        patch("unified_domain_client.sports.fixtures_client.StandardizedDomainCloudService"),
+    ):
         mock_cfg.return_value.gcp_project_id = "test-project"
         client = SportsFixturesDomainClient(project_id="test-project", gcs_bucket="sports-bucket")
 
@@ -574,8 +590,10 @@ def test_sports_odds_write_odds():
 
     from unified_domain_client.sports.odds_client import SportsOddsDomainClient
 
-    with patch("unified_domain_client.sports.odds_client.UnifiedCloudConfig") as mock_cfg, \
-         patch("unified_domain_client.sports.odds_client.StandardizedDomainCloudService"):
+    with (
+        patch("unified_domain_client.sports.odds_client.UnifiedCloudConfig") as mock_cfg,
+        patch("unified_domain_client.sports.odds_client.StandardizedDomainCloudService"),
+    ):
         mock_cfg.return_value.gcp_project_id = "test-project"
         client = SportsOddsDomainClient(project_id="test-project", gcs_bucket="sports-bucket")
 
@@ -595,8 +613,10 @@ def test_sports_tick_data_write_ticks():
 
     from unified_domain_client.sports.tick_data_client import SportsTickDataDomainClient
 
-    with patch("unified_domain_client.sports.tick_data_client.UnifiedCloudConfig") as mock_cfg, \
-         patch("unified_domain_client.sports.tick_data_client.StandardizedDomainCloudService"):
+    with (
+        patch("unified_domain_client.sports.tick_data_client.UnifiedCloudConfig") as mock_cfg,
+        patch("unified_domain_client.sports.tick_data_client.StandardizedDomainCloudService"),
+    ):
         mock_cfg.return_value.gcp_project_id = "test-project"
         client = SportsTickDataDomainClient(project_id="test-project", gcs_bucket="sports-bucket")
 
@@ -616,8 +636,10 @@ def test_sports_mappings_write_mappings():
 
     from unified_domain_client.sports.mappings_client import SportsMappingsDomainClient
 
-    with patch("unified_domain_client.sports.mappings_client.UnifiedCloudConfig") as mock_cfg, \
-         patch("unified_domain_client.sports.mappings_client.StandardizedDomainCloudService"):
+    with (
+        patch("unified_domain_client.sports.mappings_client.UnifiedCloudConfig") as mock_cfg,
+        patch("unified_domain_client.sports.mappings_client.StandardizedDomainCloudService"),
+    ):
         mock_cfg.return_value.gcp_project_id = "test-project"
         client = SportsMappingsDomainClient(project_id="test-project", gcs_bucket="sports-bucket")
 
@@ -635,8 +657,10 @@ def test_sports_mappings_has_cloud_service():
 
     from unified_domain_client.sports.mappings_client import SportsMappingsDomainClient
 
-    with patch("unified_domain_client.sports.mappings_client.UnifiedCloudConfig") as mock_cfg, \
-         patch("unified_domain_client.sports.mappings_client.StandardizedDomainCloudService"):
+    with (
+        patch("unified_domain_client.sports.mappings_client.UnifiedCloudConfig") as mock_cfg,
+        patch("unified_domain_client.sports.mappings_client.StandardizedDomainCloudService"),
+    ):
         mock_cfg.return_value.gcp_project_id = "test-project"
         client = SportsMappingsDomainClient(project_id="test-project", gcs_bucket="sports-bucket")
         assert hasattr(client, "cloud_service")

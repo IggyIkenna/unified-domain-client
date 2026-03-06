@@ -19,7 +19,7 @@ from datetime import UTC, datetime
 import pandas as pd
 from unified_config_interface import UnifiedCloudConfig
 
-from unified_domain_client.standardized_service import (
+from .standardized_service import (
     StandardizedDomainCloudService,
 )
 

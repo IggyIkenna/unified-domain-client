@@ -77,7 +77,7 @@ class InstrumentsDomainClient:
         """Load instruments by venue and apply date-availability filter."""
         instruments_df = self._load_instruments_by_venue(date_str, venues_to_load)
         if instruments_df.empty:
-            bucket = self._bucket if self.cloud_target else "unknown"
+            bucket = self._bucket or "unknown"
             logger.error(
                 "No instrument definitions found for %s. Expected: gs://%s/instrument_availability/by_date/day=%s/venue=<VENUE>/instruments.parquet",
                 date_str,
@@ -111,8 +111,13 @@ class InstrumentsDomainClient:
                 return pd.DataFrame()
             venue_filter = venue if not venues_to_load else None
             return self._apply_filters(
-                instruments_df, venue_filter, instrument_type, base_currency, quote_currency,
-                symbol_pattern, instrument_ids,
+                instruments_df,
+                venue_filter,
+                instrument_type,
+                base_currency,
+                quote_currency,
+                symbol_pattern,
+                instrument_ids,
             )
         except (ConnectionError, TimeoutError, OSError, ValueError) as e:
             logger.error("Failed to load instruments for %s: %s", date_str, e)
@@ -120,7 +125,7 @@ class InstrumentsDomainClient:
 
     def _load_instruments_by_venue(self, date_str: str, venues: list[str] | None = None) -> pd.DataFrame:
         try:
-            client = get_storage_client(project_id=self._project_id)
+            client = get_storage_client()
             bucket = client.bucket(self._bucket)
 
             base_prefix = f"instrument_availability/by_date/day={date_str}/"
@@ -129,7 +134,9 @@ class InstrumentsDomainClient:
                 venue_folders: list[str] = [f"{base_prefix}venue={v}/" for v in venues]
             else:
                 # GCS client list_blobs() returns untyped object; cast to Iterable to allow iteration.
-                iterator: Iterable[object] = cast(Iterable[object], bucket.list_blobs(prefix=base_prefix, delimiter="/"))
+                iterator: Iterable[object] = cast(
+                    Iterable[object], bucket.list_blobs(prefix=base_prefix, delimiter="/")
+                )
                 list(iterator)
                 raw_prefixes: list[str] | None = cast(list[str] | None, getattr(iterator, "prefixes", None))
                 prefixes: list[str] = list(raw_prefixes) if raw_prefixes is not None else []
@@ -227,11 +234,7 @@ class InstrumentsDomainClient:
             except re.error as e:
                 logger.warning("Invalid regex pattern '%s': %s", symbol_pattern, e)
         if instrument_ids:
-            ids = (
-                [i.strip() for i in instrument_ids.split(",")]
-                if isinstance(instrument_ids, str)
-                else instrument_ids
-            )
+            ids = [i.strip() for i in instrument_ids.split(",")] if isinstance(instrument_ids, str) else instrument_ids
             df = df.loc[df["instrument_key"].isin(ids)]
         return df
 

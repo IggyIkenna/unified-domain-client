@@ -4,7 +4,7 @@ Cloud-agnostic: passes bucket: str directly to StandardizedDomainCloudService.
 project_id and bigquery_dataset params kept for backward compatibility but ignored.
 """
 
-from unified_domain_client.standardized_service import StandardizedDomainCloudService
+from .standardized_service import StandardizedDomainCloudService
 
 
 def create_backtesting_cloud_service(
