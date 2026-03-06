@@ -6,9 +6,10 @@ from __future__ import annotations
 # Storage client list_blobs / pandas Series.to_dict() have incomplete stubs.
 import logging
 import re
+from collections.abc import Iterable
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import UTC, datetime, timedelta
-from typing import Iterable, TypedDict, cast
+from typing import TypedDict, cast
 
 import pandas as pd
 from unified_cloud_interface import get_storage_client

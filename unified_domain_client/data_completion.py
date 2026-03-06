@@ -4,8 +4,9 @@ Tier 2 compliance: Only imports from unified_cloud_interface and local modules.
 """
 
 import logging
+from collections.abc import Iterable
 from datetime import datetime, timedelta
-from typing import Iterable, cast
+from typing import cast
 
 from unified_cloud_interface import get_storage_client
 
