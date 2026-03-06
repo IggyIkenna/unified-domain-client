@@ -37,12 +37,12 @@ steps:
         echo "=== STEP 5.10: No direct cloud SDK imports ==="
         VIOLATIONS=$(rg 'from google\.cloud import|^import boto3\b|^from boto3 import|^from botocore import' \
           --type py --glob '!.venv*' --glob '!**/providers/**' --glob '!**/cache.py' \
-          . 2>/dev/null || true)
+          . 2>/dev/null || true)  # || true: cleanup step, failure is intentional (rg exits 1 when no matches found)
         [ -n "$VIOLATIONS" ] && { echo "STEP 5.10 FAILED — direct cloud SDK imports:"; echo "$VIOLATIONS"; exit 1; }
         echo "STEP 5.10 passed"
         echo "=== STEP 5.11: No UTL protocol-leaking symbols ==="
         UTL=$(rg 'from unified_trading_library import.*(CloudTarget|StandardizedDomainCloudService|upload_to_gcs_batch)' \
-          --type py --glob '!.venv*' --glob '!tests/**' . 2>/dev/null || true)
+          --type py --glob '!.venv*' --glob '!tests/**' . 2>/dev/null || true)  # || true: cleanup step, failure is intentional (rg exits 1 when no matches found)
         [ -n "$UTL" ] && { echo "STEP 5.11 FAILED — UTL protocol-leaking symbols:"; echo "$UTL"; exit 1; }
         echo "STEP 5.11 passed"
     waitFor: ["lint"]
@@ -89,7 +89,7 @@ steps:
         WHEEL_FILE=$$(ls dist/*.whl)
         VERSION=$$(echo $$WHEEL_FILE | sed -n 's/.*-\([0-9.]*\)-.*/\1/p')
         echo "{\"version\":\"$$VERSION\",\"commit\":\"$COMMIT_SHA\"}" > /tmp/build-metadata.json
-        gsutil cp /tmp/build-metadata.json gs://$PROJECT_ID-build-metadata/unified-domain-client/versions/$$VERSION.json || true
+        gsutil cp /tmp/build-metadata.json gs://$PROJECT_ID-build-metadata/unified-domain-client/versions/$$VERSION.json || true  # || true: cleanup step, failure is intentional (metadata storage non-blocking)
     waitFor: ["build-wheel"]
 
   - name: "gcr.io/google.com/cloudsdktool/cloud-sdk:alpine"
