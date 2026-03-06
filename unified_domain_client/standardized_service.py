@@ -91,4 +91,22 @@ def create_domain_cloud_service(
     return StandardizedDomainCloudService(domain=domain, cloud_target=cloud_target)
 
 
+def make_domain_service(domain: str, bucket: str, project_id: str = "", dataset: str = "") -> StandardizedDomainCloudService:
+    """Factory that hides CloudTarget construction from service code.
+
+    Services should use this instead of constructing CloudTarget directly.
+
+    Args:
+        domain: Domain name (e.g. "market_data", "strategy")
+        bucket: GCS bucket name
+        project_id: GCP project ID (optional, default "")
+        dataset: BigQuery dataset name (optional, default "")
+
+    Returns:
+        StandardizedDomainCloudService ready for upload/download
+    """
+    target = CloudTarget(gcs_bucket=bucket, project_id=project_id, bigquery_dataset=dataset)
+    return StandardizedDomainCloudService(domain=domain, cloud_target=target)
+
+
 __all__ = ["StandardizedDomainCloudService", "create_domain_cloud_service"]
