@@ -18,6 +18,9 @@ path = "../unified-config-interface"
 [tool.uv.sources.unified-events-interface]
 path = "../unified-events-interface"
 
+[tool.uv.sources.unified-internal-contracts]
+path = "../unified-internal-contracts"
+
 [tool.uv.sources.unified-trading-library]
 path = "../unified-trading-library"
 
@@ -99,6 +102,7 @@ dependencies = [
     "unified-cloud-interface[gcp]>=0.1.0",
     "unified-config-interface>=0.3.0",
     "unified-events-interface>=0.1.0",
+    "unified-internal-contracts>=0.1.0",
     "unified-trading-library>=0.4.0,<1.0.0",
 ]
 
