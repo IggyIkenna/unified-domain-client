@@ -12,6 +12,6 @@ enum-typed validation alongside InstrumentKey.
 """
 
 from unified_config_interface import InstrumentType, Venue
-from unified_internal_contracts.reference.instrument_key import InstrumentKey
+from unified_internal_contracts import InstrumentKey
 
 __all__ = ["InstrumentKey", "InstrumentType", "Venue"]
