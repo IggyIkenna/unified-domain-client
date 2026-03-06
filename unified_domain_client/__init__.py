@@ -146,6 +146,10 @@ def __getattr__(name: str) -> object:
         from unified_domain_client.standardized_service import StandardizedDomainCloudService
 
         return StandardizedDomainCloudService
+    if name == "make_domain_service":
+        from unified_domain_client.standardized_service import make_domain_service
+
+        return make_domain_service
     if name.startswith("create_") and "cloud_service" in name:
         from unified_domain_client.factories import (
             create_backtesting_cloud_service,
@@ -216,6 +220,7 @@ def __getattr__(name: str) -> object:
 __all__ = [
     "DateFilterService",
     "StandardizedDomainCloudService",
+    "make_domain_service",
     "DomainValidationService",
     "DomainValidationConfig",
     "TimestampDateValidator",
