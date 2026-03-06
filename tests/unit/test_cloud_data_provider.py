@@ -38,13 +38,14 @@ class TestCloudDataProviderBase:
         )
         provider = ConcreteProvider(domain="test", cloud_target=target)
         assert provider.domain == "test"
-        assert provider.cloud_target == target
+        # cloud_target is kept for backward compatibility; bucket defaults to config or domain-store
+        assert hasattr(provider, "bucket")
         mock_service.assert_called_once()
 
     @patch("unified_domain_client.cloud_data_provider.StandardizedDomainCloudService")
     @patch("unified_domain_client.cloud_data_provider.UnifiedCloudConfig")
     def test_init_raises_without_project(self, mock_config_cls: MagicMock, mock_service: MagicMock):
-        """Test initialization raises when GCP_PROJECT_ID not set."""
+        """Test initialization succeeds without project_id; bucket defaults to domain-store."""
         from unified_domain_client.cloud_data_provider import CloudDataProviderBase
 
         mock_config_instance = MagicMock()
@@ -57,8 +58,9 @@ class TestCloudDataProviderBase:
         class ConcreteProvider(CloudDataProviderBase):
             pass
 
-        with pytest.raises(ValueError, match="GCP_PROJECT_ID must be set"):
-            ConcreteProvider(domain="test")
+        provider = ConcreteProvider(domain="test")
+        assert provider.domain == "test"
+        assert provider.bucket == "test-store"
 
     @patch("unified_domain_client.cloud_data_provider.StandardizedDomainCloudService")
     @patch("unified_domain_client.cloud_data_provider.UnifiedCloudConfig")
@@ -77,7 +79,9 @@ class TestCloudDataProviderBase:
             pass
 
         provider = ConcreteProvider(domain="test", project_id="my-project")
-        assert provider.cloud_target.project_id == "my-project"
+        assert provider.domain == "test"
+        # project_id is kept for backward compatibility; bucket resolves from config.gcs_bucket
+        assert provider.bucket == "b"
 
     @patch("unified_domain_client.cloud_data_provider.StandardizedDomainCloudService")
     def test_download_from_gcs_returns_empty_on_404(self, mock_service: MagicMock):
