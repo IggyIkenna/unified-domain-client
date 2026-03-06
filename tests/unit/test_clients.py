@@ -142,7 +142,9 @@ class TestExecutionDomainClient:
     @patch("unified_domain_client.clients.execution.get_storage_client")
     @patch("unified_domain_client.clients.execution.StandardizedDomainCloudService")
     @patch("unified_domain_client.clients.execution.UnifiedCloudConfig")
-    def test_get_fills_returns_dataframe_on_error(self, mock_config: MagicMock, mock_svc: MagicMock, mock_storage: MagicMock):
+    def test_get_fills_returns_dataframe_on_error(
+        self, mock_config: MagicMock, mock_svc: MagicMock, mock_storage: MagicMock
+    ):
         """Test get_fills returns empty DataFrame when download fails."""
         from unified_domain_client.clients.execution import ExecutionDomainClient
 
@@ -159,7 +161,9 @@ class TestExecutionDomainClient:
     @patch("unified_domain_client.clients.execution.get_storage_client")
     @patch("unified_domain_client.clients.execution.StandardizedDomainCloudService")
     @patch("unified_domain_client.clients.execution.UnifiedCloudConfig")
-    def test_get_orders_returns_dataframe_on_error(self, mock_config: MagicMock, mock_svc: MagicMock, mock_storage: MagicMock):
+    def test_get_orders_returns_dataframe_on_error(
+        self, mock_config: MagicMock, mock_svc: MagicMock, mock_storage: MagicMock
+    ):
         """Test get_orders returns empty DataFrame when download fails."""
         from unified_domain_client.clients.execution import ExecutionDomainClient
 
@@ -289,7 +293,9 @@ class TestMLDomainClients:
     @patch("unified_domain_client.clients.ml.get_storage_client")
     @patch("unified_domain_client.clients.ml.StandardizedDomainCloudService")
     @patch("unified_domain_client.clients.ml.UnifiedCloudConfig")
-    def test_ml_predictions_get_predictions_returns_empty_on_error(self, mock_config: MagicMock, mock_svc: MagicMock, mock_storage: MagicMock):
+    def test_ml_predictions_get_predictions_returns_empty_on_error(
+        self, mock_config: MagicMock, mock_svc: MagicMock, mock_storage: MagicMock
+    ):
         """Test get_predictions returns empty DataFrame on error."""
         from unified_domain_client.clients.ml import MLPredictionsDomainClient
 
@@ -449,7 +455,9 @@ class TestFeaturesDomainClientMethods:
     @patch("unified_domain_client.clients.features.get_storage_client")
     @patch("unified_domain_client.clients.features.StandardizedDomainCloudService")
     @patch("unified_domain_client.clients.features.UnifiedCloudConfig")
-    def test_delta_one_get_available_dates_returns_empty_on_error(self, mock_config: MagicMock, mock_svc: MagicMock, mock_storage: MagicMock):
+    def test_delta_one_get_available_dates_returns_empty_on_error(
+        self, mock_config: MagicMock, mock_svc: MagicMock, mock_storage: MagicMock
+    ):
         """Test get_available_dates returns empty list on error."""
         from unified_domain_client.clients.features import FeaturesDeltaOneDomainClient
 
@@ -504,7 +512,9 @@ class TestFeaturesDomainClientMethods:
     @patch("unified_domain_client.clients.features.get_storage_client")
     @patch("unified_domain_client.clients.features.StandardizedDomainCloudService")
     @patch("unified_domain_client.clients.features.UnifiedCloudConfig")
-    def test_calendar_get_available_dates_returns_empty_on_error(self, mock_config: MagicMock, mock_svc: MagicMock, mock_storage: MagicMock):
+    def test_calendar_get_available_dates_returns_empty_on_error(
+        self, mock_config: MagicMock, mock_svc: MagicMock, mock_storage: MagicMock
+    ):
         """Test FeaturesCalendarDomainClient.get_available_dates returns empty on error."""
         from unified_domain_client.clients.features import FeaturesCalendarDomainClient
 
@@ -517,7 +527,9 @@ class TestFeaturesDomainClientMethods:
     @patch("unified_domain_client.clients.features.get_storage_client")
     @patch("unified_domain_client.clients.features.StandardizedDomainCloudService")
     @patch("unified_domain_client.clients.features.UnifiedCloudConfig")
-    def test_onchain_get_available_dates_returns_empty_on_error(self, mock_config: MagicMock, mock_svc: MagicMock, mock_storage: MagicMock):
+    def test_onchain_get_available_dates_returns_empty_on_error(
+        self, mock_config: MagicMock, mock_svc: MagicMock, mock_storage: MagicMock
+    ):
         """Test FeaturesOnchainDomainClient.get_available_dates returns empty on error."""
         from unified_domain_client.clients.features import FeaturesOnchainDomainClient
 
@@ -530,7 +542,9 @@ class TestFeaturesDomainClientMethods:
     @patch("unified_domain_client.clients.features.get_storage_client")
     @patch("unified_domain_client.clients.features.StandardizedDomainCloudService")
     @patch("unified_domain_client.clients.features.UnifiedCloudConfig")
-    def test_volatility_get_available_dates_returns_empty_on_error(self, mock_config: MagicMock, mock_svc: MagicMock, mock_storage: MagicMock):
+    def test_volatility_get_available_dates_returns_empty_on_error(
+        self, mock_config: MagicMock, mock_svc: MagicMock, mock_storage: MagicMock
+    ):
         """Test FeaturesVolatilityDomainClient.get_available_dates returns empty on error."""
         from unified_domain_client.clients.features import FeaturesVolatilityDomainClient
 
@@ -590,7 +604,9 @@ class TestStrategyDomainClientMethods:
     @patch("unified_domain_client.clients.strategy.get_storage_client")
     @patch("unified_domain_client.clients.strategy.StandardizedDomainCloudService")
     @patch("unified_domain_client.clients.strategy.UnifiedCloudConfig")
-    def test_list_strategies_returns_empty_on_error(self, mock_config: MagicMock, mock_svc: MagicMock, mock_storage: MagicMock):
+    def test_list_strategies_returns_empty_on_error(
+        self, mock_config: MagicMock, mock_svc: MagicMock, mock_storage: MagicMock
+    ):
         """Test list_strategies returns empty list on error."""
         from unified_domain_client.clients.strategy import StrategyDomainClient
 
@@ -635,7 +651,9 @@ class TestMLDomainClientMethods:
     @patch("unified_domain_client.clients.ml.get_storage_client")
     @patch("unified_domain_client.clients.ml.StandardizedDomainCloudService")
     @patch("unified_domain_client.clients.ml.UnifiedCloudConfig")
-    def test_ml_models_list_models_returns_empty_on_error(self, mock_config: MagicMock, mock_svc: MagicMock, mock_storage: MagicMock):
+    def test_ml_models_list_models_returns_empty_on_error(
+        self, mock_config: MagicMock, mock_svc: MagicMock, mock_storage: MagicMock
+    ):
         """Test list_models returns empty list on error."""
         from unified_domain_client.clients.ml import MLModelsDomainClient
 
@@ -648,7 +666,9 @@ class TestMLDomainClientMethods:
     @patch("unified_domain_client.clients.ml.get_storage_client")
     @patch("unified_domain_client.clients.ml.StandardizedDomainCloudService")
     @patch("unified_domain_client.clients.ml.UnifiedCloudConfig")
-    def test_ml_predictions_get_available_dates_returns_empty_on_error(self, mock_config: MagicMock, mock_svc: MagicMock, mock_storage: MagicMock):
+    def test_ml_predictions_get_available_dates_returns_empty_on_error(
+        self, mock_config: MagicMock, mock_svc: MagicMock, mock_storage: MagicMock
+    ):
         """Test get_available_dates returns empty list on error."""
         from unified_domain_client.clients.ml import MLPredictionsDomainClient
 
@@ -665,7 +685,9 @@ class TestPnLDomainClientMethods:
     @patch("unified_domain_client.clients.pnl.get_storage_client")
     @patch("unified_domain_client.clients.pnl.StandardizedDomainCloudService")
     @patch("unified_domain_client.clients.pnl.UnifiedCloudConfig")
-    def test_get_available_strategies_returns_empty_on_error(self, mock_config: MagicMock, mock_svc: MagicMock, mock_storage: MagicMock):
+    def test_get_available_strategies_returns_empty_on_error(
+        self, mock_config: MagicMock, mock_svc: MagicMock, mock_storage: MagicMock
+    ):
         """Test get_available_strategies returns empty list on error."""
         from unified_domain_client.clients.pnl import PnLDomainClient
 
@@ -682,7 +704,9 @@ class TestPositionsAndRiskDomainClients:
     @patch("unified_domain_client.clients.positions.get_storage_client")
     @patch("unified_domain_client.clients.positions.StandardizedDomainCloudService")
     @patch("unified_domain_client.clients.positions.UnifiedCloudConfig")
-    def test_positions_get_returns_empty_on_error(self, mock_config: MagicMock, mock_svc: MagicMock, mock_storage: MagicMock):
+    def test_positions_get_returns_empty_on_error(
+        self, mock_config: MagicMock, mock_svc: MagicMock, mock_storage: MagicMock
+    ):
         """Test PositionsDomainClient.get_positions returns empty on error."""
         from unified_domain_client.clients.positions import PositionsDomainClient
 
@@ -697,7 +721,9 @@ class TestPositionsAndRiskDomainClients:
     @patch("unified_domain_client.clients.positions.get_storage_client")
     @patch("unified_domain_client.clients.positions.StandardizedDomainCloudService")
     @patch("unified_domain_client.clients.positions.UnifiedCloudConfig")
-    def test_positions_get_available_accounts_returns_empty_on_error(self, mock_config: MagicMock, mock_svc: MagicMock, mock_storage: MagicMock):
+    def test_positions_get_available_accounts_returns_empty_on_error(
+        self, mock_config: MagicMock, mock_svc: MagicMock, mock_storage: MagicMock
+    ):
         """Test PositionsDomainClient.get_available_accounts returns empty on error."""
         from unified_domain_client.clients.positions import PositionsDomainClient
 
@@ -710,7 +736,9 @@ class TestPositionsAndRiskDomainClients:
     @patch("unified_domain_client.clients.risk.get_storage_client")
     @patch("unified_domain_client.clients.risk.StandardizedDomainCloudService")
     @patch("unified_domain_client.clients.risk.UnifiedCloudConfig")
-    def test_risk_get_metrics_returns_empty_on_error(self, mock_config: MagicMock, mock_svc: MagicMock, mock_storage: MagicMock):
+    def test_risk_get_metrics_returns_empty_on_error(
+        self, mock_config: MagicMock, mock_svc: MagicMock, mock_storage: MagicMock
+    ):
         """Test RiskDomainClient.get_risk_metrics returns empty on error."""
         from unified_domain_client.clients.risk import RiskDomainClient
 
@@ -725,7 +753,9 @@ class TestPositionsAndRiskDomainClients:
     @patch("unified_domain_client.clients.risk.get_storage_client")
     @patch("unified_domain_client.clients.risk.StandardizedDomainCloudService")
     @patch("unified_domain_client.clients.risk.UnifiedCloudConfig")
-    def test_risk_get_available_risk_types_returns_empty_on_error(self, mock_config: MagicMock, mock_svc: MagicMock, mock_storage: MagicMock):
+    def test_risk_get_available_risk_types_returns_empty_on_error(
+        self, mock_config: MagicMock, mock_svc: MagicMock, mock_storage: MagicMock
+    ):
         """Test RiskDomainClient.get_available_risk_types returns empty on error."""
         from unified_domain_client.clients.risk import RiskDomainClient
 

@@ -7,8 +7,8 @@ import logging
 import pandas as pd
 from unified_config_interface import UnifiedCloudConfig
 
-from unified_domain_client.paths import build_bucket, build_path
-from unified_domain_client.standardized_service import StandardizedDomainCloudService
+from ..paths import build_bucket, build_path
+from ..standardized_service import StandardizedDomainCloudService
 
 logger = logging.getLogger(__name__)
 

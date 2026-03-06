@@ -2,9 +2,14 @@
 
 Tier 2 compliance: Local implementation, no unified-trading-library dependency.
 """
-# pyright: reportAny=false, reportUnnecessaryIsInstance=false
+# pyright: reportAny=false, reportUnnecessaryIsInstance=false, reportReturnType=false
+# pyright: reportUnknownVariableType=false, reportUnknownMemberType=false, reportUnknownArgumentType=false
+# pyright: reportInvalidTypeArguments=false, reportAttributeAccessIssue=false
 # Reason: df: object accepts DataFrame | polars.DataFrame; getattr/callable for to_pandas() — polymorphic.
 # reportUnnecessaryIsInstance: expected_date union narrowing in nested elifs.
+# reportUnknown*: pandas Series operations on object-typed columns have incomplete stubs.
+# reportReturnType/reportInvalidTypeArguments: pd.to_datetime returns Series[Timestamp] but
+# Series[T] is invariant; suppressed since the runtime type is correct.
 
 import logging
 from dataclasses import dataclass
@@ -82,7 +87,9 @@ class TimestampDateValidator:
         errors: list[str] = []
         if not valid:
             errors.append(f"Only {pct:.1f}% of timestamps align with {expected_str}. Found dates: {actual_dates}")
-        return TimestampAlignmentResult(valid=valid, alignment_percentage=pct, errors=errors, actual_dates_found=actual_dates)
+        return TimestampAlignmentResult(
+            valid=valid, alignment_percentage=pct, errors=errors, actual_dates_found=actual_dates
+        )
 
 
 def validate_timestamp_date_alignment(

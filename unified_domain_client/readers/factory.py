@@ -4,11 +4,11 @@ from __future__ import annotations
 
 from unified_cloud_interface import StorageClient
 
-from unified_domain_client.paths import ReadMode
-from unified_domain_client.readers.athena import AthenaReader
-from unified_domain_client.readers.base import BaseDataReader
-from unified_domain_client.readers.bq_external import BigQueryExternalReader
-from unified_domain_client.readers.direct import DirectReader
+from ..paths import ReadMode
+from .athena import AthenaReader
+from .base import BaseDataReader
+from .bq_external import BigQueryExternalReader
+from .direct import DirectReader
 
 
 def get_reader(
@@ -44,5 +44,7 @@ def get_reader(
         if not glue_database_raw:
             raise ValueError("glue_database is required for ReadMode.ATHENA")
         region_raw = kwargs.get("region", "us-east-1")
-        return AthenaReader(account_id=str(account_id_raw), glue_database=str(glue_database_raw), region=str(region_raw))
+        return AthenaReader(
+            account_id=str(account_id_raw), glue_database=str(glue_database_raw), region=str(region_raw)
+        )
     raise ValueError(f"Unknown ReadMode: {mode}")

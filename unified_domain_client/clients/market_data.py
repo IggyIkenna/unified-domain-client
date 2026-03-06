@@ -11,9 +11,9 @@ from typing import NotRequired, TypedDict, Unpack
 import pandas as pd
 from unified_config_interface import UnifiedCloudConfig
 
-from unified_domain_client.clients.base import BaseDataClient
-from unified_domain_client.paths import build_bucket, build_path
-from unified_domain_client.standardized_service import StandardizedDomainCloudService
+from ..paths import build_bucket, build_path
+from ..standardized_service import StandardizedDomainCloudService
+from .base import BaseDataClient
 
 logger = logging.getLogger(__name__)
 
@@ -218,8 +218,17 @@ class MarketTickDataDomainClient:
             base_path = f"{base_path}/hour={hour:02d}"
 
         needs_venue = type_folder in {
-            "etf", "equities", "futures_chain", "options_chain", "indices",
-            "pool", "lst", "a_token", "debt_token", "perpetuals", "spot",
+            "etf",
+            "equities",
+            "futures_chain",
+            "options_chain",
+            "indices",
+            "pool",
+            "lst",
+            "a_token",
+            "debt_token",
+            "perpetuals",
+            "spot",
         }
         extracted_venue = venue
         if not extracted_venue and needs_venue:
@@ -244,9 +253,7 @@ class MarketTickDataDomainClient:
     ) -> pd.DataFrame:
         """Get raw tick data for a specific date and instrument."""
         date_str = date.strftime("%Y-%m-%d")
-        gcs_path = self._build_tick_gcs_path(
-            date_str, instrument_id, data_type, hour, venue, instrument_type_folder
-        )
+        gcs_path = self._build_tick_gcs_path(date_str, instrument_id, data_type, hour, venue, instrument_type_folder)
         try:
             result = self.cloud_service.download_from_gcs(gcs_path=gcs_path, format="parquet")
             return result if isinstance(result, pd.DataFrame) else pd.DataFrame()

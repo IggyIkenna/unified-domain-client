@@ -8,7 +8,7 @@ from abc import ABC, abstractmethod
 import pandas as pd
 from unified_cloud_interface import upload_to_storage
 
-from unified_domain_client.paths import PathRegistry
+from ..paths import PathRegistry
 
 logger = logging.getLogger(__name__)
 

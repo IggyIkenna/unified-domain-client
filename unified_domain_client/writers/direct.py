@@ -9,7 +9,7 @@ import logging
 import pandas as pd
 from unified_cloud_interface import StorageClient
 
-from unified_domain_client.writers.base import BaseDataWriter
+from .base import BaseDataWriter
 
 logger = logging.getLogger(__name__)
 
