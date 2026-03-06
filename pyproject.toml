@@ -78,6 +78,11 @@ reportGeneralTypeIssues = "error"
 reportMissingTypeStubs = false
 extraPaths = ["../unified-config-interface", "../unified-internal-contracts", "../unified-events-interface", "../unified-cloud-interface", "../unified-trading-library"]
 
+[tool.coverage.run]
+parallel = true
+concurrency = ["multiprocessing", "thread"]
+source = ["unified_domain_client"]
+
 [tool.coverage.report]
 fail_under = 70
 
