@@ -4,34 +4,54 @@
 
 steps:
   # Step 0: Ensure unified-libraries repo exists
-  - name: 'gcr.io/cloud-builders/gcloud'
-    id: 'ensure-repo'
-    entrypoint: 'bash'
+  - name: "gcr.io/cloud-builders/gcloud"
+    id: "ensure-repo"
+    entrypoint: "bash"
     args:
-      - '-c'
+      - "-c"
       - |
         gcloud artifacts repositories describe unified-libraries --location=asia-northeast1 &>/dev/null || \
           gcloud artifacts repositories create unified-libraries --repository-format=python --location=asia-northeast1 --description="Unified Python libraries"
-    waitFor: ['-']
+    waitFor: ["-"]
 
-  - name: 'python:3.13-slim'
-    id: 'lint'
-    waitFor: ['ensure-repo']
-    entrypoint: 'bash'
+  - name: "python:3.13-slim"
+    id: "lint"
+    waitFor: ["ensure-repo"]
+    entrypoint: "bash"
     args:
-      - '-c'
+      - "-c"
       - |
         pip install uv
         uv pip install ruff==0.15.0
         ruff check .
         ruff format --check .
 
-  # Step 1.5: Run tests
-  - name: 'python:3.13-slim'
-    id: 'run-tests'
-    entrypoint: 'bash'
+  # Cloud SDK isolation — STEP 5.10/5.11 (hard-fail on violations)
+  - name: "debian:bookworm-slim"
+    id: "cloud-sdk-isolation-check"
+    entrypoint: "bash"
     args:
-      - '-c'
+      - "-c"
+      - |
+        apt-get update -qq && apt-get install -y --no-install-recommends ripgrep
+        echo "=== STEP 5.10: No direct cloud SDK imports ==="
+        VIOLATIONS=$(rg 'from google\.cloud import|^import boto3\b|^from boto3 import|^from botocore import' \
+          --type py --glob '!.venv*' --glob '!**/providers/**' --glob '!**/cache.py' \
+          . 2>/dev/null || true)
+        [ -n "$VIOLATIONS" ] && { echo "STEP 5.10 FAILED — direct cloud SDK imports:"; echo "$VIOLATIONS"; exit 1; }
+        echo "STEP 5.10 passed"
+        echo "=== STEP 5.11: No UTL protocol-leaking symbols ==="
+        UTL=$(rg 'from unified_trading_library import.*(CloudTarget|StandardizedDomainCloudService|upload_to_gcs_batch)' \
+          --type py --glob '!.venv*' --glob '!tests/**' . 2>/dev/null || true)
+        [ -n "$UTL" ] && { echo "STEP 5.11 FAILED — UTL protocol-leaking symbols:"; echo "$UTL"; exit 1; }
+        echo "STEP 5.11 passed"
+    waitFor: ["lint"]
+  # Step 1.5: Run tests
+  - name: "python:3.13-slim"
+    id: "run-tests"
+    entrypoint: "bash"
+    args:
+      - "-c"
       - |
         set -e
         pip install uv keyrings.google-artifactregistry-auth
@@ -40,13 +60,13 @@ steps:
         extra-index-url = https://asia-northeast1-python.pkg.dev/$PROJECT_ID/unified-libraries/simple/" > /root/.config/pip/pip.conf
         uv pip install --system -e ".[dev]"
         python -m pytest tests/ -v --tb=short
-    waitFor: ['lint']
+    waitFor: ["lint"]
 
-  - name: 'python:3.13-slim'
-    id: 'build-wheel'
-    entrypoint: 'bash'
+  - name: "python:3.13-slim"
+    id: "build-wheel"
+    entrypoint: "bash"
     args:
-      - '-c'
+      - "-c"
       - |
         set -e
         pip install uv build keyring keyrings.google-artifactregistry-auth
@@ -56,13 +76,13 @@ steps:
         uv pip install --system -e ".[dev]"
         python -m build --wheel --outdir dist/
         ls -lh dist/
-    waitFor: ['run-tests']
+    waitFor: ["run-tests"]
 
-  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:alpine'
-    id: 'store-metadata'
-    entrypoint: 'bash'
+  - name: "gcr.io/google.com/cloudsdktool/cloud-sdk:alpine"
+    id: "store-metadata"
+    entrypoint: "bash"
     args:
-      - '-c'
+      - "-c"
       - |
         set -e
         apk add --no-cache python3
@@ -70,13 +90,13 @@ steps:
         VERSION=$$(echo $$WHEEL_FILE | sed -n 's/.*-\([0-9.]*\)-.*/\1/p')
         echo "{\"version\":\"$$VERSION\",\"commit\":\"$COMMIT_SHA\"}" > /tmp/build-metadata.json
         gsutil cp /tmp/build-metadata.json gs://$PROJECT_ID-build-metadata/unified-domain-client/versions/$$VERSION.json || true
-    waitFor: ['build-wheel']
+    waitFor: ["build-wheel"]
 
-  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:alpine'
-    id: 'publish-python'
-    entrypoint: 'bash'
+  - name: "gcr.io/google.com/cloudsdktool/cloud-sdk:alpine"
+    id: "publish-python"
+    entrypoint: "bash"
     args:
-      - '-c'
+      - "-c"
       - |
         set -e
         apk add --no-cache python3 py3-pip jq
@@ -105,10 +125,10 @@ steps:
 
         python3 -m twine upload --repository-url https://asia-northeast1-python.pkg.dev/$PROJECT_ID/unified-libraries/ --non-interactive dist/*.whl
         echo "✓ Published unified-domain-client $$VERSION"
-    waitFor: ['store-metadata']
+    waitFor: ["store-metadata"]
 
 options:
-  machineType: 'E2_HIGHCPU_8'
+  machineType: "E2_HIGHCPU_8"
   logging: CLOUD_LOGGING_ONLY
 
-timeout: '600s'
+timeout: "600s"
