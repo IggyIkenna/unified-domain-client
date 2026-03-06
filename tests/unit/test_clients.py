@@ -8,30 +8,30 @@ import pandas as pd
 class TestInstrumentsDomainClient:
     """Test InstrumentsDomainClient."""
 
-    @patch("unified_domain_client.clients.unified_config")
-    @patch("unified_domain_client.clients.StandardizedDomainCloudService")
+    @patch("unified_domain_client.clients.instruments.UnifiedCloudConfig")
+    @patch("unified_domain_client.clients.instruments.StandardizedDomainCloudService")
     def test_get_trading_parameters_returns_none_when_not_found(self, mock_service: MagicMock, mock_config: MagicMock):
         """Test get_trading_parameters returns None when instrument not found."""
         from unified_domain_client.clients import InstrumentsDomainClient
 
-        mock_config.gcp_project_id = "p"
-        mock_config.instruments_gcs_bucket = "b"
-        mock_config.instruments_bigquery_dataset = "d"
+        mock_config.return_value.gcp_project_id = "p"
+        mock_config.return_value.instruments_gcs_bucket = "b"
+        mock_config.return_value.instruments_bigquery_dataset = "d"
         client = InstrumentsDomainClient(project_id="p", gcs_bucket="b", bigquery_dataset="d")
         client.get_instruments_for_date = MagicMock(return_value=pd.DataFrame())
 
         result = client.get_trading_parameters("2024-01-15", "inst-1")
         assert result is None
 
-    @patch("unified_domain_client.clients.unified_config")
-    @patch("unified_domain_client.clients.StandardizedDomainCloudService")
+    @patch("unified_domain_client.clients.instruments.UnifiedCloudConfig")
+    @patch("unified_domain_client.clients.instruments.StandardizedDomainCloudService")
     def test_get_trading_parameters_returns_params_when_found(self, mock_service: MagicMock, mock_config: MagicMock):
         """Test get_trading_parameters returns dict when instrument found."""
         from unified_domain_client.clients import InstrumentsDomainClient
 
-        mock_config.gcp_project_id = "p"
-        mock_config.instruments_gcs_bucket = "b"
-        mock_config.instruments_bigquery_dataset = "d"
+        mock_config.return_value.gcp_project_id = "p"
+        mock_config.return_value.instruments_gcs_bucket = "b"
+        mock_config.return_value.instruments_bigquery_dataset = "d"
         client = InstrumentsDomainClient(project_id="p", gcs_bucket="b", bigquery_dataset="d")
 
         instrument_df = pd.DataFrame(
@@ -57,15 +57,15 @@ class TestInstrumentsDomainClient:
         assert "trades" in data_types
         assert "book_snapshot_5" in data_types
 
-    @patch("unified_domain_client.clients.unified_config")
-    @patch("unified_domain_client.clients.StandardizedDomainCloudService")
+    @patch("unified_domain_client.clients.instruments.UnifiedCloudConfig")
+    @patch("unified_domain_client.clients.instruments.StandardizedDomainCloudService")
     def test_get_summary_stats_empty(self, mock_service: MagicMock, mock_config: MagicMock):
         """Test get_summary_stats returns error dict when no instruments."""
         from unified_domain_client.clients import InstrumentsDomainClient
 
-        mock_config.gcp_project_id = "p"
-        mock_config.instruments_gcs_bucket = "b"
-        mock_config.instruments_bigquery_dataset = "d"
+        mock_config.return_value.gcp_project_id = "p"
+        mock_config.return_value.instruments_gcs_bucket = "b"
+        mock_config.return_value.instruments_bigquery_dataset = "d"
         client = InstrumentsDomainClient(project_id="p", gcs_bucket="b", bigquery_dataset="d")
         client.get_instruments_for_date = MagicMock(return_value=pd.DataFrame())
 
@@ -73,15 +73,15 @@ class TestInstrumentsDomainClient:
         assert result.get("total_instruments") == 0
         assert "error" in result
 
-    @patch("unified_domain_client.clients.unified_config")
-    @patch("unified_domain_client.clients.StandardizedDomainCloudService")
+    @patch("unified_domain_client.clients.instruments.UnifiedCloudConfig")
+    @patch("unified_domain_client.clients.instruments.StandardizedDomainCloudService")
     def test_get_summary_stats_with_data(self, mock_service: MagicMock, mock_config: MagicMock):
         """Test get_summary_stats returns stats when instruments exist."""
         from unified_domain_client.clients import InstrumentsDomainClient
 
-        mock_config.gcp_project_id = "p"
-        mock_config.instruments_gcs_bucket = "b"
-        mock_config.instruments_bigquery_dataset = "d"
+        mock_config.return_value.gcp_project_id = "p"
+        mock_config.return_value.instruments_gcs_bucket = "b"
+        mock_config.return_value.instruments_bigquery_dataset = "d"
         client = InstrumentsDomainClient(project_id="p", gcs_bucket="b", bigquery_dataset="d")
 
         df = pd.DataFrame(
@@ -103,15 +103,15 @@ class TestInstrumentsDomainClient:
 class TestFactoryFunctions:
     """Test factory functions."""
 
-    @patch("unified_domain_client.clients.StandardizedDomainCloudService")
-    @patch("unified_domain_client.clients.unified_config")
+    @patch("unified_domain_client.clients.instruments.StandardizedDomainCloudService")
+    @patch("unified_domain_client.clients.instruments.UnifiedCloudConfig")
     def test_create_instruments_client(self, mock_config: MagicMock, mock_standardized_service: MagicMock):
         """Test create_instruments_client returns client."""
         from unified_domain_client.clients import create_instruments_client
 
-        mock_config.gcp_project_id = "p"
-        mock_config.instruments_gcs_bucket = "b"
-        mock_config.instruments_bigquery_dataset = "d"
+        mock_config.return_value.gcp_project_id = "p"
+        mock_config.return_value.instruments_gcs_bucket = "b"
+        mock_config.return_value.instruments_bigquery_dataset = "d"
         mock_standardized_service.return_value = MagicMock()
         client = create_instruments_client(project_id="p")
         assert client is not None
