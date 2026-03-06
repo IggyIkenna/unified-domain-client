@@ -10,7 +10,8 @@ from typing import cast
 
 from unified_cloud_interface import get_storage_client
 
-from unified_domain_client.cloud_target import CloudTarget
+from unified_domain_client import CloudTarget
+from unified_domain_client.paths import build_bucket as _build_bucket
 
 logger = logging.getLogger(__name__)
 
@@ -158,8 +159,6 @@ def make_completion_checker(
     Returns:
         DataCompletionChecker ready for use
     """
-    from unified_domain_client.paths import build_bucket as _build_bucket
-
     bucket = _build_bucket(dataset_name, project_id=project_id)
     cloud_target = CloudTarget(
         gcs_bucket=bucket,

@@ -140,14 +140,33 @@ class CloudDataProviderBase(ABC):
                 logger.error("❌ Failed to load from GCS: %s", e)
             return pd.DataFrame()
 
+    def _build_category_service(self, category: str) -> tuple[str, "StandardizedDomainCloudService"]:
+        """Build a category-specific cloud service. Returns (bucket_name, service)."""
+        config = UnifiedCloudConfig()
+        try:
+            category_bucket = config.get_bucket(self.domain, category)
+        except ValueError:
+            category_bucket = f"{self.domain}-{category.lower()}"
+
+        category_target = CloudTarget(
+            project_id=self.cloud_target.project_id,
+            gcs_bucket=category_bucket,
+            bigquery_dataset=self.cloud_target.bigquery_dataset,
+            bigquery_location=self.cloud_target.bigquery_location,
+        )
+        category_service = StandardizedDomainCloudService(
+            domain=self.domain,
+            cloud_target=category_target,
+        )
+        return category_bucket, category_service
+
     def download_from_category_bucket(
         self,
         gcs_path: str,
         category: str,
         format: str = "parquet",
     ) -> pd.DataFrame:
-        """
-        Download data from a category-specific bucket.
+        """Download data from a category-specific bucket.
 
         Args:
             gcs_path: Path within the bucket
@@ -158,38 +177,15 @@ class CloudDataProviderBase(ABC):
             DataFrame with downloaded data
         """
         try:
-            # Get bucket for category - use config-based approach
-            config = UnifiedCloudConfig()
-            try:
-                category_bucket = config.get_bucket(self.domain, category)
-            except ValueError:
-                category_bucket = f"{self.domain}-{category.lower()}"
-
-            # Create cloud service for category bucket
-            category_target = CloudTarget(
-                project_id=self.cloud_target.project_id,
-                gcs_bucket=category_bucket,
-                bigquery_dataset=self.cloud_target.bigquery_dataset,
-                bigquery_location=self.cloud_target.bigquery_location,
-            )
-            category_service = StandardizedDomainCloudService(
-                domain=self.domain,
-                cloud_target=category_target,
-            )
-
+            category_bucket, category_service = self._build_category_service(category)
             logger.info("📥 Loading %s data from: %s/%s", category, category_bucket, gcs_path)
-            result = category_service.download_from_gcs(
-                gcs_path=gcs_path,
-                format=format,
-                log_errors=False,
-            )
+            result = category_service.download_from_gcs(gcs_path=gcs_path, format=format, log_errors=False)
             df = result if isinstance(result, pd.DataFrame) else pd.DataFrame()
 
             if df.empty:
                 logger.warning("⚠️ No %s data found at %s/%s", category, category_bucket, gcs_path)
             else:
                 logger.info("✅ Loaded %s %s rows from GCS", len(df), category)
-
             return df
 
         except (ConnectionError, TimeoutError, OSError, ValueError) as e:
@@ -197,7 +193,6 @@ class CloudDataProviderBase(ABC):
             if "404" in error_msg or "Not Found" in error_msg or "No such object" in error_msg:
                 logger.info("ℹ️ No %s data found (404): %s", category, gcs_path)
                 return pd.DataFrame()
-
             logger.error("❌ Failed to load %s data from GCS: %s", category, e)
             return pd.DataFrame()
 
@@ -376,6 +371,39 @@ class MarketDataProvider(CloudDataProviderBase):
             bigquery_dataset=config.market_data_bigquery_dataset,
         )
 
+    def _build_candles_query(
+        self,
+        instrument_id: str,
+        timeframe: str,
+        start_date: datetime,
+        end_date: datetime,
+        limit: int | None,
+    ) -> tuple[str, dict[str, object]]:
+        """Build BigQuery query and params for candle data retrieval."""
+        table_suffix = timeframe.replace("h", "h").replace("m", "m").replace("s", "s")
+        table_name = f"candles_{table_suffix}_trades"
+        dataset = self.cloud_target.bigquery_dataset
+        project_id = self.cloud_target.project_id
+
+        query = f"""
+        SELECT *
+        FROM `{project_id}.{dataset}.{table_name}`
+        WHERE instrument_id = @instrument_id
+          AND timestamp >= @start_time
+          AND timestamp < @end_time
+        ORDER BY timestamp ASC
+        """  # nosec B608 — table name from config (project_id/dataset/timeframe), user values use @params
+
+        params: dict[str, object] = {
+            "instrument_id": instrument_id,
+            "start_time": start_date.isoformat(),
+            "end_time": end_date.isoformat(),
+        }
+        if limit is not None and limit > 0:
+            query += " LIMIT @limit"
+            params["limit"] = limit
+        return query, params
+
     def get_candles(
         self,
         instrument_id: str,
@@ -384,8 +412,7 @@ class MarketDataProvider(CloudDataProviderBase):
         end_date: datetime,
         limit: int | None = None,
     ) -> pd.DataFrame:
-        """
-        Get candles from BigQuery.
+        """Get candles from BigQuery.
 
         Args:
             instrument_id: Canonical instrument key
@@ -397,39 +424,11 @@ class MarketDataProvider(CloudDataProviderBase):
         Returns:
             DataFrame with OHLCV data
         """
-
-        # Ensure timezone-aware datetimes
         if start_date.tzinfo is None:
             start_date = start_date.replace(tzinfo=UTC)
         if end_date.tzinfo is None:
             end_date = end_date.replace(tzinfo=UTC)
-
-        # Build table name
-        table_suffix = timeframe.replace("h", "h").replace("m", "m").replace("s", "s")
-        table_name = f"candles_{table_suffix}_trades"
-
-        dataset = self.cloud_target.bigquery_dataset
-        project_id = self.cloud_target.project_id
-
-        query = f"""
-        SELECT *
-        FROM `{project_id}.{dataset}.{table_name}`
-        WHERE instrument_id = @instrument_id
-          AND timestamp >= @start_time
-          AND timestamp < @end_time
-        ORDER BY timestamp ASC
-        """
-
-        params: dict[str, object] = {
-            "instrument_id": instrument_id,
-            "start_time": start_date.isoformat(),
-            "end_time": end_date.isoformat(),
-        }
-
-        if limit is not None and limit > 0:
-            query += " LIMIT @limit"
-            params["limit"] = limit
-
+        query, params = self._build_candles_query(instrument_id, timeframe, start_date, end_date, limit)
         return self.query_bigquery(query, params)
 
 
