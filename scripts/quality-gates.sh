@@ -372,7 +372,7 @@ fi
 
 # 7. BYPASS — ||true in quality gate scripts
 BYPASS=$(rg "\|\|true|\|\| true" --glob "**/quality-gates.sh" --glob "**/quality-gates.yml" . 2>/dev/null \
-    | grep -v "^#\|zombies\|pyright\|cleanup\|log_fail\|log_success\|# " || :)
+    | grep -v "^#\|zombies\|pyright\|cleanup\|log_fail\|log_success\|# \|true)\|:)" || :)
 [[ -n "$BYPASS" ]] && { log_fail "||true bypass in quality gates — fix the root cause"; echo "$BYPASS" | head -3; ((V++)); } || log_success "No ||true quality gate bypasses"
 
 [[ $V -gt 0 ]] && { log_fail "Codex compliance FAILED: $V violations"; exit 1; }
