@@ -2022,7 +2022,7 @@ provides-extras = ["schema-validation", "dev"]
 
 [[package]]
 name = "unified-cloud-interface"
-version = "1.1.5"
+version = "1.1.6"
 source = { directory = "../unified-cloud-interface" }
 dependencies = [
     { name = "redis" },
