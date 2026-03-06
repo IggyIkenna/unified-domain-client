@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 
-from unified_domain_client.paths import get_spec
+from ..paths import get_spec
 
 logger = logging.getLogger(__name__)
 

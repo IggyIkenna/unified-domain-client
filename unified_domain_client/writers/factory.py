@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from unified_cloud_interface import StorageClient
 
-from unified_domain_client.writers.base import BaseDataWriter
-from unified_domain_client.writers.direct import DirectWriter
+from .base import BaseDataWriter
+from .direct import DirectWriter
 
 
 def get_writer(dataset_name: str, storage_client: StorageClient | None = None) -> BaseDataWriter:
