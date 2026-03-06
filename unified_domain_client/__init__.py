@@ -7,7 +7,7 @@ Clients/standardized_service/factories/cloud_data_provider use lazy imports.
 
 from unified_domain_client.catalog import BigQueryCatalog, GlueCatalog
 from unified_domain_client.cloud_target import CloudTarget
-from unified_domain_client.data_completion import DataCompletionChecker, get_available_date_range
+from unified_domain_client.data_completion import DataCompletionChecker, get_available_date_range, make_completion_checker
 from unified_domain_client.date_validation import (
     DateValidationResult,
     DateValidator,
@@ -310,6 +310,7 @@ __all__ = [
     "CloudTarget",
     "DataCompletionChecker",
     "get_available_date_range",
+    "make_completion_checker",
     "PathRegistry",
     "PATH_REGISTRY",
     "DataSetSpec",

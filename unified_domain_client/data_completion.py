@@ -140,6 +140,34 @@ class DataCompletionChecker:
         return sorted(missing_dates)
 
 
+def make_completion_checker(
+    dataset_name: str,
+    project_id: str,
+    path_pattern: str,
+) -> "DataCompletionChecker":
+    """Factory for DataCompletionChecker that hides CloudTarget construction.
+
+    Services should use this instead of constructing CloudTarget directly.
+
+    Args:
+        dataset_name: Name of the dataset (used as BigQuery dataset and for bucket lookup via build_bucket)
+        project_id: GCP project ID
+        path_pattern: Path pattern for GCS completion checking
+
+    Returns:
+        DataCompletionChecker ready for use
+    """
+    from unified_domain_client.paths import build_bucket as _build_bucket
+
+    bucket = _build_bucket(dataset_name, project_id=project_id)
+    cloud_target = CloudTarget(
+        gcs_bucket=bucket,
+        bigquery_dataset=dataset_name,
+        project_id=project_id,
+    )
+    return DataCompletionChecker(cloud_target=cloud_target, path_pattern=path_pattern)
+
+
 def get_available_date_range(
     cloud_target: CloudTarget,
     path_prefix: str,
