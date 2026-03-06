@@ -98,19 +98,18 @@ def test_create_backtesting_cloud_service():
     """Test create_backtesting_cloud_service factory."""
     from unified_domain_client.factories import create_backtesting_cloud_service
 
-    svc = create_backtesting_cloud_service("test-project")
+    svc = create_backtesting_cloud_service(bucket="my-backtest-bucket")
     assert svc.domain == "backtest"
-    assert svc.cloud_target.project_id == "test-project"
-    assert "backtest-store" in svc.cloud_target.gcs_bucket
+    assert svc.bucket == "my-backtest-bucket"
 
 
 def test_create_features_cloud_service():
     """Test create_features_cloud_service factory."""
     from unified_domain_client.factories import create_features_cloud_service
 
-    svc = create_features_cloud_service("test-project", gcs_bucket="custom-bucket")
+    svc = create_features_cloud_service(gcs_bucket="custom-bucket")
     assert svc.domain == "features"
-    assert svc.cloud_target.gcs_bucket == "custom-bucket"
+    assert svc.bucket == "custom-bucket"
 
 
 def test_create_instruments_cloud_service():
@@ -144,22 +143,18 @@ def test_create_strategy_cloud_service():
 
 def test_standardized_service_init():
     """Test StandardizedDomainCloudService init."""
-    from unified_domain_client.cloud_target import CloudTarget
     from unified_domain_client.standardized_service import StandardizedDomainCloudService
 
-    target = CloudTarget(project_id="p", gcs_bucket="b", bigquery_dataset="d")
-    svc = StandardizedDomainCloudService(domain="test", cloud_target=target)
+    svc = StandardizedDomainCloudService(domain="test", bucket="b")
     assert svc.domain == "test"
-    assert svc.cloud_target.gcs_bucket == "b"
+    assert svc.bucket == "b"
 
 
 def test_standardized_service_query_bigquery_raises():
     """Test query_bigquery raises NotImplementedError."""
-    from unified_domain_client.cloud_target import CloudTarget
     from unified_domain_client.standardized_service import StandardizedDomainCloudService
 
-    target = CloudTarget(project_id="p", gcs_bucket="b", bigquery_dataset="d")
-    svc = StandardizedDomainCloudService(domain="test", cloud_target=target)
+    svc = StandardizedDomainCloudService(domain="test", bucket="b")
     with pytest.raises(NotImplementedError):
         svc.query_bigquery("SELECT 1")
 
@@ -170,7 +165,7 @@ def test_make_domain_service():
 
     svc = make_domain_service("instruments", bucket="my-bucket", project_id="proj", dataset="my_ds")
     assert svc.domain == "instruments"
-    assert svc.cloud_target.gcs_bucket == "my-bucket"
+    assert svc.bucket == "my-bucket"
 
 
 def test_create_domain_cloud_service():

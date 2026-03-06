@@ -11,11 +11,9 @@ def test_standardized_service_download_raises_on_error():
     """Test download_from_gcs re-raises on connection error."""
     from unittest.mock import patch
 
-    from unified_domain_client.cloud_target import CloudTarget
     from unified_domain_client.standardized_service import StandardizedDomainCloudService
 
-    target = CloudTarget(project_id="p", gcs_bucket="b", bigquery_dataset="d")
-    svc = StandardizedDomainCloudService(domain="test", cloud_target=target)
+    svc = StandardizedDomainCloudService(domain="test", bucket="b")
 
     with patch("unified_domain_client.standardized_service.download_from_storage") as mock_dl:
         mock_dl.side_effect = OSError("network error")
@@ -28,11 +26,9 @@ def test_standardized_service_download_json_format():
     import json
     from unittest.mock import patch
 
-    from unified_domain_client.cloud_target import CloudTarget
     from unified_domain_client.standardized_service import StandardizedDomainCloudService
 
-    target = CloudTarget(project_id="p", gcs_bucket="b", bigquery_dataset="d")
-    svc = StandardizedDomainCloudService(domain="test", cloud_target=target)
+    svc = StandardizedDomainCloudService(domain="test", bucket="b")
 
     with patch("unified_domain_client.standardized_service.download_from_storage") as mock_dl:
         mock_dl.return_value = json.dumps({"key": "value"}).encode()
@@ -47,11 +43,9 @@ def test_standardized_service_download_unknown_format():
 
     import pandas as pd
 
-    from unified_domain_client.cloud_target import CloudTarget
     from unified_domain_client.standardized_service import StandardizedDomainCloudService
 
-    target = CloudTarget(project_id="p", gcs_bucket="b", bigquery_dataset="d")
-    svc = StandardizedDomainCloudService(domain="test", cloud_target=target)
+    svc = StandardizedDomainCloudService(domain="test", bucket="b")
 
     with patch("unified_domain_client.standardized_service.download_from_storage") as mock_dl:
         mock_dl.return_value = b"data"
@@ -65,11 +59,9 @@ def test_standardized_service_upload_parquet():
 
     import pandas as pd
 
-    from unified_domain_client.cloud_target import CloudTarget
     from unified_domain_client.standardized_service import StandardizedDomainCloudService
 
-    target = CloudTarget(project_id="p", gcs_bucket="b", bigquery_dataset="d")
-    svc = StandardizedDomainCloudService(domain="test", cloud_target=target)
+    svc = StandardizedDomainCloudService(domain="test", bucket="b")
     df = pd.DataFrame({"x": [1, 2]})
 
     with patch("unified_domain_client.standardized_service.upload_to_storage") as mock_ul:
@@ -85,11 +77,9 @@ def test_standardized_service_upload_csv():
 
     import pandas as pd
 
-    from unified_domain_client.cloud_target import CloudTarget
     from unified_domain_client.standardized_service import StandardizedDomainCloudService
 
-    target = CloudTarget(project_id="p", gcs_bucket="b", bigquery_dataset="d")
-    svc = StandardizedDomainCloudService(domain="test", cloud_target=target)
+    svc = StandardizedDomainCloudService(domain="test", bucket="b")
     df = pd.DataFrame({"x": [1, 2]})
 
     with patch("unified_domain_client.standardized_service.upload_to_storage") as mock_ul:
@@ -102,11 +92,9 @@ def test_standardized_service_upload_unsupported_format_raises():
     """Test upload_to_gcs with unsupported format raises ValueError."""
     import pandas as pd
 
-    from unified_domain_client.cloud_target import CloudTarget
     from unified_domain_client.standardized_service import StandardizedDomainCloudService
 
-    target = CloudTarget(project_id="p", gcs_bucket="b", bigquery_dataset="d")
-    svc = StandardizedDomainCloudService(domain="test", cloud_target=target)
+    svc = StandardizedDomainCloudService(domain="test", bucket="b")
     df = pd.DataFrame({"x": [1]})
     with pytest.raises(ValueError, match="Unsupported format"):
         svc.upload_to_gcs(df, "path.xyz", format="xml")
@@ -409,11 +397,9 @@ def test_base_writer_write_parquet():
 
     import pandas as pd
 
-    from unified_domain_client.cloud_target import CloudTarget
     from unified_domain_client.writers.base import BaseWriter
 
-    target = CloudTarget(project_id="p", gcs_bucket="b", bigquery_dataset="d")
-    writer = BaseWriter(cloud_target=target)
+    writer = BaseWriter(bucket="b")
     df = pd.DataFrame({"x": [1, 2]})
 
     with patch("unified_domain_client.writers.base.upload_to_storage") as mock_upload:
@@ -427,11 +413,9 @@ def test_base_writer_write_json():
     """Test BaseWriter.write_json uploads JSON data."""
     from unittest.mock import patch
 
-    from unified_domain_client.cloud_target import CloudTarget
     from unified_domain_client.writers.base import BaseWriter
 
-    target = CloudTarget(project_id="p", gcs_bucket="b", bigquery_dataset="d")
-    writer = BaseWriter(cloud_target=target)
+    writer = BaseWriter(bucket="b")
 
     with patch("unified_domain_client.writers.base.upload_to_storage") as mock_upload:
         mock_upload.return_value = "gs://b/path.json"
@@ -445,11 +429,9 @@ def test_market_data_writer_write_tick():
 
     import pandas as pd
 
-    from unified_domain_client.cloud_target import CloudTarget
     from unified_domain_client.writers.base import MarketDataWriter
 
-    target = CloudTarget(project_id="p", gcs_bucket="b", bigquery_dataset="d")
-    writer = MarketDataWriter(cloud_target=target)
+    writer = MarketDataWriter(bucket="b")
     df = pd.DataFrame({"ts": [1000]})
 
     with patch("unified_domain_client.writers.base.upload_to_storage") as mock_upload:
@@ -467,11 +449,9 @@ def test_features_writer_write_delta_one():
 
     import pandas as pd
 
-    from unified_domain_client.cloud_target import CloudTarget
     from unified_domain_client.writers.base import FeaturesWriter
 
-    target = CloudTarget(project_id="p", gcs_bucket="b", bigquery_dataset="d")
-    writer = FeaturesWriter(cloud_target=target)
+    writer = FeaturesWriter(bucket="b")
     df = pd.DataFrame({"feature": [1.0]})
 
     with patch("unified_domain_client.writers.base.upload_to_storage") as mock_upload:
@@ -486,11 +466,9 @@ def test_ml_writer_write_predictions():
 
     import pandas as pd
 
-    from unified_domain_client.cloud_target import CloudTarget
     from unified_domain_client.writers.base import MLWriter
 
-    target = CloudTarget(project_id="p", gcs_bucket="b", bigquery_dataset="d")
-    writer = MLWriter(cloud_target=target)
+    writer = MLWriter(bucket="b")
     df = pd.DataFrame({"prediction": [0.9]})
 
     with patch("unified_domain_client.writers.base.upload_to_storage") as mock_upload:
@@ -676,11 +654,9 @@ def test_base_reader_read_parquet():
 
     import pandas as pd
 
-    from unified_domain_client.cloud_target import CloudTarget
     from unified_domain_client.readers.base import BaseReader
 
-    target = CloudTarget(project_id="p", gcs_bucket="b", bigquery_dataset="d")
-    reader = BaseReader(cloud_target=target)
+    reader = BaseReader(bucket="b")
 
     buf = io.BytesIO()
     pd.DataFrame({"x": [1]}).to_parquet(buf, index=False)
@@ -698,11 +674,9 @@ def test_base_reader_read_json():
     import json
     from unittest.mock import patch
 
-    from unified_domain_client.cloud_target import CloudTarget
     from unified_domain_client.readers.base import BaseReader
 
-    target = CloudTarget(project_id="p", gcs_bucket="b", bigquery_dataset="d")
-    reader = BaseReader(cloud_target=target)
+    reader = BaseReader(bucket="b")
 
     with patch("unified_domain_client.readers.base.download_from_storage") as mock_dl:
         mock_dl.return_value = json.dumps({"key": "val"}).encode()
@@ -714,11 +688,9 @@ def test_base_reader_exists():
     """Test BaseReader.exists checks if file exists."""
     from unittest.mock import patch
 
-    from unified_domain_client.cloud_target import CloudTarget
     from unified_domain_client.readers.base import BaseReader
 
-    target = CloudTarget(project_id="p", gcs_bucket="b", bigquery_dataset="d")
-    reader = BaseReader(cloud_target=target)
+    reader = BaseReader(bucket="b")
 
     with patch("unified_domain_client.readers.base.storage_exists") as mock_exists:
         mock_exists.return_value = True
@@ -734,11 +706,9 @@ def test_market_data_reader_read_tick():
 
     import pandas as pd
 
-    from unified_domain_client.cloud_target import CloudTarget
     from unified_domain_client.readers.base import MarketDataReader
 
-    target = CloudTarget(project_id="p", gcs_bucket="b", bigquery_dataset="d")
-    reader = MarketDataReader(cloud_target=target)
+    reader = MarketDataReader(bucket="b")
     buf = io.BytesIO()
     pd.DataFrame({"ts": [1]}).to_parquet(buf, index=False)
     buf.seek(0)
@@ -756,11 +726,9 @@ def test_market_data_reader_read_candles_timeframes():
 
     import pandas as pd
 
-    from unified_domain_client.cloud_target import CloudTarget
     from unified_domain_client.readers.base import MarketDataReader
 
-    target = CloudTarget(project_id="p", gcs_bucket="b", bigquery_dataset="d")
-    reader = MarketDataReader(cloud_target=target)
+    reader = MarketDataReader(bucket="b")
     buf = io.BytesIO()
     pd.DataFrame({"close": [100.0]}).to_parquet(buf, index=False)
 
@@ -779,11 +747,9 @@ def test_features_reader_read_delta_one():
 
     import pandas as pd
 
-    from unified_domain_client.cloud_target import CloudTarget
     from unified_domain_client.readers.base import FeaturesReader
 
-    target = CloudTarget(project_id="p", gcs_bucket="b", bigquery_dataset="d")
-    reader = FeaturesReader(cloud_target=target)
+    reader = FeaturesReader(bucket="b")
     buf = io.BytesIO()
     pd.DataFrame({"feature": [1.0]}).to_parquet(buf, index=False)
     buf.seek(0)
@@ -801,11 +767,9 @@ def test_ml_reader_read_predictions():
 
     import pandas as pd
 
-    from unified_domain_client.cloud_target import CloudTarget
     from unified_domain_client.readers.base import MLReader
 
-    target = CloudTarget(project_id="p", gcs_bucket="b", bigquery_dataset="d")
-    reader = MLReader(cloud_target=target)
+    reader = MLReader(bucket="b")
     buf = io.BytesIO()
     pd.DataFrame({"pred": [0.9]}).to_parquet(buf, index=False)
     buf.seek(0)

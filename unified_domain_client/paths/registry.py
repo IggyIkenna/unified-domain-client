@@ -236,6 +236,7 @@ class PathRegistry:
     MARKET_CANDLE_1M: str = "processed_candles/by_date/day={date}/timeframe=1m/instrument={instrument}.parquet"
     MARKET_CANDLE_1H: str = "processed_candles/by_date/day={date}/timeframe=1h/instrument={instrument}.parquet"
     MARKET_CANDLE_24H: str = "processed_candles/by_date/day={date}/timeframe=24h/instrument={instrument}.parquet"
+    MARKET_CANDLES: str = "processed_candles/by_date/day={date}/timeframe={timeframe}/instrument={instrument}.parquet"
     FEATURES_DELTA_ONE: str = "delta_one_features/by_date/day={date}/timeframe={timeframe}/instrument={instrument}.parquet"
     ML_PREDICTIONS: str = "ml_predictions/by_date/day={date}/timeframe={timeframe}/instrument={instrument}.parquet"
 
