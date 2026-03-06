@@ -11,8 +11,7 @@ from abc import ABC, abstractmethod
 import pandas as pd
 from unified_cloud_interface import download_from_storage, storage_exists
 
-from unified_domain_client.cloud_target import CloudTarget
-from unified_domain_client.paths import PathRegistry
+from unified_domain_client import CloudTarget, PathRegistry
 
 logger = logging.getLogger(__name__)
 

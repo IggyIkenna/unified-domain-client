@@ -15,10 +15,17 @@ import pandas as pd
 from unified_cloud_interface import get_storage_client
 from unified_config_interface import UnifiedCloudConfig
 
-from unified_domain_client.cloud_target import CloudTarget
+from unified_domain_client import CloudTarget
 from unified_domain_client.standardized_service import StandardizedDomainCloudService
 
 logger = logging.getLogger(__name__)
+
+
+def _to_upper_list(val: str | list[str]) -> list[str]:
+    """Normalize a comma-string or list to a list of upper-cased strings."""
+    if isinstance(val, str):
+        return [v.strip().upper() for v in val.split(",")]
+    return [v.upper() for v in val]
 
 
 def _is_empty_or_na(val: object) -> bool:
@@ -214,46 +221,26 @@ class InstrumentsDomainClient:
         instrument_ids: list[str] | str | None = None,
     ) -> pd.DataFrame:
         if venue:
-            venues = (
-                [v.strip().upper() for v in venue.split(",")] if isinstance(venue, str) else [v.upper() for v in venue]
-            )
-            df = df.loc[df["venue"].isin(venues)]
-
+            df = df.loc[df["venue"].isin(_to_upper_list(venue))]
         if instrument_type:
-            types = (
-                [t.strip().upper() for t in instrument_type.split(",")]
-                if isinstance(instrument_type, str)
-                else [t.upper() for t in instrument_type]
-            )
-            df = df.loc[df["instrument_type"].isin(types)]
-
+            df = df.loc[df["instrument_type"].isin(_to_upper_list(instrument_type))]
         if base_currency:
-            bases = (
-                [b.strip().upper() for b in base_currency.split(",")]
-                if isinstance(base_currency, str)
-                else [b.upper() for b in base_currency]
-            )
-            df = df.loc[df["base_asset"].isin(bases)]
-
+            df = df.loc[df["base_asset"].isin(_to_upper_list(base_currency))]
         if quote_currency:
-            quotes = (
-                [q.strip().upper() for q in quote_currency.split(",")]
-                if isinstance(quote_currency, str)
-                else [q.upper() for q in quote_currency]
-            )
-            df = df.loc[df["quote_asset"].isin(quotes)]
-
+            df = df.loc[df["quote_asset"].isin(_to_upper_list(quote_currency))]
         if symbol_pattern:
             try:
                 pattern = re.compile(symbol_pattern, re.IGNORECASE)
                 df = df.loc[df["symbol"].str.match(pattern)]
             except re.error as e:
                 logger.warning("Invalid regex pattern '%s': %s", symbol_pattern, e)
-
         if instrument_ids:
-            ids = [i.strip() for i in instrument_ids.split(",")] if isinstance(instrument_ids, str) else instrument_ids
+            ids = (
+                [i.strip() for i in instrument_ids.split(",")]
+                if isinstance(instrument_ids, str)
+                else instrument_ids
+            )
             df = df.loc[df["instrument_key"].isin(ids)]
-
         return df
 
     def get_instruments_date_range(
@@ -303,18 +290,30 @@ class InstrumentsDomainClient:
         combined_df = pd.concat(all_instruments, ignore_index=True)
         return combined_df.drop_duplicates(subset=["instrument_key"], keep="first")
 
+    def _optional_coverage_stats(self, df: pd.DataFrame) -> InstrumentSummaryStats:
+        """Compute optional coverage stats for ccxt_symbol and data_types columns."""
+        extra: InstrumentSummaryStats = {}
+        if "ccxt_symbol" in df.columns:
+            with_ccxt = len(df[df["ccxt_symbol"] != ""])
+            extra["ccxt_coverage"] = {
+                "instruments_with_ccxt": with_ccxt,
+                "ccxt_coverage_percent": with_ccxt / len(df) * 100,
+            }
+        if "data_types" in df.columns:
+            extra["data_type_coverage"] = {
+                dt: len(df[df["data_types"].str.contains(dt, na=False)])
+                for dt in ["trades", "book_snapshot_5", "derivative_ticker", "liquidations", "options_chain"]
+            }
+        return extra
+
     def get_summary_stats(self, date: str | datetime) -> InstrumentSummaryStats:
         """Get summary statistics for instruments on a specific date."""
         instruments_df = self.get_instruments_for_date(date)
-
         if instruments_df.empty:
             return {"total_instruments": 0, "error": "No instruments found"}
 
         def _to_str_dict(counts: pd.Series[int]) -> dict[str, int]:
-            result: dict[str, int] = {}
-            for k, v in counts.to_dict().items():
-                result[str(k)] = int(v)
-            return result
+            return {str(k): int(v) for k, v in counts.to_dict().items()}
 
         stats: InstrumentSummaryStats = {
             "total_instruments": len(instruments_df),
@@ -327,32 +326,7 @@ class InstrumentsDomainClient:
             "top_base_currencies": _to_str_dict(instruments_df["base_asset"].value_counts().head(10)),
             "top_quote_currencies": _to_str_dict(instruments_df["quote_asset"].value_counts().head(10)),
         }
-
-        if "ccxt_symbol" in instruments_df.columns:
-            stats["ccxt_coverage"] = {
-                "instruments_with_ccxt": len(instruments_df[instruments_df["ccxt_symbol"] != ""]),
-                "ccxt_coverage_percent": len(instruments_df[instruments_df["ccxt_symbol"] != ""])
-                / len(instruments_df)
-                * 100,
-            }
-
-        if "data_types" in instruments_df.columns:
-            stats["data_type_coverage"] = {
-                "trades": len(instruments_df[instruments_df["data_types"].str.contains("trades", na=False)]),
-                "book_snapshot_5": len(
-                    instruments_df[instruments_df["data_types"].str.contains("book_snapshot_5", na=False)]
-                ),
-                "derivative_ticker": len(
-                    instruments_df[instruments_df["data_types"].str.contains("derivative_ticker", na=False)]
-                ),
-                "liquidations": len(
-                    instruments_df[instruments_df["data_types"].str.contains("liquidations", na=False)]
-                ),
-                "options_chain": len(
-                    instruments_df[instruments_df["data_types"].str.contains("options_chain", na=False)]
-                ),
-            }
-
+        stats.update(self._optional_coverage_stats(instruments_df))
         return stats
 
     def get_instrument_details(

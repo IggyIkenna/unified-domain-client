@@ -9,16 +9,13 @@ Philosophy:
 - This enables clean backfill operations without artificial failures
 - Provides clear data availability timeline for downstream services
 
-Usage:
-    from unified_domain_client import (
-        DateValidator,
-        should_skip_date,
-    )
+Usage example (import from unified_domain_client top-level)::
+
+    from unified_domain_client import DateValidator, should_skip_date
 
     # Quick check
     if should_skip_date("2023-05-23", "CEFI", "BINANCE-FUTURES", "24h"):
         logger.info("Skipping date - insufficient lookback")
-        continue
 
     # Full validator
     validator = DateValidator()
@@ -242,54 +239,41 @@ class DateValidator:
         # Round up to days
         return math.ceil(total_seconds / 86400)
 
-    def check_date(
+    def _resolve_earliest_date(
         self,
-        date: str,
         category: str,
-        venue: str | None = None,
-        timeframe: str = "24h",
-        service: str = "features-delta-one-service",
-    ) -> DateValidationResult:
-        """
-        Check if a date is valid for processing.
-
-        Args:
-            date: Date to check (YYYY-MM-DD)
-            category: Category (CEFI, TRADFI, DEFI)
-            venue: Optional venue name
-            timeframe: Timeframe string
-            service: Service name
-
-        Returns:
-            DateValidationResult with validation details
-        """
+        venue: str | None,
+        timeframe: str,
+    ) -> str | None:
+        """Resolve earliest valid date from config or raw data fallback. Returns None if unconfigured."""
         earliest_date = self.get_earliest_valid_feature_date(
             category=category,
             venue=venue,
             timeframe=timeframe,
         )
+        if earliest_date is not None:
+            return earliest_date
 
-        if earliest_date is None:
-            # Fall back to raw data date + lookback
-            raw_date = self.get_earliest_raw_data_date(
-                service="market-tick-data-handler",
-                category=category,
-                venue=venue,
-            )
+        raw_date = self.get_earliest_raw_data_date(
+            service="market-tick-data-handler",
+            category=category,
+            venue=venue,
+        )
+        if not raw_date:
+            return None
 
-            if raw_date:
-                lookback_days = MAX_LOOKBACK_DAYS_BY_TIMEFRAME.get(timeframe, 200)
-                raw_dt = datetime.strptime(raw_date, "%Y-%m-%d").replace(tzinfo=UTC)
-                earliest_dt = raw_dt + timedelta(days=lookback_days)
-                earliest_date = earliest_dt.strftime("%Y-%m-%d")
-            else:
-                return DateValidationResult(
-                    is_valid=True,
-                    reason="No start date configured - allowing processing",
-                    requested_date=date,
-                )
+        lookback_days = MAX_LOOKBACK_DAYS_BY_TIMEFRAME.get(timeframe, 200)
+        raw_dt = datetime.strptime(raw_date, "%Y-%m-%d").replace(tzinfo=UTC)
+        earliest_dt = raw_dt + timedelta(days=lookback_days)
+        return earliest_dt.strftime("%Y-%m-%d")
 
-        # Compare dates
+    def _compare_dates(
+        self,
+        date: str,
+        earliest_date: str,
+        timeframe: str,
+    ) -> DateValidationResult:
+        """Compare requested date against earliest valid date and return result."""
         requested_dt = datetime.strptime(date, "%Y-%m-%d").replace(tzinfo=UTC)
         earliest_dt = datetime.strptime(earliest_date, "%Y-%m-%d").replace(tzinfo=UTC)
 
@@ -302,7 +286,6 @@ class DateValidator:
             )
 
         days_until_valid = (earliest_dt - requested_dt).days
-
         return DateValidationResult(
             is_valid=False,
             reason=f"Date {date} is before earliest valid date {earliest_date} "
@@ -311,6 +294,35 @@ class DateValidator:
             requested_date=date,
             days_until_valid=days_until_valid,
         )
+
+    def check_date(
+        self,
+        date: str,
+        category: str,
+        venue: str | None = None,
+        timeframe: str = "24h",
+        service: str = "features-delta-one-service",
+    ) -> DateValidationResult:
+        """Check if a date is valid for processing.
+
+        Args:
+            date: Date to check (YYYY-MM-DD)
+            category: Category (CEFI, TRADFI, DEFI)
+            venue: Optional venue name
+            timeframe: Timeframe string
+            service: Service name
+
+        Returns:
+            DateValidationResult with validation details
+        """
+        earliest_date = self._resolve_earliest_date(category, venue, timeframe)
+        if earliest_date is None:
+            return DateValidationResult(
+                is_valid=True,
+                reason="No start date configured - allowing processing",
+                requested_date=date,
+            )
+        return self._compare_dates(date, earliest_date, timeframe)
 
 
 # Module-level instance for convenience

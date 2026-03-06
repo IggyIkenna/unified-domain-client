@@ -14,7 +14,7 @@ from unified_cloud_interface import (
     upload_to_storage,
 )
 
-from unified_domain_client.cloud_target import CloudTarget
+from unified_domain_client import CloudTarget
 
 logger = logging.getLogger(__name__)
 
