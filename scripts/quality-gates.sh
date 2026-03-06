@@ -452,6 +452,20 @@ if [ -n "$SCHEMA_COLLISION" ]; then
     echo "$SCHEMA_COLLISION" | head -5
 fi
 
+# ============================================================
+# STEP 5.14 — Block direct ConfigStore construction in services (must use get_config_store())
+# ============================================================
+echo ""
+echo "STEP 5.14: Checking for direct ConfigStore() construction..."
+if grep -r "ConfigStore(" "$SOURCE_DIR" --include="*.py" 2>/dev/null | grep -v "get_config_store\|TimeSeriesConfigStore\|test_\|conftest\|persistence\.py\|#" | grep -q .; then
+  log_fail "STEP 5.14: Direct ConfigStore() construction found in library source."
+  echo "      Use get_config_store(domain) from unified_config_interface instead."
+  echo "      Direct ConfigStore() is only allowed in unified_config_interface/persistence.py"
+  ((V++))
+else
+  log_success "STEP 5.14: No direct ConfigStore() construction in library source"
+fi
+
 [[ $V -gt 0 ]] && { log_fail "Codex compliance FAILED: $V violations"; exit 1; }
 log_success "Codex compliance PASSED"
 
