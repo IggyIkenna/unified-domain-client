@@ -8,7 +8,6 @@ import pandas as pd
 from unified_cloud_interface import get_storage_client
 from unified_config_interface import UnifiedCloudConfig
 
-from unified_domain_client.cloud_target import CloudTarget
 from unified_domain_client.paths import build_bucket, build_path
 from unified_domain_client.standardized_service import StandardizedDomainCloudService
 
@@ -25,8 +24,7 @@ class StrategyDomainClient:
     ) -> None:
         self._project_id = project_id or UnifiedCloudConfig().gcp_project_id
         bucket = gcs_bucket or build_bucket("strategy_orders", project_id=self._project_id)
-        cloud_target = CloudTarget(project_id=self._project_id, gcs_bucket=bucket, bigquery_dataset="strategy")
-        self.cloud_service = StandardizedDomainCloudService(domain="strategy", cloud_target=cloud_target)
+        self.cloud_service = StandardizedDomainCloudService(domain="strategy", bucket=bucket)
         self._bucket = bucket
 
     def get_orders(self, date: str, strategy_id: str) -> pd.DataFrame:

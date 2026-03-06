@@ -1,6 +1,7 @@
 """Standardized Domain Cloud Service.
 
-Tier 2 compliance: Uses unified_cloud_interface for GCS I/O only.
+Cloud-agnostic: uses unified_cloud_interface for all storage I/O.
+Takes bucket: str directly — no GCS-specific CloudTarget wrapper.
 """
 
 import io
@@ -14,17 +15,15 @@ from unified_cloud_interface import (
     upload_to_storage,
 )
 
-from unified_domain_client import CloudTarget
-
 logger = logging.getLogger(__name__)
 
 
 class StandardizedDomainCloudService:
-    """Domain cloud service using UCLI for GCS operations."""
+    """Domain cloud service using UCI for storage operations."""
 
-    def __init__(self, domain: str, cloud_target: CloudTarget) -> None:
+    def __init__(self, domain: str, bucket: str) -> None:
         self.domain: str = domain
-        self.cloud_target: CloudTarget = cloud_target
+        self.bucket: str = bucket
 
     def download_from_gcs(
         self,
@@ -32,11 +31,10 @@ class StandardizedDomainCloudService:
         format: str = "parquet",
         log_errors: bool = True,
     ) -> pd.DataFrame | dict[str, object]:
-        """Download data from GCS."""
-        bucket = self.cloud_target.gcs_bucket
+        """Download data from cloud storage."""
         path = gcs_path.lstrip("/")
         try:
-            data = download_from_storage(bucket, path)
+            data = download_from_storage(self.bucket, path)
             if format == "parquet":
                 return pd.read_parquet(io.BytesIO(data))
             if format == "csv":
@@ -48,7 +46,7 @@ class StandardizedDomainCloudService:
             return pd.DataFrame()
         except (ConnectionError, TimeoutError, OSError, ValueError) as e:
             if log_errors:
-                logger.error("Failed to download %s/%s: %s", bucket, path, e)
+                logger.error("Failed to download %s/%s: %s", self.bucket, path, e)
             raise
 
     def upload_to_gcs(
@@ -57,8 +55,7 @@ class StandardizedDomainCloudService:
         gcs_path: str,
         format: str = "parquet",
     ) -> str:
-        """Upload data to GCS."""
-        bucket = self.cloud_target.gcs_bucket
+        """Upload data to cloud storage."""
         path = gcs_path.lstrip("/")
         if format == "parquet":
             buf = io.BytesIO()
@@ -69,7 +66,7 @@ class StandardizedDomainCloudService:
             raw = data.to_csv(index=False).encode("utf-8")
         else:
             raise ValueError("Unsupported format: " + format)
-        return upload_to_storage(bucket, path, raw)
+        return upload_to_storage(self.bucket, path, raw)
 
     def query_bigquery(
         self,
@@ -78,35 +75,37 @@ class StandardizedDomainCloudService:
     ) -> pd.DataFrame:
         _ = (query, parameters)
         raise NotImplementedError(
-            "BigQuery is not supported in Tier 2 UDS. "
-            + "Use unified-trading-library or google-cloud-bigquery in the service layer."
+            "BigQuery is not supported in StandardizedDomainCloudService. "
+            + "Use get_analytics_client() from unified_cloud_interface.factory in the service layer."
         )
 
 
 def create_domain_cloud_service(
     domain: str,
-    cloud_target: CloudTarget,
+    bucket: str,
 ) -> StandardizedDomainCloudService:
     """Factory for StandardizedDomainCloudService."""
-    return StandardizedDomainCloudService(domain=domain, cloud_target=cloud_target)
+    return StandardizedDomainCloudService(domain=domain, bucket=bucket)
 
 
-def make_domain_service(domain: str, bucket: str, project_id: str = "", dataset: str = "") -> StandardizedDomainCloudService:
-    """Factory that hides CloudTarget construction from service code.
-
-    Services should use this instead of constructing CloudTarget directly.
+def make_domain_service(
+    domain: str,
+    bucket: str,
+    project_id: str = "",
+    dataset: str = "",
+) -> StandardizedDomainCloudService:
+    """Factory that creates a StandardizedDomainCloudService for a domain + bucket.
 
     Args:
         domain: Domain name (e.g. "market_data", "strategy")
-        bucket: GCS bucket name
-        project_id: GCP project ID (optional, default "")
-        dataset: BigQuery dataset name (optional, default "")
+        bucket: Cloud storage bucket name
+        project_id: Ignored — kept for backward compatibility only
+        dataset: Ignored — kept for backward compatibility only
 
     Returns:
         StandardizedDomainCloudService ready for upload/download
     """
-    target = CloudTarget(gcs_bucket=bucket, project_id=project_id, bigquery_dataset=dataset)
-    return StandardizedDomainCloudService(domain=domain, cloud_target=target)
+    return StandardizedDomainCloudService(domain=domain, bucket=bucket)
 
 
-__all__ = ["StandardizedDomainCloudService", "create_domain_cloud_service"]
+__all__ = ["StandardizedDomainCloudService", "create_domain_cloud_service", "make_domain_service"]

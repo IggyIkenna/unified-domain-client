@@ -9,7 +9,6 @@ import pandas as pd
 from unified_cloud_interface import get_storage_client
 from unified_config_interface import UnifiedCloudConfig
 
-from unified_domain_client.cloud_target import CloudTarget
 from unified_domain_client.paths import build_bucket, build_path
 from unified_domain_client.standardized_service import StandardizedDomainCloudService
 
@@ -26,8 +25,7 @@ class PositionsDomainClient:
     ) -> None:
         self._project_id = project_id or UnifiedCloudConfig().gcp_project_id
         bucket = gcs_bucket or build_bucket("positions", project_id=self._project_id)
-        cloud_target = CloudTarget(project_id=self._project_id, gcs_bucket=bucket, bigquery_dataset="positions")
-        self.cloud_service = StandardizedDomainCloudService(domain="positions", cloud_target=cloud_target)
+        self.cloud_service = StandardizedDomainCloudService(domain="positions", bucket=bucket)
         self._bucket = bucket
 
     def get_positions(self, date: str, account_key: str, snapshot_type: str) -> pd.DataFrame:

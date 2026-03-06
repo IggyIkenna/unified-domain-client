@@ -7,7 +7,6 @@ import logging
 import pandas as pd
 from unified_config_interface import UnifiedCloudConfig
 
-from unified_domain_client.cloud_target import CloudTarget
 from unified_domain_client.paths import build_bucket, build_path
 from unified_domain_client.standardized_service import StandardizedDomainCloudService
 
@@ -24,12 +23,7 @@ class SportsMappingsDomainClient:
     ) -> None:
         self._project_id = project_id or UnifiedCloudConfig().gcp_project_id
         bucket = gcs_bucket or build_bucket("sports_mappings", project_id=self._project_id)
-        cloud_target = CloudTarget(
-            project_id=self._project_id,
-            gcs_bucket=bucket,
-            bigquery_dataset="sports_mappings",
-        )
-        self.cloud_service = StandardizedDomainCloudService(domain="sports", cloud_target=cloud_target)
+        self.cloud_service = StandardizedDomainCloudService(domain="sports", bucket=bucket)
 
     def read_mappings(self, entity_type: str) -> pd.DataFrame:
         """Read entity mappings for a specific entity type.

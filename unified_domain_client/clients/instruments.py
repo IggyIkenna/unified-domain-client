@@ -15,7 +15,6 @@ import pandas as pd
 from unified_cloud_interface import get_storage_client
 from unified_config_interface import UnifiedCloudConfig
 
-from unified_domain_client import CloudTarget
 from unified_domain_client.standardized_service import StandardizedDomainCloudService
 
 logger = logging.getLogger(__name__)
@@ -64,14 +63,32 @@ class InstrumentsDomainClient:
         gcs_bucket: str | None = None,
         bigquery_dataset: str | None = None,
     ) -> None:
-        cloud_target = CloudTarget(
-            project_id=project_id or UnifiedCloudConfig().gcp_project_id,
-            gcs_bucket=gcs_bucket or UnifiedCloudConfig().instruments_gcs_bucket,
-            bigquery_dataset=bigquery_dataset or UnifiedCloudConfig().instruments_bigquery_dataset,
-        )
-        self.cloud_service = StandardizedDomainCloudService(domain="instruments", cloud_target=cloud_target)
-        self.cloud_target = cloud_target
-        logger.info("InstrumentsDomainClient initialized: bucket=%s", cloud_target.gcs_bucket)
+        bucket = gcs_bucket or UnifiedCloudConfig().instruments_gcs_bucket
+        self.cloud_service = StandardizedDomainCloudService(domain="instruments", bucket=bucket)
+        self._bucket = bucket
+        logger.info("InstrumentsDomainClient initialized: bucket=%s", bucket)
+
+    def _load_and_filter_for_date(
+        self,
+        date_str: str,
+        date_obj: datetime,
+        venues_to_load: list[str] | None,
+    ) -> pd.DataFrame:
+        """Load instruments by venue and apply date-availability filter."""
+        instruments_df = self._load_instruments_by_venue(date_str, venues_to_load)
+        if instruments_df.empty:
+            bucket = self._bucket if self.cloud_target else "unknown"
+            logger.error(
+                "No instrument definitions found for %s. Expected: gs://%s/instrument_availability/by_date/day=%s/venue=<VENUE>/instruments.parquet",
+                date_str,
+                bucket,
+                date_str,
+            )
+            return pd.DataFrame()
+        instruments_df = self._filter_by_date_availability(instruments_df, date_obj)
+        if instruments_df.empty:
+            logger.warning("No instruments available for %s after date filtering", date_str)
+        return instruments_df
 
     def get_instruments_for_date(
         self,
@@ -85,42 +102,17 @@ class InstrumentsDomainClient:
         venues: list[str] | None = None,
     ) -> pd.DataFrame:
         """Get instrument definitions for a specific date with filtering."""
-        if isinstance(date, str):
-            date_obj = datetime.strptime(date, "%Y-%m-%d").replace(tzinfo=UTC)
-        else:
-            date_obj = date
-
+        date_obj = datetime.strptime(date, "%Y-%m-%d").replace(tzinfo=UTC) if isinstance(date, str) else date
         date_str = date_obj.strftime("%Y-%m-%d")
-
         try:
             venues_to_load = venues or ([venue] if venue else None)
-            instruments_df = self._load_instruments_by_venue(date_str, venues_to_load)
-
+            instruments_df = self._load_and_filter_for_date(date_str, date_obj, venues_to_load)
             if instruments_df.empty:
-                bucket = self.cloud_target.gcs_bucket if self.cloud_target else "unknown"
-                logger.error(
-                    "No instrument definitions found for %s. Expected: gs://%s/instrument_availability/by_date/day=%s/venue=<VENUE>/instruments.parquet",
-                    date_str,
-                    bucket,
-                    date_str,
-                )
                 return pd.DataFrame()
-
-            instruments_df = self._filter_by_date_availability(instruments_df, date_obj)
-
-            if instruments_df.empty:
-                logger.warning("No instruments available for %s after date filtering", date_str)
-                return pd.DataFrame()
-
             venue_filter = venue if not venues_to_load else None
             return self._apply_filters(
-                instruments_df,
-                venue_filter,
-                instrument_type,
-                base_currency,
-                quote_currency,
-                symbol_pattern,
-                instrument_ids,
+                instruments_df, venue_filter, instrument_type, base_currency, quote_currency,
+                symbol_pattern, instrument_ids,
             )
         except (ConnectionError, TimeoutError, OSError, ValueError) as e:
             logger.error("Failed to load instruments for %s: %s", date_str, e)
@@ -128,8 +120,8 @@ class InstrumentsDomainClient:
 
     def _load_instruments_by_venue(self, date_str: str, venues: list[str] | None = None) -> pd.DataFrame:
         try:
-            client = get_storage_client(project_id=self.cloud_target.project_id)
-            bucket = client.bucket(self.cloud_target.gcs_bucket)
+            client = get_storage_client(project_id=self._project_id)
+            bucket = client.bucket(self._bucket)
 
             base_prefix = f"instrument_availability/by_date/day={date_str}/"
 

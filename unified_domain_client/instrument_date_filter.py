@@ -91,19 +91,30 @@ class DateFilterService:
             self._protocol_defaults[proto_lower] = {}
         self._protocol_defaults[proto_lower][key] = value
 
+    def _resolve_available_from(
+        self,
+        inst_data: InstrumentData,
+        protocol: str | None,
+    ) -> datetime | None:
+        """Resolve available_from datetime from instrument data or protocol default."""
+        available_from_str = inst_data.get("available_from_datetime")
+        if available_from_str is not None and available_from_str != "":
+            return _parse_iso_datetime(available_from_str if isinstance(available_from_str, str) else None)
+        if protocol:
+            default_str = self.get_protocol_default_date(protocol, "available_from")
+            return _parse_iso_datetime(default_str) if default_str else None
+        return None
+
     def filter_instruments_by_date(
         self,
         instruments: dict[str, InstrumentData],
         target_date: datetime,
         protocol: str | None = None,
     ) -> dict[str, InstrumentData]:
-        """
-        Filter instruments to those available on target_date.
+        """Filter instruments to those available on target_date.
 
-        An instrument is included if:
-        - target_date >= available_from (or protocol default when None)
-        - target_date <= available_to (when set)
-        - No date restriction (both None and no protocol default) -> include
+        An instrument is included if target_date >= available_from (or protocol default)
+        and target_date <= available_to (when set). No restriction means include.
 
         Args:
             instruments: Dict of instrument_key -> instrument data
@@ -115,33 +126,17 @@ class DateFilterService:
         """
         target_utc = _to_utc(target_date)
         result: dict[str, InstrumentData] = {}
-
         for inst_key, inst_data in instruments.items():
-            available_from_str = inst_data.get("available_from_datetime")
+            available_from = self._resolve_available_from(inst_data, protocol)
             available_to_str = inst_data.get("available_to_datetime")
-
-            if available_from_str is not None and available_from_str != "":
-                available_from = _parse_iso_datetime(
-                    available_from_str if isinstance(available_from_str, str) else None
-                )
-            elif protocol:
-                default_str = self.get_protocol_default_date(protocol, "available_from")
-                available_from = _parse_iso_datetime(default_str) if default_str else None
-            else:
-                available_from = None
-
             available_to = (
                 _parse_iso_datetime(available_to_str if isinstance(available_to_str, str) else None)
                 if available_to_str is not None and available_to_str != ""
                 else None
             )
-
             if available_from is not None and target_utc < available_from:
                 continue
-
             if available_to is not None and target_utc > available_to:
                 continue
-
             result[inst_key] = inst_data
-
         return result
