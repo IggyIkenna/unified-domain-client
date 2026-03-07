@@ -20,10 +20,10 @@ class StrategyDomainClient:
     def __init__(
         self,
         project_id: str | None = None,
-        gcs_bucket: str | None = None,
+        storage_bucket: str | None = None,
     ) -> None:
         self._project_id = project_id or UnifiedCloudConfig().gcp_project_id
-        bucket = gcs_bucket or build_bucket("strategy_orders", project_id=self._project_id)
+        bucket = storage_bucket or build_bucket("strategy_orders", project_id=self._project_id)
         self.cloud_service = StandardizedDomainCloudService(domain="strategy", bucket=bucket)
         self._bucket = bucket
 
@@ -39,7 +39,10 @@ class StrategyDomainClient:
 
     def get_instructions(self, strategy_id: str, date: str) -> pd.DataFrame:
         """Get strategy instructions for a specific strategy and date."""
-        path = build_path("strategy_instructions", strategy_id=strategy_id, date=date) + "instructions.parquet"
+        path = (
+            build_path("strategy_instructions", strategy_id=strategy_id, date=date)
+            + "instructions.parquet"
+        )
         try:
             result = self.cloud_service.download_from_gcs(gcs_path=path, format="parquet")
             return result if isinstance(result, pd.DataFrame) else pd.DataFrame()

@@ -21,16 +21,19 @@ class MLModelsDomainClient:
     def __init__(
         self,
         project_id: str | None = None,
-        gcs_bucket: str | None = None,
+        storage_bucket: str | None = None,
     ) -> None:
         self._project_id = project_id or UnifiedCloudConfig().gcp_project_id
-        bucket = gcs_bucket or build_bucket("ml_models", project_id=self._project_id)
+        bucket = storage_bucket or build_bucket("ml_models", project_id=self._project_id)
         self.cloud_service = StandardizedDomainCloudService(domain="ml_models", bucket=bucket)
         self._bucket = bucket
 
     def get_model(self, model_id: str, training_period: str) -> bytes:
         """Download a serialised model artifact (joblib bytes)."""
-        path = build_path("ml_models", model_id=model_id, training_period=training_period) + "model.joblib"
+        path = (
+            build_path("ml_models", model_id=model_id, training_period=training_period)
+            + "model.joblib"
+        )
         try:
             raw = self.cloud_service.download_from_gcs(gcs_path=path, format="bytes")
             return raw if isinstance(raw, bytes) else b""
@@ -40,7 +43,10 @@ class MLModelsDomainClient:
 
     def get_metadata(self, model_id: str, training_period: str) -> dict[str, str | int | float]:
         """Get model metadata JSON."""
-        path = build_path("ml_model_metadata", model_id=model_id, training_period=training_period) + "metadata.json"
+        path = (
+            build_path("ml_model_metadata", model_id=model_id, training_period=training_period)
+            + "metadata.json"
+        )
         try:
             raw = self.cloud_service.download_from_gcs(gcs_path=path, format="json")
             if isinstance(raw, dict):
@@ -75,10 +81,10 @@ class MLPredictionsDomainClient:
     def __init__(
         self,
         project_id: str | None = None,
-        gcs_bucket: str | None = None,
+        storage_bucket: str | None = None,
     ) -> None:
         self._project_id = project_id or UnifiedCloudConfig().gcp_project_id
-        bucket = gcs_bucket or build_bucket("ml_predictions", project_id=self._project_id)
+        bucket = storage_bucket or build_bucket("ml_predictions", project_id=self._project_id)
         self.cloud_service = StandardizedDomainCloudService(domain="ml_predictions", bucket=bucket)
         self._bucket = bucket
 
@@ -90,7 +96,11 @@ class MLPredictionsDomainClient:
         prefix = build_path("ml_predictions", date=date, mode=mode)
         try:
             client = get_storage_client(project_id=self._project_id)
-            blobs = [b for b in client.list_blobs(self._bucket, prefix=prefix) if b.name.endswith(".parquet")]
+            blobs = [
+                b
+                for b in client.list_blobs(self._bucket, prefix=prefix)
+                if b.name.endswith(".parquet")
+            ]
             if not blobs:
                 return pd.DataFrame()
 

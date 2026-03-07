@@ -19,10 +19,10 @@ class SportsMappingsDomainClient:
     def __init__(
         self,
         project_id: str | None = None,
-        gcs_bucket: str | None = None,
+        storage_bucket: str | None = None,
     ) -> None:
         self._project_id = project_id or UnifiedCloudConfig().gcp_project_id
-        bucket = gcs_bucket or build_bucket("sports_mappings", project_id=self._project_id)
+        bucket = storage_bucket or build_bucket("sports_mappings", project_id=self._project_id)
         self.cloud_service = StandardizedDomainCloudService(domain="sports", bucket=bucket)
 
     def read_mappings(self, entity_type: str) -> pd.DataFrame:
@@ -53,4 +53,4 @@ class SportsMappingsDomainClient:
             GCS URI of the uploaded file.
         """
         path = build_path("sports_mappings", entity_type=entity_type) + "mappings.parquet"
-        return self.cloud_service.upload_to_gcs(data=df, gcs_path=path, format="parquet")
+        return self.cloud_service.upload_artifact(df, path, format="parquet")

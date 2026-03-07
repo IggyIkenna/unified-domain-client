@@ -73,7 +73,9 @@ class TimestampDateValidator:
 
         col = self._resolve_timestamp_col(df, timestamp_col)
         if col is None:
-            return TimestampAlignmentResult(valid=False, alignment_percentage=0.0, errors=["No timestamp column found"])
+            return TimestampAlignmentResult(
+                valid=False, alignment_percentage=0.0, errors=["No timestamp column found"]
+            )
 
         dt = self._parse_timestamps(df[col])
         dates = dt.dt.date
@@ -86,7 +88,9 @@ class TimestampDateValidator:
         valid = pct >= self.alignment_threshold
         errors: list[str] = []
         if not valid:
-            errors.append(f"Only {pct:.1f}% of timestamps align with {expected_str}. Found dates: {actual_dates}")
+            errors.append(
+                f"Only {pct:.1f}% of timestamps align with {expected_str}. Found dates: {actual_dates}"
+            )
         return TimestampAlignmentResult(
             valid=valid, alignment_percentage=pct, errors=errors, actual_dates_found=actual_dates
         )
@@ -121,7 +125,11 @@ def validate_timestamp_date_alignment(
             try:
                 exp_date = date_type.fromisoformat(expected_date.split("T")[0])
             except ValueError as e:
-                logger.debug("Suppressed %s during validate timestamp date alignment: %s", type(e).__name__, e)
+                logger.debug(
+                    "Suppressed %s during validate timestamp date alignment: %s",
+                    type(e).__name__,
+                    e,
+                )
                 pass
     if exp_date is None and path_to_use:
         try:

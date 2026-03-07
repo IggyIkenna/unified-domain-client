@@ -11,8 +11,8 @@ class CloudTarget:
     """Runtime-configurable cloud target for specific operations."""
 
     project_id: str
-    gcs_bucket: str
-    bigquery_dataset: str
+    storage_bucket: str = ""
+    analytics_dataset: str = ""
     region: str = "us-central1"
     bigquery_location: str = "asia-northeast1"
 
@@ -20,7 +20,7 @@ class CloudTarget:
         """Validate required parameters."""
         if not (self.project_id or "").strip():
             raise ValueError("project_id is required")
-        if not (self.gcs_bucket or "").strip():
-            raise ValueError("gcs_bucket is required")
-        if not (self.bigquery_dataset or "").strip():
-            raise ValueError("bigquery_dataset is required (even for GCS-only operations)")
+        if not (self.storage_bucket or "").strip():
+            raise ValueError("storage_bucket is required")
+        if not (self.analytics_dataset or "").strip():
+            raise ValueError("analytics_dataset is required (even for storage-only operations)")

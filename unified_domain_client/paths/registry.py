@@ -198,6 +198,27 @@ PATH_REGISTRY: dict[str, DataSetSpec] = {
         partition_keys=["venue", "date"],
         file_template="ticks.parquet",
     ),
+    "l2_book_checkpoints": DataSetSpec(
+        name="l2_book_checkpoints",
+        bucket_template="market-data-tick-{category}-{project_id}",
+        path_template="l2_book_checkpoints/by_date/day={date}/venue={venue}/",
+        partition_keys=["date", "venue"],
+        file_template="instrument_key={instrument_key}.parquet",
+    ),
+    "liquidation_clusters": DataSetSpec(
+        name="liquidation_clusters",
+        bucket_template="market-data-tick-{category}-{project_id}",
+        path_template="liquidation_clusters/by_date/day={date}/source={source}/venue={venue}/",
+        partition_keys=["date", "source", "venue"],
+        file_template="instrument_key={instrument_key}.parquet",
+    ),
+    "liquidity_features_1m": DataSetSpec(
+        name="liquidity_features_1m",
+        bucket_template="market-data-features-{category}-{project_id}",
+        path_template="liquidity_features_1m/by_date/day={date}/venue={venue}/",
+        partition_keys=["date", "venue"],
+        file_template="instrument_key={instrument_key}.parquet",
+    ),
 }
 
 
@@ -217,7 +238,9 @@ def build_path(name: str, **partition_values: str) -> str:
     return spec.path_template.format(**partition_values)
 
 
-def build_full_uri(name: str, *, project_id: str, category: str = "", **partition_values: str) -> str:
+def build_full_uri(
+    name: str, *, project_id: str, category: str = "", **partition_values: str
+) -> str:
     bucket = build_bucket(name, project_id=project_id, category=category)
     path = build_path(name, **partition_values)
     return f"gs://{bucket}/{path}"
@@ -233,14 +256,22 @@ class PathRegistry:
     # Legacy path template strings for backward-compatible readers/writers.
     # Used with PathRegistry.format() which substitutes {instrument}, {date}, {timeframe}.
     MARKET_TICK_RAW: str = "raw_tick_data/by_date/day={date}/instrument={instrument}.parquet"
-    MARKET_CANDLE_1M: str = "processed_candles/by_date/day={date}/timeframe=1m/instrument={instrument}.parquet"
-    MARKET_CANDLE_1H: str = "processed_candles/by_date/day={date}/timeframe=1h/instrument={instrument}.parquet"
-    MARKET_CANDLE_24H: str = "processed_candles/by_date/day={date}/timeframe=24h/instrument={instrument}.parquet"
-    MARKET_CANDLES: str = "processed_candles/by_date/day={date}/timeframe={timeframe}/instrument={instrument}.parquet"
-    FEATURES_DELTA_ONE: str = (
-        "delta_one_features/by_date/day={date}/timeframe={timeframe}/instrument={instrument}.parquet"
+    MARKET_CANDLE_1M: str = (
+        "processed_candles/by_date/day={date}/timeframe=1m/instrument={instrument}.parquet"
     )
-    ML_PREDICTIONS: str = "ml_predictions/by_date/day={date}/timeframe={timeframe}/instrument={instrument}.parquet"
+    MARKET_CANDLE_1H: str = (
+        "processed_candles/by_date/day={date}/timeframe=1h/instrument={instrument}.parquet"
+    )
+    MARKET_CANDLE_24H: str = (
+        "processed_candles/by_date/day={date}/timeframe=24h/instrument={instrument}.parquet"
+    )
+    MARKET_CANDLES: str = (
+        "processed_candles/by_date/day={date}/timeframe={timeframe}/instrument={instrument}.parquet"
+    )
+    FEATURES_DELTA_ONE: str = "delta_one_features/by_date/day={date}/timeframe={timeframe}/instrument={instrument}.parquet"
+    ML_PREDICTIONS: str = (
+        "ml_predictions/by_date/day={date}/timeframe={timeframe}/instrument={instrument}.parquet"
+    )
 
     @classmethod
     def all_patterns(cls) -> dict[str, DataSetSpec]:

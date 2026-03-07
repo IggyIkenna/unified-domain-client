@@ -204,3 +204,408 @@ class TestValidateInstructionParquet:
         result = validate_instruction_parquet(Path("/nonexistent/path.parquet"))
         assert len(result) == 1
         assert "not found" in result[0].lower() or "exist" in result[0].lower()
+
+
+class TestInstructionValidatorLegacySignalId:
+    """Test legacy signal_id handling."""
+
+    @patch("unified_domain_client.schemas.instruction_schema.validate_strategy_id")
+    def test_legacy_signal_id_auto_renamed(self, mock_validate: MagicMock):
+        """Test that signal_id is auto-renamed to instruction_id when allow_legacy_signal_id=True."""
+        mock_validate.return_value = True
+        validator = InstructionValidator(allow_legacy_signal_id=True)
+        df = pd.DataFrame(
+            {
+                "timestamp": pd.array([1704067200000000000], dtype="int64"),
+                "signal_id": ["sig-001"],
+                "instruction_type": ["TRADE"],
+                "instrument_id": ["BINANCE:PERPETUAL:BTC-USDT"],
+                "strategy_id": ["CEFI_BTC_momentum_LIVE_1h_V1"],
+                "quantity": [0.1],
+                "benchmark_price": [50000.0],
+                "direction": [1],
+            }
+        )
+        result = validator.validate(df)
+        assert result == []
+
+    @patch("unified_domain_client.schemas.instruction_schema.validate_strategy_id")
+    def test_legacy_signal_id_rejected_when_not_allowed(self, mock_validate: MagicMock):
+        """Test that signal_id is rejected when allow_legacy_signal_id=False."""
+        mock_validate.return_value = True
+        validator = InstructionValidator(allow_legacy_signal_id=False)
+        df = pd.DataFrame(
+            {
+                "timestamp": pd.array([1704067200000000000], dtype="int64"),
+                "signal_id": ["sig-001"],
+                "instruction_type": ["TRADE"],
+                "instrument_id": ["BINANCE:PERPETUAL:BTC-USDT"],
+                "strategy_id": ["CEFI_BTC_momentum_LIVE_1h_V1"],
+                "quantity": [0.1],
+                "benchmark_price": [50000.0],
+                "direction": [1],
+            }
+        )
+        result = validator.validate(df)
+        assert any("DEPRECATED" in e or "signal_id" in e for e in result)
+
+
+class TestInstructionValidatorDirectionValidation:
+    """Test direction validation in detail."""
+
+    @patch("unified_domain_client.schemas.instruction_schema.validate_strategy_id")
+    def test_missing_direction_column_for_trade(self, mock_validate: MagicMock):
+        """Test that missing direction column is flagged for TRADE instructions."""
+        mock_validate.return_value = True
+        validator = InstructionValidator()
+        df = pd.DataFrame(
+            {
+                "timestamp": pd.array([1704067200000000000], dtype="int64"),
+                "instruction_id": ["i1"],
+                "instruction_type": ["TRADE"],
+                "instrument_id": ["BINANCE:PERPETUAL:BTC-USDT"],
+                "strategy_id": ["CEFI_BTC_momentum_LIVE_1h_V1"],
+                "quantity": [0.1],
+                "benchmark_price": [50000.0],
+                # No direction column
+            }
+        )
+        result = validator.validate(df)
+        assert any("direction" in e.lower() for e in result)
+
+    @patch("unified_domain_client.schemas.instruction_schema.validate_strategy_id")
+    def test_null_direction_for_trade(self, mock_validate: MagicMock):
+        """Test that null direction is flagged for TRADE instructions."""
+        mock_validate.return_value = True
+        validator = InstructionValidator()
+        df = pd.DataFrame(
+            {
+                "timestamp": pd.array([1704067200000000000], dtype="int64"),
+                "instruction_id": ["i1"],
+                "instruction_type": ["TRADE"],
+                "instrument_id": ["BINANCE:PERPETUAL:BTC-USDT"],
+                "strategy_id": ["CEFI_BTC_momentum_LIVE_1h_V1"],
+                "quantity": [0.1],
+                "benchmark_price": [50000.0],
+                "direction": [None],
+            }
+        )
+        result = validator.validate(df)
+        assert any("direction" in e.lower() for e in result)
+
+    @patch("unified_domain_client.schemas.instruction_schema.validate_strategy_id")
+    def test_invalid_direction_zero_for_trade(self, mock_validate: MagicMock):
+        """Test that direction=0 is rejected for TRADE instructions."""
+        mock_validate.return_value = True
+        validator = InstructionValidator()
+        df = pd.DataFrame(
+            {
+                "timestamp": pd.array([1704067200000000000], dtype="int64"),
+                "instruction_id": ["i1"],
+                "instruction_type": ["TRADE"],
+                "instrument_id": ["BINANCE:PERPETUAL:BTC-USDT"],
+                "strategy_id": ["CEFI_BTC_momentum_LIVE_1h_V1"],
+                "quantity": [0.1],
+                "benchmark_price": [50000.0],
+                "direction": [0],
+            }
+        )
+        result = validator.validate(df)
+        assert any("direction" in e.lower() for e in result)
+
+    @patch("unified_domain_client.schemas.instruction_schema.validate_strategy_id")
+    def test_direction_not_required_for_heartbeat(self, mock_validate: MagicMock):
+        """Test that direction is not required for HEARTBEAT instructions."""
+        mock_validate.return_value = True
+        validator = InstructionValidator()
+        df = pd.DataFrame(
+            {
+                "timestamp": pd.array([1704067200000000000], dtype="int64"),
+                "instruction_id": ["i1"],
+                "instruction_type": ["HEARTBEAT"],
+                "instrument_id": ["BINANCE:PERPETUAL:BTC-USDT"],
+                "strategy_id": ["CEFI_BTC_momentum_LIVE_1h_V1"],
+                "quantity": [0.1],
+                "benchmark_price": [50000.0],
+            }
+        )
+        result = validator.validate(df)
+        assert result == []
+
+
+class TestInstructionValidatorAtomicValidation:
+    """Test ATOMIC instruction validation."""
+
+    @patch("unified_domain_client.schemas.instruction_schema.validate_strategy_id")
+    def test_atomic_requires_nested_instructions_column(self, mock_validate: MagicMock):
+        """Test that ATOMIC instructions require nested_instructions column."""
+        mock_validate.return_value = True
+        validator = InstructionValidator()
+        df = pd.DataFrame(
+            {
+                "timestamp": pd.array([1704067200000000000], dtype="int64"),
+                "instruction_id": ["i1"],
+                "instruction_type": ["ATOMIC"],
+                "instrument_id": ["BINANCE:PERPETUAL:BTC-USDT"],
+                "strategy_id": ["CEFI_BTC_momentum_LIVE_1h_V1"],
+                "quantity": [0.1],
+                "benchmark_price": [50000.0],
+            }
+        )
+        result = validator.validate(df)
+        assert any("nested_instructions" in e for e in result)
+
+    @patch("unified_domain_client.schemas.instruction_schema.validate_strategy_id")
+    def test_atomic_empty_nested_instructions(self, mock_validate: MagicMock):
+        """Test that ATOMIC with empty nested_instructions is flagged."""
+        mock_validate.return_value = True
+        validator = InstructionValidator()
+        df = pd.DataFrame(
+            {
+                "timestamp": pd.array([1704067200000000000], dtype="int64"),
+                "instruction_id": ["i1"],
+                "instruction_type": ["ATOMIC"],
+                "instrument_id": ["BINANCE:PERPETUAL:BTC-USDT"],
+                "strategy_id": ["CEFI_BTC_momentum_LIVE_1h_V1"],
+                "quantity": [0.1],
+                "benchmark_price": [50000.0],
+                "nested_instructions": [None],
+            }
+        )
+        result = validator.validate(df)
+        assert any("empty nested_instructions" in e for e in result)
+
+    @patch("unified_domain_client.schemas.instruction_schema.validate_strategy_id")
+    def test_atomic_valid_nested_instructions(self, mock_validate: MagicMock):
+        """Test valid ATOMIC instruction with valid nested types."""
+        import json
+
+        mock_validate.return_value = True
+        validator = InstructionValidator()
+        nested = json.dumps([{"instruction_type": "SWAP", "quantity": 1.0}])
+        df = pd.DataFrame(
+            {
+                "timestamp": pd.array([1704067200000000000], dtype="int64"),
+                "instruction_id": ["i1"],
+                "instruction_type": ["ATOMIC"],
+                "instrument_id": ["BINANCE:PERPETUAL:BTC-USDT"],
+                "strategy_id": ["CEFI_BTC_momentum_LIVE_1h_V1"],
+                "quantity": [0.1],
+                "benchmark_price": [50000.0],
+                "nested_instructions": [nested],
+            }
+        )
+        result = validator.validate(df)
+        assert result == []
+
+    @patch("unified_domain_client.schemas.instruction_schema.validate_strategy_id")
+    def test_atomic_invalid_nested_type_trade(self, mock_validate: MagicMock):
+        """Test ATOMIC with TRADE nested type is rejected."""
+        import json
+
+        mock_validate.return_value = True
+        validator = InstructionValidator()
+        # TRADE is not allowed in ATOMIC
+        nested = json.dumps([{"instruction_type": "TRADE", "quantity": 1.0}])
+        df = pd.DataFrame(
+            {
+                "timestamp": pd.array([1704067200000000000], dtype="int64"),
+                "instruction_id": ["i1"],
+                "instruction_type": ["ATOMIC"],
+                "instrument_id": ["BINANCE:PERPETUAL:BTC-USDT"],
+                "strategy_id": ["CEFI_BTC_momentum_LIVE_1h_V1"],
+                "quantity": [0.1],
+                "benchmark_price": [50000.0],
+                "nested_instructions": [nested],
+            }
+        )
+        result = validator.validate(df)
+        assert any("ATOMIC" in e and "TRADE" in e for e in result)
+
+    @patch("unified_domain_client.schemas.instruction_schema.validate_strategy_id")
+    def test_atomic_invalid_json(self, mock_validate: MagicMock):
+        """Test ATOMIC with invalid JSON nested_instructions."""
+        mock_validate.return_value = True
+        validator = InstructionValidator()
+        df = pd.DataFrame(
+            {
+                "timestamp": pd.array([1704067200000000000], dtype="int64"),
+                "instruction_id": ["i1"],
+                "instruction_type": ["ATOMIC"],
+                "instrument_id": ["BINANCE:PERPETUAL:BTC-USDT"],
+                "strategy_id": ["CEFI_BTC_momentum_LIVE_1h_V1"],
+                "quantity": [0.1],
+                "benchmark_price": [50000.0],
+                "nested_instructions": ["{not valid json}"],
+            }
+        )
+        result = validator.validate(df)
+        assert any("invalid JSON" in e for e in result)
+
+
+class TestInstructionValidatorOptionalFields:
+    """Test optional field validation."""
+
+    @patch("unified_domain_client.schemas.instruction_schema.validate_strategy_id")
+    def test_confidence_out_of_range(self, mock_validate: MagicMock):
+        """Test that confidence outside [0, 1] is flagged."""
+        mock_validate.return_value = True
+        validator = InstructionValidator()
+        df = _minimal_valid_df()
+        df["confidence"] = 1.5  # out of range
+        result = validator.validate(df)
+        assert any("confidence" in e for e in result)
+
+    @patch("unified_domain_client.schemas.instruction_schema.validate_strategy_id")
+    def test_urgency_out_of_range(self, mock_validate: MagicMock):
+        """Test that urgency outside [0, 1] is flagged."""
+        mock_validate.return_value = True
+        validator = InstructionValidator()
+        df = _minimal_valid_df()
+        df["urgency"] = -0.1  # out of range
+        result = validator.validate(df)
+        assert any("urgency" in e for e in result)
+
+    @patch("unified_domain_client.schemas.instruction_schema.validate_strategy_id")
+    def test_price_cap_less_than_price_floor(self, mock_validate: MagicMock):
+        """Test that price_cap < price_floor is flagged."""
+        mock_validate.return_value = True
+        validator = InstructionValidator()
+        df = _minimal_valid_df()
+        df["price_cap"] = 100.0
+        df["price_floor"] = 200.0
+        result = validator.validate(df)
+        assert any("price_cap" in e and "price_floor" in e for e in result)
+
+    @patch("unified_domain_client.schemas.instruction_schema.validate_strategy_id")
+    def test_chain_id_without_chain_sequence(self, mock_validate: MagicMock):
+        """Test that chain_id without chain_sequence is flagged."""
+        mock_validate.return_value = True
+        validator = InstructionValidator()
+        df = _minimal_valid_df()
+        df["chain_id"] = "chain-001"
+        df["chain_sequence"] = None
+        result = validator.validate(df)
+        assert any("chain_sequence" in e for e in result)
+
+    @patch("unified_domain_client.schemas.instruction_schema.validate_strategy_id")
+    def test_chain_sequence_negative(self, mock_validate: MagicMock):
+        """Test that negative chain_sequence is flagged."""
+        mock_validate.return_value = True
+        validator = InstructionValidator()
+        df = _minimal_valid_df()
+        df["chain_id"] = "chain-001"
+        df["chain_sequence"] = -1
+        result = validator.validate(df)
+        assert any("chain_sequence" in e for e in result)
+
+    @patch("unified_domain_client.schemas.instruction_schema.validate_strategy_id")
+    def test_duplicate_instruction_ids_flagged(self, mock_validate: MagicMock):
+        """Test that duplicate instruction_ids are flagged in strict mode."""
+        mock_validate.return_value = True
+        validator = InstructionValidator(strict=True)
+        df = pd.DataFrame(
+            {
+                "timestamp": pd.array([1704067200000000000, 1704067200000000000], dtype="int64"),
+                "instruction_id": ["i1", "i1"],  # duplicate!
+                "instruction_type": ["TRADE", "TRADE"],
+                "instrument_id": ["BINANCE:PERPETUAL:BTC-USDT", "BINANCE:PERPETUAL:BTC-USDT"],
+                "strategy_id": ["CEFI_BTC_momentum_LIVE_1h_V1", "CEFI_BTC_momentum_LIVE_1h_V1"],
+                "quantity": [0.1, 0.1],
+                "benchmark_price": [50000.0, 50000.0],
+                "direction": [1, 1],
+            }
+        )
+        result = validator.validate(df)
+        assert any("duplicate" in e.lower() for e in result)
+
+    @patch("unified_domain_client.schemas.instruction_schema.validate_strategy_id")
+    def test_timestamp_non_int_flagged(self, mock_validate: MagicMock):
+        """Test that non-int64 timestamp is flagged."""
+        mock_validate.return_value = True
+        validator = InstructionValidator()
+        df = _minimal_valid_df()
+        df["timestamp"] = df["timestamp"].astype(float)  # float instead of int
+        result = validator.validate(df)
+        assert any("timestamp" in e for e in result)
+
+    @patch("unified_domain_client.schemas.instruction_schema.validate_strategy_id")
+    def test_invalid_instrument_id_format(self, mock_validate: MagicMock):
+        """Test that instrument_id without two colons is flagged."""
+        mock_validate.return_value = True
+        validator = InstructionValidator()
+        df = _minimal_valid_df()
+        df["instrument_id"] = "BINANCE-BTC-USDT"  # missing colons
+        result = validator.validate(df)
+        assert any("instrument_id" in e for e in result)
+
+    @patch("unified_domain_client.schemas.instruction_schema.validate_strategy_id")
+    def test_invalid_strategy_id_format(self, mock_validate: MagicMock):
+        """Test that invalid strategy_id format is flagged."""
+        mock_validate.return_value = False  # simulate invalid format
+        validator = InstructionValidator()
+        df = _minimal_valid_df()
+        df["strategy_id"] = "invalid_strategy_id"
+        result = validator.validate(df)
+        assert any("strategy_id" in e for e in result)
+
+    @patch("unified_domain_client.schemas.instruction_schema.validate_strategy_id")
+    def test_benchmark_price_negative(self, mock_validate: MagicMock):
+        """Test that negative benchmark_price is flagged."""
+        mock_validate.return_value = True
+        validator = InstructionValidator()
+        df = _minimal_valid_df()
+        df["benchmark_price"] = -100.0
+        result = validator.validate(df)
+        assert any("benchmark_price" in e for e in result)
+
+    @patch("unified_domain_client.schemas.instruction_schema.validate_strategy_id")
+    def test_benchmark_price_nan(self, mock_validate: MagicMock):
+        """Test that NaN benchmark_price is flagged."""
+
+        mock_validate.return_value = True
+        validator = InstructionValidator()
+        df = _minimal_valid_df()
+        df["benchmark_price"] = float("nan")
+        result = validator.validate(df)
+        assert any("benchmark_price" in e for e in result)
+
+    @patch("unified_domain_client.schemas.instruction_schema.validate_strategy_id")
+    def test_null_instruction_id(self, mock_validate: MagicMock):
+        """Test that null instruction_id is flagged."""
+        mock_validate.return_value = True
+        validator = InstructionValidator()
+        df = _minimal_valid_df()
+        df["instruction_id"] = None
+        result = validator.validate(df)
+        assert any("instruction_id" in e for e in result)
+
+    @patch("unified_domain_client.schemas.instruction_schema.validate_strategy_id")
+    def test_null_instruction_type(self, mock_validate: MagicMock):
+        """Test that null instruction_type is flagged."""
+        mock_validate.return_value = True
+        validator = InstructionValidator()
+        df = _minimal_valid_df()
+        df["instruction_type"] = None
+        result = validator.validate(df)
+        assert any("instruction_type" in e for e in result)
+
+    @patch("unified_domain_client.schemas.instruction_schema.validate_strategy_id")
+    def test_deprecated_withdraw_instruction_type(self, mock_validate: MagicMock):
+        """Test that WITHDRAW (deprecated) does not raise but logs warning."""
+        mock_validate.return_value = True
+        validator = InstructionValidator()
+        df = pd.DataFrame(
+            {
+                "timestamp": pd.array([1704067200000000000], dtype="int64"),
+                "instruction_id": ["i1"],
+                "instruction_type": ["WITHDRAW"],
+                "instrument_id": ["BINANCE:PERPETUAL:BTC-USDT"],
+                "strategy_id": ["CEFI_BTC_momentum_LIVE_1h_V1"],
+                "quantity": [0.1],
+                "benchmark_price": [50000.0],
+            }
+        )
+        result = validator.validate(df)
+        # WITHDRAW is deprecated but still valid - no error expected
+        assert not any("Invalid instruction_type" in e for e in result)

@@ -107,7 +107,7 @@ def test_create_features_cloud_service():
     """Test create_features_cloud_service factory."""
     from unified_domain_client.factories import create_features_cloud_service
 
-    svc = create_features_cloud_service(gcs_bucket="custom-bucket")
+    svc = create_features_cloud_service(storage_bucket="custom-bucket")
     assert svc.domain == "features"
     assert svc.bucket == "custom-bucket"
 
@@ -173,7 +173,7 @@ def test_create_domain_cloud_service():
     from unified_domain_client.cloud_target import CloudTarget
     from unified_domain_client.standardized_service import create_domain_cloud_service
 
-    target = CloudTarget(project_id="p", gcs_bucket="bucket", bigquery_dataset="ds")
+    target = CloudTarget(project_id="p", storage_bucket="bucket", analytics_dataset="ds")
     svc = create_domain_cloud_service("market_data", target)
     assert svc.domain == "market_data"
 
@@ -282,7 +282,9 @@ def test_paths_registry_build_full_uri():
     """Test build_full_uri returns gs:// URI."""
     from unified_domain_client.paths.registry import build_full_uri
 
-    uri = build_full_uri("instruments", project_id="test-proj", category="cefi", date="2024-01-15", venue="BINANCE")
+    uri = build_full_uri(
+        "instruments", project_id="test-proj", category="cefi", date="2024-01-15", venue="BINANCE"
+    )
     assert uri.startswith("gs://")
 
 
@@ -299,7 +301,9 @@ def test_path_registry_class_format():
     """Test PathRegistry.format substitutes variables."""
     from unified_domain_client.paths.registry import PathRegistry
 
-    result = PathRegistry.format(PathRegistry.MARKET_TICK_RAW, date="2024-01-15", instrument="BTC-USDT")
+    result = PathRegistry.format(
+        PathRegistry.MARKET_TICK_RAW, date="2024-01-15", instrument="BTC-USDT"
+    )
     assert "2024-01-15" in result
     assert "BTC-USDT" in result
 
@@ -417,7 +421,7 @@ def test_sports_clients_instantiate_with_mocks():
         mock_cfg.return_value.gcp_project_id = "test-project"
         from unified_domain_client.sports.features_client import SportsFeaturesDomainClient
 
-        client = SportsFeaturesDomainClient(project_id="test-project", gcs_bucket="test-bucket")
+        client = SportsFeaturesDomainClient(project_id="test-project", storage_bucket="test-bucket")
         assert client is not None
 
     with (
@@ -427,7 +431,9 @@ def test_sports_clients_instantiate_with_mocks():
         mock_cfg.return_value.gcp_project_id = "test-project"
         from unified_domain_client.sports.fixtures_client import SportsFixturesDomainClient
 
-        client2 = SportsFixturesDomainClient(project_id="test-project", gcs_bucket="test-bucket")
+        client2 = SportsFixturesDomainClient(
+            project_id="test-project", storage_bucket="test-bucket"
+        )
         assert client2 is not None
 
     with (
@@ -437,7 +443,9 @@ def test_sports_clients_instantiate_with_mocks():
         mock_cfg.return_value.gcp_project_id = "test-project"
         from unified_domain_client.sports.mappings_client import SportsMappingsDomainClient
 
-        client3 = SportsMappingsDomainClient(project_id="test-project", gcs_bucket="test-bucket")
+        client3 = SportsMappingsDomainClient(
+            project_id="test-project", storage_bucket="test-bucket"
+        )
         assert client3 is not None
 
     with (
@@ -447,7 +455,7 @@ def test_sports_clients_instantiate_with_mocks():
         mock_cfg.return_value.gcp_project_id = "test-project"
         from unified_domain_client.sports.odds_client import SportsOddsDomainClient
 
-        client4 = SportsOddsDomainClient(project_id="test-project", gcs_bucket="test-bucket")
+        client4 = SportsOddsDomainClient(project_id="test-project", storage_bucket="test-bucket")
         assert client4 is not None
 
     with (
@@ -457,7 +465,9 @@ def test_sports_clients_instantiate_with_mocks():
         mock_cfg.return_value.gcp_project_id = "test-project"
         from unified_domain_client.sports.tick_data_client import SportsTickDataDomainClient
 
-        client5 = SportsTickDataDomainClient(project_id="test-project", gcs_bucket="test-bucket")
+        client5 = SportsTickDataDomainClient(
+            project_id="test-project", storage_bucket="test-bucket"
+        )
         assert client5 is not None
 
 
@@ -489,7 +499,9 @@ def test_timestamp_date_validator_no_timestamp_col():
     from unified_domain_client.timestamp_validation import TimestampDateValidator
 
     validator = TimestampDateValidator()
-    result = validator.validate(pd.DataFrame({"x": [1]}), expected_date=date(2024, 1, 15), timestamp_col="ts")
+    result = validator.validate(
+        pd.DataFrame({"x": [1]}), expected_date=date(2024, 1, 15), timestamp_col="ts"
+    )
     assert result.valid is False
     assert "No timestamp column found" in result.errors[0]
 

@@ -35,7 +35,9 @@ def get_reader(
         bq_dataset_raw = kwargs.get("bq_dataset")
         if not bq_dataset_raw:
             raise ValueError("bq_dataset is required for ReadMode.BQ_EXTERNAL")
-        return BigQueryExternalReader(project_id=str(project_id_raw), bq_dataset=str(bq_dataset_raw))
+        return BigQueryExternalReader(
+            project_id=str(project_id_raw), bq_dataset=str(bq_dataset_raw)
+        )
     if mode == ReadMode.ATHENA:
         account_id_raw = kwargs.get("account_id")
         if not account_id_raw:
@@ -45,6 +47,8 @@ def get_reader(
             raise ValueError("glue_database is required for ReadMode.ATHENA")
         region_raw = kwargs.get("region", "us-east-1")
         return AthenaReader(
-            account_id=str(account_id_raw), glue_database=str(glue_database_raw), region=str(region_raw)
+            account_id=str(account_id_raw),
+            glue_database=str(glue_database_raw),
+            region=str(region_raw),
         )
     raise ValueError(f"Unknown ReadMode: {mode}")

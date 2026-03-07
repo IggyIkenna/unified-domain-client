@@ -60,13 +60,15 @@ class InstrumentsDomainClient:
     def __init__(
         self,
         project_id: str | None = None,
-        gcs_bucket: str | None = None,
-        bigquery_dataset: str | None = None,
+        storage_bucket: str | None = None,
+        analytics_dataset: str | None = None,
     ) -> None:
-        bucket = gcs_bucket or UnifiedCloudConfig().instruments_gcs_bucket
-        self.cloud_service = StandardizedDomainCloudService(domain="instruments", bucket=bucket)
-        self._bucket = bucket
-        logger.info("InstrumentsDomainClient initialized: bucket=%s", bucket)
+        resolved_bucket = storage_bucket or UnifiedCloudConfig().instruments_gcs_bucket
+        self.cloud_service = StandardizedDomainCloudService(
+            domain="instruments", bucket=resolved_bucket
+        )
+        self._bucket = resolved_bucket
+        logger.info("InstrumentsDomainClient initialized: bucket=%s", resolved_bucket)
 
     def _load_and_filter_for_date(
         self,
@@ -102,7 +104,11 @@ class InstrumentsDomainClient:
         venues: list[str] | None = None,
     ) -> pd.DataFrame:
         """Get instrument definitions for a specific date with filtering."""
-        date_obj = datetime.strptime(date, "%Y-%m-%d").replace(tzinfo=UTC) if isinstance(date, str) else date
+        date_obj = (
+            datetime.strptime(date, "%Y-%m-%d").replace(tzinfo=UTC)
+            if isinstance(date, str)
+            else date
+        )
         date_str = date_obj.strftime("%Y-%m-%d")
         try:
             venues_to_load = venues or ([venue] if venue else None)
@@ -123,7 +129,9 @@ class InstrumentsDomainClient:
             logger.error("Failed to load instruments for %s: %s", date_str, e)
             return pd.DataFrame()
 
-    def _load_instruments_by_venue(self, date_str: str, venues: list[str] | None = None) -> pd.DataFrame:
+    def _load_instruments_by_venue(
+        self, date_str: str, venues: list[str] | None = None
+    ) -> pd.DataFrame:
         try:
             client = get_storage_client()
             bucket = client.bucket(self._bucket)
@@ -138,7 +146,9 @@ class InstrumentsDomainClient:
                     Iterable[object], bucket.list_blobs(prefix=base_prefix, delimiter="/")
                 )
                 list(iterator)
-                raw_prefixes: list[str] | None = cast(list[str] | None, getattr(iterator, "prefixes", None))
+                raw_prefixes: list[str] | None = cast(
+                    list[str] | None, getattr(iterator, "prefixes", None)
+                )
                 prefixes: list[str] = list(raw_prefixes) if raw_prefixes is not None else []
                 venue_folders = [p for p in prefixes if "venue=" in p]
 
@@ -148,7 +158,9 @@ class InstrumentsDomainClient:
             def load_venue_file(venue_prefix: str) -> pd.DataFrame:
                 try:
                     gcs_path = f"{venue_prefix}instruments.parquet"
-                    result = self.cloud_service.download_from_gcs(gcs_path=gcs_path, format="parquet")
+                    result = self.cloud_service.download_from_gcs(
+                        gcs_path=gcs_path, format="parquet"
+                    )
                     return result if isinstance(result, pd.DataFrame) else pd.DataFrame()
                 except (ConnectionError, TimeoutError, OSError, ValueError) as e:
                     logger.warning("Could not load %s: %s", venue_prefix, e)
@@ -181,15 +193,21 @@ class InstrumentsDomainClient:
                 if _is_empty_or_na(from_datetime_str):
                     return True
                 try:
-                    from_date = datetime.fromisoformat(str(from_datetime_str).replace("Z", "+00:00"))
+                    from_date = datetime.fromisoformat(
+                        str(from_datetime_str).replace("Z", "+00:00")
+                    )
                     if from_date.tzinfo is None:
                         from_date = from_date.replace(tzinfo=UTC)
-                    target_date_aware = target_date if target_date.tzinfo else target_date.replace(tzinfo=UTC)
+                    target_date_aware = (
+                        target_date if target_date.tzinfo else target_date.replace(tzinfo=UTC)
+                    )
                     return target_date_aware >= from_date
                 except (ValueError, AttributeError):
                     return True
 
-            filtered_df = filtered_df.loc[filtered_df["available_from_datetime"].apply(is_available_from)]
+            filtered_df = filtered_df.loc[
+                filtered_df["available_from_datetime"].apply(is_available_from)
+            ]
 
         if "available_to_datetime" in filtered_df.columns:
 
@@ -200,12 +218,16 @@ class InstrumentsDomainClient:
                     to_date = datetime.fromisoformat(str(to_datetime_str).replace("Z", "+00:00"))
                     if to_date.tzinfo is None:
                         to_date = to_date.replace(tzinfo=UTC)
-                    target_date_aware = target_date if target_date.tzinfo else target_date.replace(tzinfo=UTC)
+                    target_date_aware = (
+                        target_date if target_date.tzinfo else target_date.replace(tzinfo=UTC)
+                    )
                     return target_date_aware <= to_date
                 except (ValueError, AttributeError):
                     return True
 
-            filtered_df = filtered_df.loc[filtered_df["available_to_datetime"].apply(is_available_to)]
+            filtered_df = filtered_df.loc[
+                filtered_df["available_to_datetime"].apply(is_available_to)
+            ]
 
         return filtered_df
 
@@ -234,7 +256,11 @@ class InstrumentsDomainClient:
             except re.error as e:
                 logger.warning("Invalid regex pattern '%s': %s", symbol_pattern, e)
         if instrument_ids:
-            ids = [i.strip() for i in instrument_ids.split(",")] if isinstance(instrument_ids, str) else instrument_ids
+            ids = (
+                [i.strip() for i in instrument_ids.split(",")]
+                if isinstance(instrument_ids, str)
+                else instrument_ids
+            )
             df = df.loc[df["instrument_key"].isin(ids)]
         return df
 
@@ -297,7 +323,13 @@ class InstrumentsDomainClient:
         if "data_types" in df.columns:
             extra["data_type_coverage"] = {
                 dt: len(df[df["data_types"].str.contains(dt, na=False)])
-                for dt in ["trades", "book_snapshot_5", "derivative_ticker", "liquidations", "options_chain"]
+                for dt in [
+                    "trades",
+                    "book_snapshot_5",
+                    "derivative_ticker",
+                    "liquidations",
+                    "options_chain",
+                ]
             }
         return extra
 
@@ -318,8 +350,12 @@ class InstrumentsDomainClient:
             "type_breakdown": _to_str_dict(instruments_df["instrument_type"].value_counts()),
             "base_currencies": int(instruments_df["base_asset"].nunique()),
             "quote_currencies": int(instruments_df["quote_asset"].nunique()),
-            "top_base_currencies": _to_str_dict(instruments_df["base_asset"].value_counts().head(10)),
-            "top_quote_currencies": _to_str_dict(instruments_df["quote_asset"].value_counts().head(10)),
+            "top_base_currencies": _to_str_dict(
+                instruments_df["base_asset"].value_counts().head(10)
+            ),
+            "top_quote_currencies": _to_str_dict(
+                instruments_df["quote_asset"].value_counts().head(10)
+            ),
         }
         stats.update(self._optional_coverage_stats(instruments_df))
         return stats
@@ -394,7 +430,9 @@ class InstrumentsDomainClient:
         limit: int = 100,
     ) -> pd.DataFrame:
         """Search instruments by symbol pattern (regex supported)."""
-        instruments_df = self.get_instruments_for_date(date, venue=venue, symbol_pattern=symbol_pattern)
+        instruments_df = self.get_instruments_for_date(
+            date, venue=venue, symbol_pattern=symbol_pattern
+        )
         return instruments_df.head(limit) if len(instruments_df) > limit else instruments_df
 
     def get_expiring_instruments(

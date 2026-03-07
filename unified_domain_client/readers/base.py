@@ -59,7 +59,9 @@ class MarketDataReader(BaseReader):
 
     def read_candles(self, instrument: str, date: str, timeframe: str = "1h") -> pd.DataFrame:
         """Read candle data for instrument, date and timeframe."""
-        path = PathRegistry.format(PathRegistry.MARKET_CANDLES, instrument=instrument, date=date, timeframe=timeframe)
+        path = PathRegistry.format(
+            PathRegistry.MARKET_CANDLES, instrument=instrument, date=date, timeframe=timeframe
+        )
         return self.read_parquet(path)
 
 
@@ -79,5 +81,7 @@ class MLReader(BaseReader):
 
     def read_predictions(self, instrument: str, date: str, timeframe: str = "24h") -> pd.DataFrame:
         """Read ML predictions for instrument, date and timeframe."""
-        path = PathRegistry.format(PathRegistry.ML_PREDICTIONS, instrument=instrument, date=date, timeframe=timeframe)
+        path = PathRegistry.format(
+            PathRegistry.ML_PREDICTIONS, instrument=instrument, date=date, timeframe=timeframe
+        )
         return self.read_parquet(path)

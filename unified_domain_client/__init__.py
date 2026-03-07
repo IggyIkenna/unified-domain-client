@@ -131,7 +131,12 @@ def __getattr__(name: str) -> object:
     """
     if name not in _LAZY_NAMES:
         raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-    if name in ("CloudDataProviderBase", "FeaturesDataProvider", "InstrumentsDataProvider", "MarketDataProvider"):
+    if name in (
+        "CloudDataProviderBase",
+        "FeaturesDataProvider",
+        "InstrumentsDataProvider",
+        "MarketDataProvider",
+    ):
         from unified_domain_client.cloud_data_provider import (
             CloudDataProviderBase,
             FeaturesDataProvider,

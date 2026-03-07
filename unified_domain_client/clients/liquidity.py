@@ -34,9 +34,14 @@ class L2BookCheckpointClient(BaseDataClient):
             DataFrame with columns: instrument_key, timestamp, sequence,
             bids, asks, bid_levels, ask_levels, best_bid, best_ask, mid_price.
         """
-        bucket = build_bucket("l2_book_checkpoints", project_id=self._config.gcp_project_id, category=category)
+        bucket = build_bucket(
+            "l2_book_checkpoints", project_id=self._config.gcp_project_id, category=category
+        )
         safe_key = instrument_key.replace("/", "_").replace(":", "_")
-        path = build_path("l2_book_checkpoints", date=date, venue=venue) + f"instrument_key={safe_key}.parquet"
+        path = (
+            build_path("l2_book_checkpoints", date=date, venue=venue)
+            + f"instrument_key={safe_key}.parquet"
+        )
         return self._read_parquet(bucket, path)
 
     def list_instrument_keys(
@@ -46,7 +51,9 @@ class L2BookCheckpointClient(BaseDataClient):
         category: str = "cefi",
     ) -> list[str]:
         """List instrument keys that have checkpoint data for a given date+venue."""
-        bucket = build_bucket("l2_book_checkpoints", project_id=self._config.gcp_project_id, category=category)
+        bucket = build_bucket(
+            "l2_book_checkpoints", project_id=self._config.gcp_project_id, category=category
+        )
         prefix = build_path("l2_book_checkpoints", date=date, venue=venue)
         blobs = self._list_blobs(bucket, prefix)
         keys: list[str] = []
@@ -81,7 +88,9 @@ class LiquidationClustersClient(BaseDataClient):
         Returns:
             DataFrame with CanonicalLiquidationCluster fields.
         """
-        bucket = build_bucket("liquidation_clusters", project_id=self._config.gcp_project_id, category=category)
+        bucket = build_bucket(
+            "liquidation_clusters", project_id=self._config.gcp_project_id, category=category
+        )
         safe_key = instrument_key.replace("/", "_").replace(":", "_")
         path = (
             build_path("liquidation_clusters", date=date, source=source, venue=venue)
@@ -111,7 +120,12 @@ class LiquidityFeaturesClient(BaseDataClient):
         Returns:
             DataFrame with all liquidity feature columns at 1-min resolution.
         """
-        bucket = build_bucket("liquidity_features_1m", project_id=self._config.gcp_project_id, category=category)
+        bucket = build_bucket(
+            "liquidity_features_1m", project_id=self._config.gcp_project_id, category=category
+        )
         safe_key = instrument_key.replace("/", "_").replace(":", "_")
-        path = build_path("liquidity_features_1m", date=date, venue=venue) + f"instrument_key={safe_key}.parquet"
+        path = (
+            build_path("liquidity_features_1m", date=date, venue=venue)
+            + f"instrument_key={safe_key}.parquet"
+        )
         return self._read_parquet(bucket, path)

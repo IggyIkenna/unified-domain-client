@@ -21,16 +21,19 @@ class PnLDomainClient:
     def __init__(
         self,
         project_id: str | None = None,
-        gcs_bucket: str | None = None,
+        storage_bucket: str | None = None,
     ) -> None:
         self._project_id = project_id or UnifiedCloudConfig().gcp_project_id
-        bucket = gcs_bucket or build_bucket("pnl_attribution", project_id=self._project_id)
+        bucket = storage_bucket or build_bucket("pnl_attribution", project_id=self._project_id)
         self.cloud_service = StandardizedDomainCloudService(domain="pnl", bucket=bucket)
         self._bucket = bucket
 
     def get_pnl_attribution(self, date: str, strategy_id: str) -> pd.DataFrame:
         """Get PnL attribution for a specific date and strategy."""
-        path = build_path("pnl_attribution", date=date, strategy_id=strategy_id) + "pnl_attribution.parquet"
+        path = (
+            build_path("pnl_attribution", date=date, strategy_id=strategy_id)
+            + "pnl_attribution.parquet"
+        )
         try:
             client = get_storage_client(project_id=self._project_id)
             raw = client.download_bytes(self._bucket, path)

@@ -56,7 +56,9 @@ class MarketDataWriter(BaseWriter):
 class FeaturesWriter(BaseWriter):
     """Writer for feature data files."""
 
-    def write_delta_one(self, df: pd.DataFrame, instrument: str, date: str, timeframe: str = "24h") -> str:
+    def write_delta_one(
+        self, df: pd.DataFrame, instrument: str, date: str, timeframe: str = "24h"
+    ) -> str:
         """Write delta one features for instrument, date and timeframe."""
         path = PathRegistry.format(
             PathRegistry.FEATURES_DELTA_ONE, instrument=instrument, timeframe=timeframe, date=date
@@ -67,7 +69,11 @@ class FeaturesWriter(BaseWriter):
 class MLWriter(BaseWriter):
     """Writer for ML data files."""
 
-    def write_predictions(self, df: pd.DataFrame, instrument: str, date: str, timeframe: str = "24h") -> str:
+    def write_predictions(
+        self, df: pd.DataFrame, instrument: str, date: str, timeframe: str = "24h"
+    ) -> str:
         """Write ML predictions for instrument, date and timeframe."""
-        path = PathRegistry.format(PathRegistry.ML_PREDICTIONS, instrument=instrument, timeframe=timeframe, date=date)
+        path = PathRegistry.format(
+            PathRegistry.ML_PREDICTIONS, instrument=instrument, timeframe=timeframe, date=date
+        )
         return self.write_parquet(df, path)

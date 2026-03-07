@@ -71,7 +71,9 @@ class DataCompletionChecker:
             prefix_pattern = prefix_pattern.replace("{instrument}", instrument)
         base_prefix = prefix_pattern.split("{date}")[0]
 
-        blobs_iterator: Iterable[object] = cast(Iterable[object], bucket_obj.list_blobs(prefix=base_prefix))
+        blobs_iterator: Iterable[object] = cast(
+            Iterable[object], bucket_obj.list_blobs(prefix=base_prefix)
+        )
         start_dt = datetime.strptime(start_date, "%Y-%m-%d")
         end_dt = datetime.strptime(end_date, "%Y-%m-%d")
 
@@ -165,7 +167,9 @@ def get_available_date_range(
     client = get_storage_client()
     bucket_obj = client.bucket(bucket)
 
-    blobs_iterator: Iterable[object] = cast(Iterable[object], bucket_obj.list_blobs(prefix=path_prefix))
+    blobs_iterator: Iterable[object] = cast(
+        Iterable[object], bucket_obj.list_blobs(prefix=path_prefix)
+    )
 
     dates: list[datetime] = []
 

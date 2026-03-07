@@ -347,7 +347,11 @@ class InstructionValidator:
         if null_type_count > 0:
             errors.append(f"instruction_type is REQUIRED but has {null_type_count} null values")
 
-        invalid_types = df[~df["instruction_type"].isin(VALID_INSTRUCTION_TYPES)]["instruction_type"].dropna().unique()
+        invalid_types = (
+            df[~df["instruction_type"].isin(VALID_INSTRUCTION_TYPES)]["instruction_type"]
+            .dropna()
+            .unique()
+        )
         if len(invalid_types) > 0:
             errors.append(
                 f"Invalid instruction_type values: {list(invalid_types)}. Must be one of {VALID_INSTRUCTION_TYPES}"
@@ -375,7 +379,9 @@ class InstructionValidator:
         trade_swap_df = df[trade_swap_mask]
 
         if "direction" not in df.columns:
-            errors.append(f"direction column REQUIRED for TRADE/SWAP instructions ({trade_swap_mask.sum()} rows)")
+            errors.append(
+                f"direction column REQUIRED for TRADE/SWAP instructions ({trade_swap_mask.sum()} rows)"
+            )
             return
 
         # Check for missing direction in TRADE/SWAP rows
@@ -450,12 +456,16 @@ class InstructionValidator:
         # Check for negative values
         negative_count = (df["benchmark_price"] < 0).sum()
         if negative_count > 0:
-            errors.append(f"benchmark_price contains {negative_count} negative values. benchmark_price must be > 0.")
+            errors.append(
+                f"benchmark_price contains {negative_count} negative values. benchmark_price must be > 0."
+            )
 
         # Check for NaN values
         nan_count = df["benchmark_price"].isna().sum()
         if nan_count > 0:
-            errors.append(f"benchmark_price contains {nan_count} NaN values. benchmark_price must be > 0.")
+            errors.append(
+                f"benchmark_price contains {nan_count} NaN values. benchmark_price must be > 0."
+            )
 
     def _validate_instruction_id(self, df: pd.DataFrame, errors: list[str]) -> None:
         """Validate instruction_id is present and unique."""
@@ -472,7 +482,9 @@ class InstructionValidator:
     def _validate_timestamp_type(self, df: pd.DataFrame, errors: list[str]) -> None:
         """Validate timestamp column dtype is int64."""
         if not df["timestamp"].dtype.name.startswith("int"):
-            errors.append(f"timestamp column must be int64 (nanoseconds), got {df['timestamp'].dtype}")
+            errors.append(
+                f"timestamp column must be int64 (nanoseconds), got {df['timestamp'].dtype}"
+            )
 
     def _validate_strategy_id_format(self, df: pd.DataFrame, errors: list[str]) -> None:
         """Validate strategy_id format matches expected pattern."""
@@ -489,7 +501,9 @@ class InstructionValidator:
         unique_inst_ids = df["instrument_id"].unique()
         for inst_id in unique_inst_ids:
             if inst_id and str(inst_id).count(":") < 2:
-                errors.append(f"Invalid instrument_id format: {inst_id}. Expected: VENUE:TYPE:SYMBOL")
+                errors.append(
+                    f"Invalid instrument_id format: {inst_id}. Expected: VENUE:TYPE:SYMBOL"
+                )
 
     def _validate_optional_fields(self, df: pd.DataFrame, errors: list[str]) -> None:
         """Validate optional fields (confidence, urgency, price bounds, chains)."""
@@ -500,7 +514,9 @@ class InstructionValidator:
                 non_null = df[col].notna()
                 out_of_range = ((df[col] < 0) | (df[col] > 1)) & non_null
                 if out_of_range.sum() > 0:
-                    errors.append(f"{col} contains {out_of_range.sum()} values outside [0, 1] range")
+                    errors.append(
+                        f"{col} contains {out_of_range.sum()} values outside [0, 1] range"
+                    )
 
         # Validate price bounds (price_cap >= price_floor if both set)
         if "price_cap" in df.columns and "price_floor" in df.columns:
@@ -508,7 +524,9 @@ class InstructionValidator:
             if both_set.any():
                 invalid_bounds = df[both_set]["price_cap"] < df[both_set]["price_floor"]
                 if invalid_bounds.sum() > 0:
-                    errors.append(f"price_cap must be >= price_floor: {invalid_bounds.sum()} violations")
+                    errors.append(
+                        f"price_cap must be >= price_floor: {invalid_bounds.sum()} violations"
+                    )
 
         # Validate chain_sequence is positive if chain_id is set
         if "chain_id" in df.columns and "chain_sequence" in df.columns:
@@ -516,7 +534,9 @@ class InstructionValidator:
             if has_chain.any():
                 missing_seq = has_chain & df["chain_sequence"].isna()
                 if missing_seq.sum() > 0:
-                    errors.append(f"{missing_seq.sum()} rows have chain_id but missing chain_sequence")
+                    errors.append(
+                        f"{missing_seq.sum()} rows have chain_id but missing chain_sequence"
+                    )
 
                 invalid_seq = has_chain & (df["chain_sequence"] <= 0)
                 if invalid_seq.sum() > 0:
@@ -580,7 +600,9 @@ def validate_instruction_parquet(
     except (OSError, PermissionError, ValueError) as e:
         return [f"Failed to read parquet file {path}: {e}"]
 
-    return validate_instruction_dataframe(df, strict=strict, allow_legacy_signal_id=allow_legacy_signal_id)
+    return validate_instruction_dataframe(
+        df, strict=strict, allow_legacy_signal_id=allow_legacy_signal_id
+    )
 
 
 def get_instruction_pyarrow_schema() -> pa.Schema:

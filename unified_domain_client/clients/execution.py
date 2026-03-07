@@ -22,7 +22,7 @@ class _ExecClientConfig(TypedDict, total=False):
     """Typed kwargs for ExecutionDomainClient factory."""
 
     project_id: NotRequired[str | None]
-    gcs_bucket: NotRequired[str | None]
+    storage_bucket: NotRequired[str | None]
 
 
 class ExecutionDomainClient:
@@ -31,11 +31,11 @@ class ExecutionDomainClient:
     def __init__(
         self,
         project_id: str | None = None,
-        gcs_bucket: str | None = None,
-        bigquery_dataset: str | None = None,
+        storage_bucket: str | None = None,
+        analytics_dataset: str | None = None,
     ) -> None:
         proj = project_id or UnifiedCloudConfig().gcp_project_id
-        bucket = gcs_bucket or UnifiedCloudConfig().execution_gcs_bucket
+        bucket = storage_bucket or UnifiedCloudConfig().execution_gcs_bucket
         self.cloud_service = StandardizedDomainCloudService(domain="execution", bucket=bucket)
         self._project_id = proj
         self._bucket = bucket

@@ -44,8 +44,8 @@ class CloudDataProviderBase(ABC):
         domain: str,
         bucket: str = "",
         project_id: str | None = None,
-        gcs_bucket: str | None = None,
-        bigquery_dataset: str | None = None,
+        storage_bucket: str | None = None,
+        analytics_dataset: str | None = None,
         bigquery_location: str | None = None,
         cloud_target: object | None = None,
     ):
@@ -56,15 +56,15 @@ class CloudDataProviderBase(ABC):
             domain: Domain name (e.g., 'instruments', 'market_data', 'features', 'ml')
             bucket: Cloud storage bucket name (preferred)
             project_id: GCP project ID (used for bucket resolution if bucket not set)
-            gcs_bucket: Alternate bucket arg — used if bucket not set
-            bigquery_dataset: Ignored — kept for backward compatibility
+            storage_bucket: Alternate bucket arg — used if bucket not set
+            analytics_dataset: Ignored — kept for backward compatibility
             bigquery_location: Ignored — kept for backward compatibility
             cloud_target: Ignored — kept for backward compatibility
         """
         self.domain = domain
         config = UnifiedCloudConfig()
 
-        resolved_bucket = bucket or gcs_bucket or config.gcs_bucket or f"{domain}-store"
+        resolved_bucket = bucket or storage_bucket or config.gcs_bucket or f"{domain}-store"
         self.bucket: str = resolved_bucket
 
         # Create domain cloud service
@@ -129,7 +129,9 @@ class CloudDataProviderBase(ABC):
                 logger.error("❌ Failed to load from GCS: %s", e)
             return pd.DataFrame()
 
-    def _build_category_service(self, category: str) -> tuple[str, "StandardizedDomainCloudService"]:
+    def _build_category_service(
+        self, category: str
+    ) -> tuple[str, "StandardizedDomainCloudService"]:
         """Build a category-specific cloud service. Returns (bucket_name, service)."""
         config = UnifiedCloudConfig()
         try:
@@ -162,7 +164,9 @@ class CloudDataProviderBase(ABC):
         try:
             category_bucket, category_service = self._build_category_service(category)
             logger.info("📥 Loading %s data from: %s/%s", category, category_bucket, gcs_path)
-            result = category_service.download_from_gcs(gcs_path=gcs_path, format=format, log_errors=False)
+            result = category_service.download_from_gcs(
+                gcs_path=gcs_path, format=format, log_errors=False
+            )
             df = result if isinstance(result, pd.DataFrame) else pd.DataFrame()
 
             if df.empty:
@@ -207,14 +211,14 @@ class CloudDataProviderBase(ABC):
             logger.error("❌ BigQuery query failed: %s", e)
             return pd.DataFrame()
 
-    def upload_to_gcs(
+    def upload_artifact(
         self,
         df: pd.DataFrame,
         gcs_path: str,
         format: str = "parquet",
     ) -> bool:
         """
-        Upload data to GCS.
+        Upload data to cloud storage.
 
         Args:
             df: DataFrame to upload
@@ -225,8 +229,8 @@ class CloudDataProviderBase(ABC):
             True if successful
         """
         try:
-            logger.info("📤 Uploading %s rows to GCS: %s", len(df), gcs_path)
-            self.cloud_service.upload_to_gcs(
+            logger.info("📤 Uploading %s rows to storage: %s", len(df), gcs_path)
+            self.cloud_service.upload_artifact(
                 data=df,
                 gcs_path=gcs_path,
                 format=format,
@@ -235,7 +239,7 @@ class CloudDataProviderBase(ABC):
             return True
 
         except (ConnectionError, TimeoutError, OSError, ValueError) as e:
-            logger.error("❌ Failed to upload to GCS: %s", e)
+            logger.error("❌ Failed to upload to storage: %s", e)
             return False
 
     def check_gcs_exists(self, gcs_path: str) -> bool:
@@ -276,8 +280,8 @@ class InstrumentsDataProvider(CloudDataProviderBase):
         config = UnifiedCloudConfig()
         super().__init__(
             domain="instruments",
-            gcs_bucket=_resolve_instruments_bucket_cefi(),
-            bigquery_dataset=config.instruments_bigquery_dataset,
+            storage_bucket=_resolve_instruments_bucket_cefi(),
+            analytics_dataset=config.instruments_bigquery_dataset,
         )
 
     def get_instruments_for_date(
@@ -348,8 +352,8 @@ class MarketDataProvider(CloudDataProviderBase):
         config = UnifiedCloudConfig()
         super().__init__(
             domain="market_data",
-            gcs_bucket=config.market_data_gcs_bucket,
-            bigquery_dataset=config.market_data_bigquery_dataset,
+            storage_bucket=config.market_data_gcs_bucket,
+            analytics_dataset=config.market_data_bigquery_dataset,
         )
 
     def _build_candles_query(
@@ -409,7 +413,9 @@ class MarketDataProvider(CloudDataProviderBase):
             start_date = start_date.replace(tzinfo=UTC)
         if end_date.tzinfo is None:
             end_date = end_date.replace(tzinfo=UTC)
-        query, params = self._build_candles_query(instrument_id, timeframe, start_date, end_date, limit)
+        query, params = self._build_candles_query(
+            instrument_id, timeframe, start_date, end_date, limit
+        )
         return self.query_bigquery(query, params)
 
 
@@ -420,8 +426,8 @@ class FeaturesDataProvider(CloudDataProviderBase):
         config = UnifiedCloudConfig()
         super().__init__(
             domain="features",
-            gcs_bucket=config.features_gcs_bucket,
-            bigquery_dataset=config.bigquery_dataset,
+            storage_bucket=config.features_gcs_bucket,
+            analytics_dataset=config.bigquery_dataset,
         )
 
     def get_features_for_date(

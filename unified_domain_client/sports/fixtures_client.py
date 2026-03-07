@@ -20,10 +20,10 @@ class SportsFixturesDomainClient:
     def __init__(
         self,
         project_id: str | None = None,
-        gcs_bucket: str | None = None,
+        storage_bucket: str | None = None,
     ) -> None:
         self._project_id = project_id or UnifiedCloudConfig().gcp_project_id
-        bucket = gcs_bucket or build_bucket("sports_fixtures", project_id=self._project_id)
+        bucket = storage_bucket or build_bucket("sports_fixtures", project_id=self._project_id)
         self.cloud_service = StandardizedDomainCloudService(domain="sports", bucket=bucket)
 
     def read_fixtures(self, season: str, league: str, date: str) -> pd.DataFrame:
@@ -37,7 +37,10 @@ class SportsFixturesDomainClient:
         Returns:
             DataFrame of fixture data, or empty DataFrame on failure.
         """
-        path = build_path("sports_fixtures", season=season, league=league, date=date) + "fixtures.parquet"
+        path = (
+            build_path("sports_fixtures", season=season, league=league, date=date)
+            + "fixtures.parquet"
+        )
         try:
             result = self.cloud_service.download_from_gcs(gcs_path=path, format="parquet")
             return result if isinstance(result, pd.DataFrame) else pd.DataFrame()
@@ -57,15 +60,20 @@ class SportsFixturesDomainClient:
         Returns:
             GCS URI of the uploaded file.
         """
-        path = build_path("sports_fixtures", season=season, league=league, date=date) + "fixtures.parquet"
-        return self.cloud_service.upload_to_gcs(data=df, gcs_path=path, format="parquet")
+        path = (
+            build_path("sports_fixtures", season=season, league=league, date=date)
+            + "fixtures.parquet"
+        )
+        return self.cloud_service.upload_artifact(df, path, format="parquet")
 
     def get_available_dates(self, season: str, league: str) -> list[str]:
         """List dates that have fixture data for a given season and league."""
         try:
             bucket_name = build_bucket("sports_fixtures", project_id=self._project_id)
             client = get_storage_client(project_id=self._project_id)
-            blobs = client.list_blobs(bucket_name, prefix=f"fixtures/season={season}/league={league}/")
+            blobs = client.list_blobs(
+                bucket_name, prefix=f"fixtures/season={season}/league={league}/"
+            )
             dates: list[str] = []
             for blob in blobs:
                 for part in blob.name.split("/"):
