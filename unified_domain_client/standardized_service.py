@@ -49,7 +49,7 @@ class StandardizedDomainCloudService:
                 logger.error("Failed to download %s/%s: %s", self.bucket, path, e)
             raise
 
-    def upload_to_gcs(
+    def upload_artifact(
         self,
         data: pd.DataFrame,
         gcs_path: str,
@@ -82,10 +82,19 @@ class StandardizedDomainCloudService:
 
 def create_domain_cloud_service(
     domain: str,
-    bucket: str,
+    bucket: "str | object" = "",
 ) -> StandardizedDomainCloudService:
-    """Factory for StandardizedDomainCloudService."""
-    return StandardizedDomainCloudService(domain=domain, bucket=bucket)
+    """Factory for StandardizedDomainCloudService.
+
+    ``bucket`` may be a plain str or a CloudTarget-like object with a
+    ``storage_bucket`` attribute (backward compatibility).
+    """
+    if isinstance(bucket, str):
+        resolved = bucket
+    else:
+        # CloudTarget or any object with storage_bucket attribute
+        resolved = getattr(bucket, "storage_bucket", "") or ""
+    return StandardizedDomainCloudService(domain=domain, bucket=resolved)
 
 
 def make_domain_service(

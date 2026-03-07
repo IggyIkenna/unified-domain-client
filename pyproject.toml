@@ -1,6 +1,6 @@
 [build-system]
 requires = [
-    "setuptools>=65",
+    "setuptools>=75,<82",
     "wheel",
 ]
 build-backend = "setuptools.build_meta"
@@ -8,15 +8,11 @@ build-backend = "setuptools.build_meta"
 [tool.uv.sources.unified-api-contracts]
 path = "../unified-api-contracts"
 
-
 [tool.uv.sources.unified-cloud-interface]
 path = "../unified-cloud-interface"
 
 [tool.uv.sources.unified-config-interface]
 path = "../unified-config-interface"
-
-[tool.uv.sources.unified-events-interface]
-path = "../unified-events-interface"
 
 [tool.uv.sources.unified-internal-contracts]
 path = "../unified-internal-contracts"
@@ -37,7 +33,7 @@ exclude = [
 ]
 
 [tool.ruff]
-line-length = 120
+line-length = 100
 target-version = "py313"
 
 [tool.ruff.lint]
@@ -48,10 +44,12 @@ select = [
     "I",
     "UP",
     "G",
+    "C90",
 ]
-ignore = [
-    "E501",
-]
+ignore = []
+
+[tool.ruff.lint.mccabe]
+max-complexity = 7
 
 [tool.pytest.ini_options]
 testpaths = [
@@ -79,30 +77,43 @@ reportOptionalMemberAccess = "error"
 reportOptionalSubscript = "error"
 reportGeneralTypeIssues = "error"
 reportMissingTypeStubs = false
-extraPaths = ["../unified-config-interface", "../unified-internal-contracts", "../unified-events-interface", "../unified-cloud-interface", "../unified-trading-library"]
+extraPaths = [
+    "../unified-config-interface",
+    "../unified-internal-contracts",
+    "../unified-events-interface",
+    "../unified-cloud-interface",
+    "../unified-trading-library",
+]
 
 [tool.coverage.run]
 parallel = true
-concurrency = ["multiprocessing", "thread"]
-source = ["unified_domain_client"]
+concurrency = [
+    "multiprocessing",
+    "thread",
+]
+source = [
+    "unified_domain_client",
+]
 
 [tool.coverage.report]
 fail_under = 70
 
+[tool.quality-gates]
+repo_arch_tier = "3"
+
 [project]
 name = "unified-domain-client"
-version = "0.1.14"
+version = "0.1.19"
 description = "Trading domain services - clients, validation, cloud service wrappers"
 requires-python = ">=3.13,<3.14"
 dependencies = [
     "pandas>=2.3.0,<3.0.0",
     "pyarrow>=23.0.0,<24.0.0",
     "pyyaml>=6.0.1,<7.0.0",
-    "unified-api-contracts>=0.1.0",
-    "unified-cloud-interface[gcp]>=0.1.0",
-    "unified-config-interface>=0.3.0",
-    "unified-events-interface>=0.1.0",
-    "unified-internal-contracts>=0.1.0",
+    "unified-api-contracts>=0.1.0,<1.0.0",
+    "unified-cloud-interface[gcp]>=0.1.0,<1.0.0",
+    "unified-config-interface>=0.3.0,<1.0.0",
+    "unified-internal-contracts>=0.1.0,<1.0.0",
     "unified-trading-library>=0.4.0,<1.0.0",
 ]
 

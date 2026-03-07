@@ -99,7 +99,9 @@ class DateFilterService:
         """Resolve available_from datetime from instrument data or protocol default."""
         available_from_str = inst_data.get("available_from_datetime")
         if available_from_str is not None and available_from_str != "":
-            return _parse_iso_datetime(available_from_str if isinstance(available_from_str, str) else None)
+            return _parse_iso_datetime(
+                available_from_str if isinstance(available_from_str, str) else None
+            )
         if protocol:
             default_str = self.get_protocol_default_date(protocol, "available_from")
             return _parse_iso_datetime(default_str) if default_str else None

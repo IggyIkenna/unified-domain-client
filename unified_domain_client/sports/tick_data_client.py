@@ -20,10 +20,10 @@ class SportsTickDataDomainClient:
     def __init__(
         self,
         project_id: str | None = None,
-        gcs_bucket: str | None = None,
+        storage_bucket: str | None = None,
     ) -> None:
         self._project_id = project_id or UnifiedCloudConfig().gcp_project_id
-        bucket = gcs_bucket or build_bucket("sports_tick_data", project_id=self._project_id)
+        bucket = storage_bucket or build_bucket("sports_tick_data", project_id=self._project_id)
         self.cloud_service = StandardizedDomainCloudService(domain="sports", bucket=bucket)
 
     def read_ticks(self, venue: str, date: str) -> pd.DataFrame:
@@ -56,7 +56,7 @@ class SportsTickDataDomainClient:
             GCS URI of the uploaded file.
         """
         path = build_path("sports_tick_data", venue=venue, date=date) + "ticks.parquet"
-        return self.cloud_service.upload_to_gcs(data=df, gcs_path=path, format="parquet")
+        return self.cloud_service.upload_artifact(df, path, format="parquet")
 
     def get_available_dates(self, venue: str) -> list[str]:
         """List dates that have tick data for a given venue."""

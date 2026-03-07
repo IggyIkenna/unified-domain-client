@@ -181,9 +181,13 @@ class DateValidator:
 
         # Fall back to category-level computed dates
         raw_earliest = self._config.get("earliest_valid_features")
-        earliest_features: dict[str, object] = raw_earliest if isinstance(raw_earliest, dict) else {}
+        earliest_features: dict[str, object] = (
+            raw_earliest if isinstance(raw_earliest, dict) else {}
+        )
         raw_timeframe = earliest_features.get(timeframe)
-        timeframe_dates: dict[str, object] = raw_timeframe if isinstance(raw_timeframe, dict) else {}
+        timeframe_dates: dict[str, object] = (
+            raw_timeframe if isinstance(raw_timeframe, dict) else {}
+        )
         raw_val = timeframe_dates.get(category)
         return str(raw_val) if isinstance(raw_val, str) else None
 
@@ -207,9 +211,13 @@ class DateValidator:
         raw_ml = self._config.get("ml-training-service")
         ml_config: dict[str, object] = raw_ml if isinstance(raw_ml, dict) else {}
         raw_earliest_ml = ml_config.get("earliest_valid_ml")
-        earliest_ml: dict[str, object] = raw_earliest_ml if isinstance(raw_earliest_ml, dict) else {}
+        earliest_ml: dict[str, object] = (
+            raw_earliest_ml if isinstance(raw_earliest_ml, dict) else {}
+        )
         raw_timeframe = earliest_ml.get(timeframe)
-        timeframe_dates: dict[str, object] = raw_timeframe if isinstance(raw_timeframe, dict) else {}
+        timeframe_dates: dict[str, object] = (
+            raw_timeframe if isinstance(raw_timeframe, dict) else {}
+        )
         raw_val = timeframe_dates.get(category)
         return str(raw_val) if isinstance(raw_val, str) else None
 

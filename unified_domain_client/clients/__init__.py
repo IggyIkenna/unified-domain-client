@@ -54,27 +54,27 @@ from unified_domain_client.clients.strategy import StrategyDomainClient
 
 def create_instruments_client(
     project_id: str | None = None,
-    gcs_bucket: str | None = None,
-    bigquery_dataset: str | None = None,
+    storage_bucket: str | None = None,
+    analytics_dataset: str | None = None,
 ) -> InstrumentsDomainClient:
     """Factory function to create InstrumentsDomainClient."""
     return InstrumentsDomainClient(
         project_id=project_id,
-        gcs_bucket=gcs_bucket,
-        bigquery_dataset=bigquery_dataset,
+        storage_bucket=storage_bucket,
+        analytics_dataset=analytics_dataset,
     )
 
 
 def create_features_client(
     feature_type: str = "delta_one",
     project_id: str | None = None,
-    gcs_bucket: str | None = None,
+    storage_bucket: str | None = None,
     category: str | None = None,
 ) -> FeaturesDeltaOneDomainClient:
     """Factory function to create FeaturesDeltaOneDomainClient (legacy: feature_type param ignored)."""
     return FeaturesDeltaOneDomainClient(
         project_id=project_id,
-        gcs_bucket=gcs_bucket,
+        storage_bucket=storage_bucket,
         category=category if category is not None else "cefi",
     )
 

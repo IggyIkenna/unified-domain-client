@@ -66,7 +66,7 @@ def test_standardized_service_upload_parquet():
 
     with patch("unified_domain_client.standardized_service.upload_to_storage") as mock_ul:
         mock_ul.return_value = "gs://b/some/path.parquet"
-        result = svc.upload_to_gcs(df, "some/path.parquet", format="parquet")
+        result = svc.upload_artifact(df, "some/path.parquet", format="parquet")
         assert result == "gs://b/some/path.parquet"
         mock_ul.assert_called_once()
 
@@ -84,7 +84,7 @@ def test_standardized_service_upload_csv():
 
     with patch("unified_domain_client.standardized_service.upload_to_storage") as mock_ul:
         mock_ul.return_value = "gs://b/some/path.csv"
-        result = svc.upload_to_gcs(df, "some/path.csv", format="csv")
+        result = svc.upload_artifact(df, "some/path.csv", format="csv")
         assert result == "gs://b/some/path.csv"
 
 
@@ -97,7 +97,7 @@ def test_standardized_service_upload_unsupported_format_raises():
     svc = StandardizedDomainCloudService(domain="test", bucket="b")
     df = pd.DataFrame({"x": [1]})
     with pytest.raises(ValueError, match="Unsupported format"):
-        svc.upload_to_gcs(df, "path.xyz", format="xml")
+        svc.upload_artifact(df, "path.xyz", format="xml")
 
 
 # ===========================================================================
@@ -118,7 +118,9 @@ def test_sports_features_read_features_returns_empty_on_error():
         patch("unified_domain_client.sports.features_client.StandardizedDomainCloudService"),
     ):
         mock_cfg.return_value.gcp_project_id = "test-project"
-        client = SportsFeaturesDomainClient(project_id="test-project", gcs_bucket="sports-bucket")
+        client = SportsFeaturesDomainClient(
+            project_id="test-project", storage_bucket="sports-bucket"
+        )
 
     mock_svc = MagicMock()
     mock_svc.download_from_gcs.side_effect = OSError("not found")
@@ -140,10 +142,12 @@ def test_sports_features_write_features():
         patch("unified_domain_client.sports.features_client.StandardizedDomainCloudService"),
     ):
         mock_cfg.return_value.gcp_project_id = "test-project"
-        client = SportsFeaturesDomainClient(project_id="test-project", gcs_bucket="sports-bucket")
+        client = SportsFeaturesDomainClient(
+            project_id="test-project", storage_bucket="sports-bucket"
+        )
 
     mock_svc = MagicMock()
-    mock_svc.upload_to_gcs.return_value = "gs://sports-bucket/path"
+    mock_svc.upload_artifact.return_value = "gs://sports-bucket/path"
     client.cloud_service = mock_svc
     df = pd.DataFrame({"feature": [1.0]})
     result = client.write_features(df, horizon="1d", date="2024-01-15", league="epl")
@@ -163,7 +167,9 @@ def test_sports_fixtures_read_fixtures_returns_empty_on_error():
         patch("unified_domain_client.sports.fixtures_client.StandardizedDomainCloudService"),
     ):
         mock_cfg.return_value.gcp_project_id = "test-project"
-        client = SportsFixturesDomainClient(project_id="test-project", gcs_bucket="sports-bucket")
+        client = SportsFixturesDomainClient(
+            project_id="test-project", storage_bucket="sports-bucket"
+        )
 
     mock_svc = MagicMock()
     mock_svc.download_from_gcs.side_effect = OSError("not found")
@@ -185,7 +191,7 @@ def test_sports_odds_read_odds_returns_empty_on_error():
         patch("unified_domain_client.sports.odds_client.StandardizedDomainCloudService"),
     ):
         mock_cfg.return_value.gcp_project_id = "test-project"
-        client = SportsOddsDomainClient(project_id="test-project", gcs_bucket="sports-bucket")
+        client = SportsOddsDomainClient(project_id="test-project", storage_bucket="sports-bucket")
 
     mock_svc = MagicMock()
     mock_svc.download_from_gcs.side_effect = OSError("not found")
@@ -207,7 +213,9 @@ def test_sports_tick_data_read_ticks_returns_empty_on_error():
         patch("unified_domain_client.sports.tick_data_client.StandardizedDomainCloudService"),
     ):
         mock_cfg.return_value.gcp_project_id = "test-project"
-        client = SportsTickDataDomainClient(project_id="test-project", gcs_bucket="sports-bucket")
+        client = SportsTickDataDomainClient(
+            project_id="test-project", storage_bucket="sports-bucket"
+        )
 
     mock_svc = MagicMock()
     mock_svc.download_from_gcs.side_effect = OSError("not found")
@@ -229,7 +237,9 @@ def test_sports_mappings_read_mappings_returns_empty_on_error():
         patch("unified_domain_client.sports.mappings_client.StandardizedDomainCloudService"),
     ):
         mock_cfg.return_value.gcp_project_id = "test-project"
-        client = SportsMappingsDomainClient(project_id="test-project", gcs_bucket="sports-bucket")
+        client = SportsMappingsDomainClient(
+            project_id="test-project", storage_bucket="sports-bucket"
+        )
 
     mock_svc = MagicMock()
     mock_svc.download_from_gcs.side_effect = OSError("not found")
@@ -554,7 +564,9 @@ def test_sports_features_get_available_dates_returns_empty_on_error():
     ):
         mock_cfg.return_value.gcp_project_id = "test-project"
         mock_storage.side_effect = OSError("not found")
-        client = SportsFeaturesDomainClient(project_id="test-project", gcs_bucket="sports-bucket")
+        client = SportsFeaturesDomainClient(
+            project_id="test-project", storage_bucket="sports-bucket"
+        )
         result = client.get_available_dates(horizon="1d", league="epl")
         assert result == []
 
@@ -572,10 +584,12 @@ def test_sports_fixtures_write_fixtures():
         patch("unified_domain_client.sports.fixtures_client.StandardizedDomainCloudService"),
     ):
         mock_cfg.return_value.gcp_project_id = "test-project"
-        client = SportsFixturesDomainClient(project_id="test-project", gcs_bucket="sports-bucket")
+        client = SportsFixturesDomainClient(
+            project_id="test-project", storage_bucket="sports-bucket"
+        )
 
     mock_svc = MagicMock()
-    mock_svc.upload_to_gcs.return_value = "gs://sports-bucket/fixtures"
+    mock_svc.upload_artifact.return_value = "gs://sports-bucket/fixtures"
     client.cloud_service = mock_svc
     df = pd.DataFrame({"fixture": [1]})
     result = client.write_fixtures(df, season="2024", date="2024-01-15", league="epl")
@@ -595,10 +609,10 @@ def test_sports_odds_write_odds():
         patch("unified_domain_client.sports.odds_client.StandardizedDomainCloudService"),
     ):
         mock_cfg.return_value.gcp_project_id = "test-project"
-        client = SportsOddsDomainClient(project_id="test-project", gcs_bucket="sports-bucket")
+        client = SportsOddsDomainClient(project_id="test-project", storage_bucket="sports-bucket")
 
     mock_svc = MagicMock()
-    mock_svc.upload_to_gcs.return_value = "gs://sports-bucket/odds"
+    mock_svc.upload_artifact.return_value = "gs://sports-bucket/odds"
     client.cloud_service = mock_svc
     df = pd.DataFrame({"odds": [2.5]})
     result = client.write_odds(df, provider="bet365", date="2024-01-15", league="epl")
@@ -618,10 +632,12 @@ def test_sports_tick_data_write_ticks():
         patch("unified_domain_client.sports.tick_data_client.StandardizedDomainCloudService"),
     ):
         mock_cfg.return_value.gcp_project_id = "test-project"
-        client = SportsTickDataDomainClient(project_id="test-project", gcs_bucket="sports-bucket")
+        client = SportsTickDataDomainClient(
+            project_id="test-project", storage_bucket="sports-bucket"
+        )
 
     mock_svc = MagicMock()
-    mock_svc.upload_to_gcs.return_value = "gs://sports-bucket/ticks"
+    mock_svc.upload_artifact.return_value = "gs://sports-bucket/ticks"
     client.cloud_service = mock_svc
     df = pd.DataFrame({"tick": [1]})
     result = client.write_ticks(df, venue="betfair", date="2024-01-15")
@@ -641,10 +657,12 @@ def test_sports_mappings_write_mappings():
         patch("unified_domain_client.sports.mappings_client.StandardizedDomainCloudService"),
     ):
         mock_cfg.return_value.gcp_project_id = "test-project"
-        client = SportsMappingsDomainClient(project_id="test-project", gcs_bucket="sports-bucket")
+        client = SportsMappingsDomainClient(
+            project_id="test-project", storage_bucket="sports-bucket"
+        )
 
     mock_svc = MagicMock()
-    mock_svc.upload_to_gcs.return_value = "gs://sports-bucket/mappings"
+    mock_svc.upload_artifact.return_value = "gs://sports-bucket/mappings"
     client.cloud_service = mock_svc
     df = pd.DataFrame({"id": [1]})
     result = client.write_mappings(df, entity_type="player")
@@ -662,7 +680,9 @@ def test_sports_mappings_has_cloud_service():
         patch("unified_domain_client.sports.mappings_client.StandardizedDomainCloudService"),
     ):
         mock_cfg.return_value.gcp_project_id = "test-project"
-        client = SportsMappingsDomainClient(project_id="test-project", gcs_bucket="sports-bucket")
+        client = SportsMappingsDomainClient(
+            project_id="test-project", storage_bucket="sports-bucket"
+        )
         assert hasattr(client, "cloud_service")
 
 

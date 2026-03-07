@@ -19,7 +19,11 @@ class BigQueryExternalReader(BaseDataReader):
         self._bq_dataset = bq_dataset
 
     def read(self, bucket: str, path: str) -> pd.DataFrame:
-        raise NotImplementedError("BigQueryExternalReader.read() — implement with BQ client from UCLI")
+        raise NotImplementedError(
+            "BigQueryExternalReader.read() — implement with BQ client from UCLI"
+        )
 
     def list_available(self, bucket: str, prefix: str) -> list[str]:
-        raise NotImplementedError("BigQueryExternalReader.list_available() — implement with BQ client")
+        raise NotImplementedError(
+            "BigQueryExternalReader.list_available() — implement with BQ client"
+        )

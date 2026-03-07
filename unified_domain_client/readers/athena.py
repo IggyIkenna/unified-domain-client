@@ -20,7 +20,9 @@ class AthenaReader(BaseDataReader):
         self._region = region
 
     def read(self, bucket: str, path: str) -> pd.DataFrame:
-        raise NotImplementedError("AthenaReader.read() — implement with boto3 Athena client from UCLI")
+        raise NotImplementedError(
+            "AthenaReader.read() — implement with boto3 Athena client from UCLI"
+        )
 
     def list_available(self, bucket: str, prefix: str) -> list[str]:
         raise NotImplementedError("AthenaReader.list_available() — implement with S3 list via UCLI")

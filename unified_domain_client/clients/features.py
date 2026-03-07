@@ -20,13 +20,15 @@ class FeaturesDeltaOneDomainClient:
     def __init__(
         self,
         project_id: str | None = None,
-        gcs_bucket: str | None = None,
+        storage_bucket: str | None = None,
         category: str = "cefi",
-        bigquery_dataset: str | None = None,
+        analytics_dataset: str | None = None,
     ) -> None:
         self._category = category
         self._project_id = project_id or UnifiedCloudConfig().gcp_project_id
-        bucket = gcs_bucket or build_bucket("delta_one_features", project_id=self._project_id, category=category)
+        bucket = storage_bucket or build_bucket(
+            "delta_one_features", project_id=self._project_id, category=category
+        )
         self.cloud_service = StandardizedDomainCloudService(domain="features", bucket=bucket)
 
     def get_features(
@@ -38,7 +40,9 @@ class FeaturesDeltaOneDomainClient:
     ) -> pd.DataFrame:
         """Get delta-one features for a date, instrument, feature group, and timeframe."""
         path = (
-            build_path("delta_one_features", date=date, feature_group=feature_group, timeframe=timeframe)
+            build_path(
+                "delta_one_features", date=date, feature_group=feature_group, timeframe=timeframe
+            )
             + f"{instrument_id}.parquet"
         )
         try:
@@ -51,12 +55,17 @@ class FeaturesDeltaOneDomainClient:
     def get_available_dates(self, feature_group: str, timeframe: str) -> list[str]:
         """List dates that have delta-one features for this group and timeframe."""
         try:
-            bucket_name = build_bucket("delta_one_features", project_id=self._project_id, category=self._category)
+            bucket_name = build_bucket(
+                "delta_one_features", project_id=self._project_id, category=self._category
+            )
             client = get_storage_client(project_id=self._project_id)
             blobs = client.list_blobs(bucket_name, prefix="by_date/")
             dates: list[str] = []
             for blob in blobs:
-                if f"/feature_group={feature_group}/" in blob.name and f"/timeframe={timeframe}/" in blob.name:
+                if (
+                    f"/feature_group={feature_group}/" in blob.name
+                    and f"/timeframe={timeframe}/" in blob.name
+                ):
                     for part in blob.name.split("/"):
                         if part.startswith("day="):
                             dates.append(part[4:])
@@ -72,11 +81,11 @@ class FeaturesCalendarDomainClient:
     def __init__(
         self,
         project_id: str | None = None,
-        gcs_bucket: str | None = None,
-        bigquery_dataset: str | None = None,
+        storage_bucket: str | None = None,
+        analytics_dataset: str | None = None,
     ) -> None:
         self._project_id = project_id or UnifiedCloudConfig().gcp_project_id
-        bucket = gcs_bucket or build_bucket("calendar_features", project_id=self._project_id)
+        bucket = storage_bucket or build_bucket("calendar_features", project_id=self._project_id)
         self.cloud_service = StandardizedDomainCloudService(domain="features", bucket=bucket)
 
     def get_features(self, date: str, category: str = "cefi") -> pd.DataFrame:
@@ -115,16 +124,19 @@ class FeaturesOnchainDomainClient:
     def __init__(
         self,
         project_id: str | None = None,
-        gcs_bucket: str | None = None,
-        bigquery_dataset: str | None = None,
+        storage_bucket: str | None = None,
+        analytics_dataset: str | None = None,
     ) -> None:
         self._project_id = project_id or UnifiedCloudConfig().gcp_project_id
-        bucket = gcs_bucket or build_bucket("onchain_features", project_id=self._project_id)
+        bucket = storage_bucket or build_bucket("onchain_features", project_id=self._project_id)
         self.cloud_service = StandardizedDomainCloudService(domain="features", bucket=bucket)
 
     def get_features(self, date: str, feature_group: str) -> pd.DataFrame:
         """Get on-chain features for a specific date and feature group."""
-        path = build_path("onchain_features", date=date, feature_group=feature_group) + "features.parquet"
+        path = (
+            build_path("onchain_features", date=date, feature_group=feature_group)
+            + "features.parquet"
+        )
         try:
             result = self.cloud_service.download_from_gcs(gcs_path=path, format="parquet")
             return result if isinstance(result, pd.DataFrame) else pd.DataFrame()
@@ -156,18 +168,23 @@ class FeaturesVolatilityDomainClient:
     def __init__(
         self,
         project_id: str | None = None,
-        gcs_bucket: str | None = None,
+        storage_bucket: str | None = None,
         category: str = "cefi",
-        bigquery_dataset: str | None = None,
+        analytics_dataset: str | None = None,
     ) -> None:
         self._category = category
         self._project_id = project_id or UnifiedCloudConfig().gcp_project_id
-        bucket = gcs_bucket or build_bucket("volatility_features", project_id=self._project_id, category=category)
+        bucket = storage_bucket or build_bucket(
+            "volatility_features", project_id=self._project_id, category=category
+        )
         self.cloud_service = StandardizedDomainCloudService(domain="features", bucket=bucket)
 
     def get_features(self, date: str, underlying: str, feature_group: str) -> pd.DataFrame:
         """Get volatility features for a specific date, underlying, and feature group."""
-        path = build_path("volatility_features", date=date, feature_group=feature_group) + f"{underlying}.parquet"
+        path = (
+            build_path("volatility_features", date=date, feature_group=feature_group)
+            + f"{underlying}.parquet"
+        )
         try:
             result = self.cloud_service.download_from_gcs(gcs_path=path, format="parquet")
             return result if isinstance(result, pd.DataFrame) else pd.DataFrame()
@@ -178,7 +195,9 @@ class FeaturesVolatilityDomainClient:
     def get_available_dates(self, feature_group: str) -> list[str]:
         """List dates that have volatility features for this feature group."""
         try:
-            bucket_name = build_bucket("volatility_features", project_id=self._project_id, category=self._category)
+            bucket_name = build_bucket(
+                "volatility_features", project_id=self._project_id, category=self._category
+            )
             client = get_storage_client(project_id=self._project_id)
             blobs = client.list_blobs(bucket_name, prefix="by_date/")
             dates: list[str] = []

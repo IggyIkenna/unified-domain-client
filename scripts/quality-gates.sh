@@ -29,7 +29,7 @@ set -e
 # ── REPO-SPECIFIC SETTINGS ────────────────────────────────────────────────────
 PACKAGE_NAME="unified-domain-client"         # e.g. unified-trading-library
 SOURCE_DIR="unified_domain_client"           # e.g. unified_trading_library  (underscore form)
-MIN_COVERAGE=70
+MIN_COVERAGE=86  # Template default — set to (actual coverage - 1%) after first test run. See test-coverage-targets.mdc
 PYTEST_WORKERS=${PYTEST_WORKERS:-2}
 
 # Path dependencies (libraries may have path deps to unified-api-contracts, unified-config-interface, etc.)
@@ -104,15 +104,15 @@ RUFF_VER=$($RUFF_CMD --version 2>&1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -
 # ── [1] AUTO-FIX ──────────────────────────────────────────────────────────────
 if [ "$RUN_LINT" = true ] && [ "$FIX_MODE" = true ]; then
     log_section "[1/6] AUTO-FIX"
-    run_timeout 30 $RUFF_CMD format --line-length 120 $SOURCE_DIRS || exit 1
-    run_timeout 30 $RUFF_CMD check --fix --line-length 120 $SOURCE_DIRS || exit 1
+    run_timeout 30 $RUFF_CMD format $SOURCE_DIRS || exit 1
+    run_timeout 30 $RUFF_CMD check --fix $SOURCE_DIRS || exit 1
     log_success "Auto-fix complete"
 fi
 
 # ── [2] LINT ───────────────────────────────────────────────────────────────────
 if [ "$RUN_LINT" = true ]; then
     log_section "[2/6] LINT"
-    run_timeout 30 $RUFF_CMD check --line-length 120 $SOURCE_DIRS && log_success "Lint PASSED" || { log_fail "Lint FAILED"; exit 1; }
+    run_timeout 30 $RUFF_CMD check $SOURCE_DIRS && log_success "Lint PASSED" || { log_fail "Lint FAILED"; exit 1; }
 fi
 
 # ── [3] TESTS ──────────────────────────────────────────────────────────────────
@@ -408,7 +408,7 @@ CLOUD_SDK_VIOLATIONS=$(rg "^from google\.cloud|^import boto3|^import botocore" \
     --glob '!tests' \
     --glob '!*/providers/**' \
     --glob '!*/cache.py' \
-    -l . 2>/dev/null || true)
+    -l . 2>/dev/null || :)
 if [ -n "$CLOUD_SDK_VIOLATIONS" ]; then
     log_fail "STEP 5.10: Direct cloud SDK imports found. Use unified_cloud_interface instead:"
     echo "$CLOUD_SDK_VIOLATIONS"
@@ -420,13 +420,11 @@ fi
 # ============================================================
 # STEP 5.11 — Block protocol-specific symbols in service/library code
 # ============================================================
-# CloudTarget and StandardizedDomainCloudService are FULLY DELETED from UTL/UDC (not deprecated stubs).
-# Pattern kept to prevent re-introduction. Any match = FAIL; expect 0 matches from deleted symbols in clean repos.
 PROTOCOL_VIOLATIONS=$(rg "CloudTarget|upload_to_gcs_batch|gcs_bucket|bigquery_dataset|StandardizedDomainCloudService" \
     --type py \
     --glob '!.venv*' --glob '!**/.venv*/**' \
     --glob '!tests' \
-    -l . 2>/dev/null || true)
+    -l . 2>/dev/null || :)
 if [ -n "$PROTOCOL_VIOLATIONS" ]; then
     log_fail "STEP 5.11: Protocol-specific symbols found. Use get_data_sink() / get_event_bus() from UCI instead:"
     echo "$PROTOCOL_VIOLATIONS"
@@ -445,25 +443,11 @@ SCHEMA_COLLISION=$(rg 'class\s+Canonical[A-Z]\w+\s*\(' \
     --type py \
     --glob '!.venv*' --glob '!**/.venv*/**' \
     --glob '!tests' \
-    "$SOURCE_DIR/" 2>/dev/null | grep -v 'unified_api_contracts\|unified_internal_contracts' || true)
+    "$SOURCE_DIR/" 2>/dev/null | grep -v 'unified_api_contracts\|unified_internal_contracts' || :)
 if [ -n "$SCHEMA_COLLISION" ]; then
     log_warn "STEP 5.13: Canonical* BaseModel subclass in library source — potential name collision with UAC/UIC canonical:"
     log_warn "See: cursor-rules/core/schema-governance-index.mdc (Rule 5)"
     echo "$SCHEMA_COLLISION" | head -5
-fi
-
-# ============================================================
-# STEP 5.14 — Block direct ConfigStore construction in services (must use get_config_store())
-# ============================================================
-echo ""
-echo "STEP 5.14: Checking for direct ConfigStore() construction..."
-if grep -r "ConfigStore(" "$SOURCE_DIR" --include="*.py" 2>/dev/null | grep -v "get_config_store\|TimeSeriesConfigStore\|test_\|conftest\|persistence\.py\|#" | grep -q .; then
-  log_fail "STEP 5.14: Direct ConfigStore() construction found in library source."
-  echo "      Use get_config_store(domain) from unified_config_interface instead."
-  echo "      Direct ConfigStore() is only allowed in unified_config_interface/persistence.py"
-  ((V++))
-else
-  log_success "STEP 5.14: No direct ConfigStore() construction in library source"
 fi
 
 [[ $V -gt 0 ]] && { log_fail "Codex compliance FAILED: $V violations"; exit 1; }

@@ -120,7 +120,9 @@ class DomainValidationService:
         self.domain_configs = _DOMAIN_CONFIGS
 
         if domain not in self.domain_configs:
-            raise ValueError(f"Unknown domain: {domain}. Must be one of: {list(self.domain_configs.keys())}")
+            raise ValueError(
+                f"Unknown domain: {domain}. Must be one of: {list(self.domain_configs.keys())}"
+            )
 
         self.domain_config = self.domain_configs[domain]
 
@@ -132,7 +134,9 @@ class DomainValidationService:
             self.domain_config["skip_for_sparse"],
         )
 
-    def validate_for_domain(self, data: pd.DataFrame, data_type: str | None = None) -> ValidationResult:
+    def validate_for_domain(
+        self, data: pd.DataFrame, data_type: str | None = None
+    ) -> ValidationResult:
         """
         Apply domain-specific validation rules.
 
@@ -170,7 +174,10 @@ class DomainValidationService:
         self, data: pd.DataFrame, data_type: str | None, errors: list[str], warnings: list[str]
     ) -> None:
         """Run timestamp semantics validation and collect errors/warnings."""
-        if not (self.config.validate_external_io_timestamps or self.config.validate_internal_domain_timestamps):
+        if not (
+            self.config.validate_external_io_timestamps
+            or self.config.validate_internal_domain_timestamps
+        ):
             return
         timestamp_result = self.validate_timestamp_semantics(data, data_type)
         if not timestamp_result.valid:
@@ -224,24 +231,38 @@ class DomainValidationService:
 
     def _validate_market_data_domain(self, data: pd.DataFrame, errors: list[str]) -> None:
         """Validate market_data domain: candle count, midnight boundaries, UTC alignment."""
-        if self.domain_config["validate_candle_count"] and self.config.enable_candle_count_validation:
+        if (
+            self.domain_config["validate_candle_count"]
+            and self.config.enable_candle_count_validation
+        ):
             candle_result = self._validate_candle_count(data)
             if not candle_result.valid:
                 errors.extend(candle_result.errors or [])
 
-        if self.domain_config["validate_midnight_boundaries"] and self.config.enable_midnight_boundary_validation:
+        if (
+            self.domain_config["validate_midnight_boundaries"]
+            and self.config.enable_midnight_boundary_validation
+        ):
             midnight_result = self._validate_midnight_boundaries(data)
             if not midnight_result.valid:
                 errors.extend(midnight_result.errors or [])
 
-        if self.domain_config["validate_utc_alignment"] and self.config.enable_utc_alignment_validation:
+        if (
+            self.domain_config["validate_utc_alignment"]
+            and self.config.enable_utc_alignment_validation
+        ):
             utc_result = self._validate_utc_alignment(data)
             if not utc_result.valid:
                 errors.extend(utc_result.errors or [])
 
-    def _validate_features_domain(self, data: pd.DataFrame, errors: list[str], warnings: list[str]) -> None:
+    def _validate_features_domain(
+        self, data: pd.DataFrame, errors: list[str], warnings: list[str]
+    ) -> None:
         """Validate features domain: UTC alignment and feature completeness."""
-        if self.domain_config["validate_utc_alignment"] and self.config.enable_utc_alignment_validation:
+        if (
+            self.domain_config["validate_utc_alignment"]
+            and self.config.enable_utc_alignment_validation
+        ):
             utc_result = self._validate_utc_alignment(data)
             if not utc_result.valid:
                 errors.extend(utc_result.errors or [])
@@ -250,7 +271,9 @@ class DomainValidationService:
         if not feature_result.valid:
             warnings.extend(feature_result.warnings or [])
 
-    def _validate_strategy_domain(self, data: pd.DataFrame, data_type: str | None, errors: list[str]) -> None:
+    def _validate_strategy_domain(
+        self, data: pd.DataFrame, data_type: str | None, errors: list[str]
+    ) -> None:
         """Validate strategy domain: timestamp ordering and UTC for orders."""
         if self.domain_config["skip_for_sparse"] and self.config.validate_timestamp_ordering:
             ordering_result = self._validate_timestamp_ordering(data)
@@ -270,7 +293,9 @@ class DomainValidationService:
             if not ordering_result.valid:
                 errors.extend(ordering_result.errors or [])
 
-    def validate_timestamp_semantics(self, data: pd.DataFrame, data_type: str | None = None) -> ValidationResult:
+    def validate_timestamp_semantics(
+        self, data: pd.DataFrame, data_type: str | None = None
+    ) -> ValidationResult:
         """
         Validate timestamp semantics based on data type.
 
@@ -302,7 +327,9 @@ class DomainValidationService:
             total_records=len(data) if hasattr(data, "__len__") else 0,
         )
 
-    def _validate_external_io_timestamps(self, data: pd.DataFrame, errors: list[str], warnings: list[str]) -> None:
+    def _validate_external_io_timestamps(
+        self, data: pd.DataFrame, errors: list[str], warnings: list[str]
+    ) -> None:
         """Validate external I/O timestamp semantics (local_timestamp vs timestamp)."""
         if "local_timestamp" not in data.columns:
             errors.append("Missing 'local_timestamp' column for external I/O data")
@@ -322,7 +349,9 @@ class DomainValidationService:
                     f"(expected: local_timestamp >= timestamp for external I/O)"
                 )
 
-    def _validate_internal_domain_timestamps(self, data: pd.DataFrame, errors: list[str], warnings: list[str]) -> None:
+    def _validate_internal_domain_timestamps(
+        self, data: pd.DataFrame, errors: list[str], warnings: list[str]
+    ) -> None:
         """Validate internal domain timestamp semantics (timestamp_in, timestamp_out, timestamp)."""
         if "timestamp_in" not in data.columns:
             warnings.append(
@@ -336,15 +365,21 @@ class DomainValidationService:
             )
 
         if "timestamp" not in data.columns:
-            errors.append("Missing 'timestamp' column for internal domain data (required, candle-aligned timestamp)")
+            errors.append(
+                "Missing 'timestamp' column for internal domain data (required, candle-aligned timestamp)"
+            )
 
         if all(col in data.columns for col in ["timestamp", "timestamp_out", "timestamp_in"]):
             self._validate_internal_timestamp_ordering(data, warnings)
 
-    def _validate_internal_timestamp_ordering(self, data: pd.DataFrame, warnings: list[str]) -> None:
+    def _validate_internal_timestamp_ordering(
+        self, data: pd.DataFrame, warnings: list[str]
+    ) -> None:
         """Validate internal domain timestamp ordering relationships."""
         timestamp_dt = pd.to_datetime(data["timestamp"], unit="us", errors="coerce", utc=True)
-        timestamp_out_dt = pd.to_datetime(data["timestamp_out"], unit="us", errors="coerce", utc=True)
+        timestamp_out_dt = pd.to_datetime(
+            data["timestamp_out"], unit="us", errors="coerce", utc=True
+        )
 
         invalid_mask = timestamp_out_dt < timestamp_dt
         invalid_count = invalid_mask.sum()
@@ -424,7 +459,9 @@ class DomainValidationService:
             stats={"midnight_candles": midnight_count},
         )
 
-    def _validate_utc_alignment(self, data: pd.DataFrame, column: str = "timestamp") -> ValidationResult:
+    def _validate_utc_alignment(
+        self, data: pd.DataFrame, column: str = "timestamp"
+    ) -> ValidationResult:
         """Validate UTC alignment of timestamps"""
         if column not in data.columns:
             return ValidationResult(
@@ -512,7 +549,9 @@ class DomainValidationService:
         high_nan_cols = nan_counts[nan_counts > len(data) * 0.1]  # More than 10% NaN
 
         if len(high_nan_cols) > 0:
-            warnings.append(f"{len(high_nan_cols)} feature columns with >10% NaN values: {list(high_nan_cols.index)}")
+            warnings.append(
+                f"{len(high_nan_cols)} feature columns with >10% NaN values: {list(high_nan_cols.index)}"
+            )
 
         return ValidationResult(
             validation_type="feature_completeness_validation",

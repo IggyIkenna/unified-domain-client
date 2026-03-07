@@ -46,16 +46,26 @@ class MarketTickDomainClient(BaseDataClient):
         category: str = "cefi",
     ) -> pd.DataFrame:
         """Get tick data for a specific date, venue, and instrument."""
-        bucket = build_bucket("raw_tick_data", project_id=self._config.gcp_project_id, category=category)
+        bucket = build_bucket(
+            "raw_tick_data", project_id=self._config.gcp_project_id, category=category
+        )
         path = (
-            build_path("raw_tick_data", date=date, data_type=data_type, instrument_type=instrument_type, venue=venue)
+            build_path(
+                "raw_tick_data",
+                date=date,
+                data_type=data_type,
+                instrument_type=instrument_type,
+                venue=venue,
+            )
             + f"{instrument_key}.parquet"
         )
         return self._read_parquet(bucket, path)
 
     def get_available_dates(self, venue: str, category: str = "cefi") -> list[str]:
         """List dates for which tick data exists at this venue."""
-        bucket = build_bucket("raw_tick_data", project_id=self._config.gcp_project_id, category=category)
+        bucket = build_bucket(
+            "raw_tick_data", project_id=self._config.gcp_project_id, category=category
+        )
         blobs = self._list_blobs(bucket, "raw_tick_data/by_date/")
         dates: list[str] = []
         for blob in blobs:
@@ -80,7 +90,9 @@ class MarketCandleDomainClient(BaseDataClient):
         category: str = "cefi",
     ) -> pd.DataFrame:
         """Get candle data for a specific date, venue, and instrument."""
-        bucket = build_bucket("processed_candles", project_id=self._config.gcp_project_id, category=category)
+        bucket = build_bucket(
+            "processed_candles", project_id=self._config.gcp_project_id, category=category
+        )
         path = (
             build_path(
                 "processed_candles",
@@ -96,7 +108,9 @@ class MarketCandleDomainClient(BaseDataClient):
 
     def get_available_timeframes(self, venue: str, category: str = "cefi") -> list[str]:
         """List timeframes that have candle data at this venue."""
-        bucket = build_bucket("processed_candles", project_id=self._config.gcp_project_id, category=category)
+        bucket = build_bucket(
+            "processed_candles", project_id=self._config.gcp_project_id, category=category
+        )
         blobs = self._list_blobs(bucket, "processed_candles/by_date/")
         timeframes: list[str] = []
         for blob in blobs:
@@ -118,10 +132,10 @@ class MarketCandleDataDomainClient:
     def __init__(
         self,
         project_id: str | None = None,
-        gcs_bucket: str | None = None,
-        bigquery_dataset: str | None = None,
+        storage_bucket: str | None = None,
+        analytics_dataset: str | None = None,
     ) -> None:
-        bucket = gcs_bucket or UnifiedCloudConfig().market_data_gcs_bucket
+        bucket = storage_bucket or UnifiedCloudConfig().market_data_gcs_bucket
         self.cloud_service = StandardizedDomainCloudService(domain="market_data", bucket=bucket)
         self._bucket = bucket
         logger.info("MarketCandleDataDomainClient initialized: bucket=%s", bucket)
@@ -189,10 +203,10 @@ class MarketTickDataDomainClient:
     def __init__(
         self,
         project_id: str | None = None,
-        gcs_bucket: str | None = None,
-        bigquery_dataset: str | None = None,
+        storage_bucket: str | None = None,
+        analytics_dataset: str | None = None,
     ) -> None:
-        bucket = gcs_bucket or UnifiedCloudConfig().market_data_gcs_bucket
+        bucket = storage_bucket or UnifiedCloudConfig().market_data_gcs_bucket
         self.cloud_service = StandardizedDomainCloudService(domain="market_data", bucket=bucket)
         self._bucket = bucket
         logger.info("MarketTickDataDomainClient initialized: bucket=%s", bucket)
@@ -253,7 +267,9 @@ class MarketTickDataDomainClient:
     ) -> pd.DataFrame:
         """Get raw tick data for a specific date and instrument."""
         date_str = date.strftime("%Y-%m-%d")
-        gcs_path = self._build_tick_gcs_path(date_str, instrument_id, data_type, hour, venue, instrument_type_folder)
+        gcs_path = self._build_tick_gcs_path(
+            date_str, instrument_id, data_type, hour, venue, instrument_type_folder
+        )
         try:
             result = self.cloud_service.download_from_gcs(gcs_path=gcs_path, format="parquet")
             return result if isinstance(result, pd.DataFrame) else pd.DataFrame()
@@ -291,7 +307,7 @@ class _ClientConfig(TypedDict, total=False):
     """Typed kwargs for market data client factories."""
 
     project_id: NotRequired[str | None]
-    gcs_bucket: NotRequired[str | None]
+    storage_bucket: NotRequired[str | None]
 
 
 class MarketDataDomainClient(MarketCandleDataDomainClient):
@@ -300,8 +316,8 @@ class MarketDataDomainClient(MarketCandleDataDomainClient):
     def __init__(
         self,
         project_id: str | None = None,
-        gcs_bucket: str | None = None,
-        bigquery_dataset: str | None = None,
+        storage_bucket: str | None = None,
+        analytics_dataset: str | None = None,
     ) -> None:
         warnings.warn(
             "MarketDataDomainClient is deprecated. Use MarketCandleDataDomainClient or MarketTickDataDomainClient.",
@@ -310,13 +326,15 @@ class MarketDataDomainClient(MarketCandleDataDomainClient):
         )
         super().__init__(
             project_id=project_id,
-            gcs_bucket=gcs_bucket,
-            bigquery_dataset=bigquery_dataset,
+            storage_bucket=storage_bucket,
+            analytics_dataset=analytics_dataset,
         )
 
 
 # Factory functions (backward compat)
-def create_market_candle_data_client(**kwargs: Unpack[_ClientConfig]) -> MarketCandleDataDomainClient:
+def create_market_candle_data_client(
+    **kwargs: Unpack[_ClientConfig],
+) -> MarketCandleDataDomainClient:
     return MarketCandleDataDomainClient(**kwargs)
 
 

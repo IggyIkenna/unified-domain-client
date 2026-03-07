@@ -93,7 +93,9 @@ class TestDomainValidationService:
     def test_validate_for_domain_features_with_data(self):
         """Test features domain validates UTC alignment and feature completeness."""
         svc = DomainValidationService(domain="features")
-        df = pd.DataFrame({"timestamp": [1000000, 2000000], "feature_1": [1.0, 2.0], "feature_2": [3.0, 4.0]})
+        df = pd.DataFrame(
+            {"timestamp": [1000000, 2000000], "feature_1": [1.0, 2.0], "feature_2": [3.0, 4.0]}
+        )
         result = svc.validate_for_domain(df)
         assert result.validation_type == "domain_validation_features"
 
