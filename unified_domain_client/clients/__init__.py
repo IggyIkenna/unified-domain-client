@@ -1,4 +1,4 @@
-"""Domain clients subpackage — 14 typed clients covering the full data platform."""
+"""Domain clients subpackage — 17 typed clients covering the full data platform."""
 
 from __future__ import annotations
 
@@ -15,6 +15,13 @@ from unified_domain_client.clients.features import (
 
 # 1. Instruments
 from unified_domain_client.clients.instruments import InstrumentsDomainClient
+
+# 15-17. Liquidity (L2 checkpoints, liquidation clusters, liquidity features)
+from unified_domain_client.clients.liquidity import (
+    L2BookCheckpointClient,
+    LiquidationClustersClient,
+    LiquidityFeaturesClient,
+)
 
 # Backward-compat factory functions
 # 2-3. Market data (thin typed + legacy rich)
@@ -88,6 +95,10 @@ __all__ = [
     "PositionsDomainClient",
     "PnLDomainClient",
     "RiskDomainClient",
+    # 15-17. Liquidity
+    "L2BookCheckpointClient",
+    "LiquidationClustersClient",
+    "LiquidityFeaturesClient",
     # Legacy rich clients (backward compat)
     "MarketCandleDataDomainClient",
     "MarketTickDataDomainClient",
