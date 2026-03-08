@@ -93,7 +93,7 @@ class TestInstrumentsDomainClientFilters:
         )
 
     def _make_client(self):
-        from unified_domain_client.clients.instruments import (
+        from unified_domain_client import (
             InstrumentsDomainClient,  # noqa: deep-import
         )
 
@@ -216,7 +216,7 @@ class TestInstrumentsDomainClientFilters:
 
 class TestExecutionDomainClientMethods:
     def _make_client(self):
-        from unified_domain_client.clients.execution import (
+        from unified_domain_client import (
             ExecutionDomainClient,  # noqa: deep-import
         )
 
@@ -296,7 +296,7 @@ class TestExecutionDomainClientMethods:
         assert result["total_pnl"] == 100.0
 
     def test_create_execution_client_factory(self):
-        from unified_domain_client.clients.execution import (
+        from unified_domain_client import (
             create_execution_client,  # noqa: deep-import
         )
 
@@ -315,7 +315,7 @@ class TestExecutionDomainClientMethods:
 
 class TestMarketTickDataDomainClientPaths:
     def _make_client(self):
-        from unified_domain_client.clients.market_data import (
+        from unified_domain_client import (
             MarketTickDataDomainClient,  # noqa: deep-import
         )
 
@@ -369,7 +369,7 @@ class TestMarketTickDataDomainClientPaths:
         assert result.empty
 
     def test_get_candles_range_empty(self):
-        from unified_domain_client.clients.market_data import (
+        from unified_domain_client import (
             MarketCandleDataDomainClient,  # noqa: deep-import
         )
 
@@ -428,7 +428,7 @@ class TestDataCompletionChecker:
 
 class TestL2BookCheckpointClient:
     def _make_client(self):
-        from unified_domain_client.clients.liquidity import (
+        from unified_domain_client import (
             L2BookCheckpointClient,  # noqa: deep-import
         )
 
@@ -490,7 +490,7 @@ class TestCatalogModules:
 
 class TestSportsDomainClients:
     def _make_fixtures_client(self):
-        from unified_domain_client.sports.fixtures_client import (
+        from unified_domain_client import (
             SportsFixturesDomainClient,  # noqa: deep-import
         )
 
@@ -501,7 +501,7 @@ class TestSportsDomainClients:
                 return SportsFixturesDomainClient(storage_bucket="sports-bucket")
 
     def _make_odds_client(self):
-        from unified_domain_client.sports.odds_client import (
+        from unified_domain_client import (
             SportsOddsDomainClient,  # noqa: deep-import
         )
 
@@ -512,7 +512,7 @@ class TestSportsDomainClients:
                 return SportsOddsDomainClient(storage_bucket="sports-bucket")
 
     def _make_tick_client(self):
-        from unified_domain_client.sports.tick_data_client import (
+        from unified_domain_client import (
             SportsTickDataDomainClient,  # noqa: deep-import
         )
 
