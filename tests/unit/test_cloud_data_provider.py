@@ -40,7 +40,7 @@ class TestCloudDataProviderBase:
         )
         provider = ConcreteProvider(domain="test", cloud_target=target)
         assert provider.domain == "test"
-        # cloud_target is kept for backward compatibility; bucket defaults to config or domain-store
+        # cloud_target is kept for legacy callers; bucket defaults to config or domain-store
         assert hasattr(provider, "bucket")
         mock_service.assert_called_once()
 
@@ -86,7 +86,7 @@ class TestCloudDataProviderBase:
 
         provider = ConcreteProvider(domain="test", project_id="my-project")
         assert provider.domain == "test"
-        # project_id is kept for backward compatibility; bucket resolves from config.gcs_bucket
+        # project_id is kept for legacy callers; bucket resolves from config.gcs_bucket
         assert provider.bucket == "b"
 
     @patch("unified_domain_client.cloud_data_provider.StandardizedDomainCloudService")
