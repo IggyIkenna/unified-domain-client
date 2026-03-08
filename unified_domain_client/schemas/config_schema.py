@@ -1,7 +1,7 @@
 """Config schema and validation - re-exported from unified-config-interface.
 
 Canonical implementation lives in unified-config-interface. This module
-provides backward compatibility for callers importing from unified_domain_client.
+provides legacy API compatibility for callers importing from unified_domain_client.
 
 Re-exports all config schema symbols from UCI so domain services and downstream
 callers can import from unified_domain_client.schemas.config_schema if needed.

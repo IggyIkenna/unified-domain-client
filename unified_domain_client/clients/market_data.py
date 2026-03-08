@@ -335,7 +335,7 @@ class MarketDataDomainClient(MarketCandleDataDomainClient):
         )
 
 
-# Factory functions (backward compat)
+# Factory functions (legacy)
 def create_market_candle_data_client(
     **kwargs: Unpack[_ClientConfig],
 ) -> MarketCandleDataDomainClient:

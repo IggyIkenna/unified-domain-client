@@ -142,8 +142,8 @@ def make_completion_checker(
     Args:
         bucket: Cloud storage bucket name (required)
         path_pattern: Path pattern for storage completion checking
-        dataset_name: Ignored — kept for backward compatibility
-        project_id: Ignored — kept for backward compatibility
+        dataset_name: Ignored — kept for legacy callers (deprecated)
+        project_id: Ignored — kept for legacy callers (deprecated)
 
     Returns:
         DataCompletionChecker ready for use

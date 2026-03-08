@@ -6,7 +6,7 @@ from unittest.mock import MagicMock, patch
 import pandas as pd
 import pytest
 
-from unified_domain_client.cloud_target import CloudTarget
+from unified_domain_client.cloud_target import CloudTarget  # noqa: deep-import
 
 
 class TestCloudDataProviderBase:
@@ -25,7 +25,9 @@ class TestCloudDataProviderBase:
     @patch("unified_domain_client.cloud_data_provider.StandardizedDomainCloudService")
     def test_init_with_cloud_target(self, mock_service: MagicMock):
         """Test initialization with explicit CloudTarget."""
-        from unified_domain_client.cloud_data_provider import CloudDataProviderBase
+        from unified_domain_client.cloud_data_provider import (  # noqa: deep-import
+            CloudDataProviderBase,
+        )
 
         class ConcreteProvider(CloudDataProviderBase):
             pass
@@ -46,7 +48,9 @@ class TestCloudDataProviderBase:
     @patch("unified_domain_client.cloud_data_provider.UnifiedCloudConfig")
     def test_init_raises_without_project(self, mock_config_cls: MagicMock, mock_service: MagicMock):
         """Test initialization succeeds without project_id; bucket defaults to domain-store."""
-        from unified_domain_client.cloud_data_provider import CloudDataProviderBase
+        from unified_domain_client.cloud_data_provider import (  # noqa: deep-import
+            CloudDataProviderBase,
+        )
 
         mock_config_instance = MagicMock()
         mock_config_instance.gcp_project_id = ""
@@ -66,7 +70,9 @@ class TestCloudDataProviderBase:
     @patch("unified_domain_client.cloud_data_provider.UnifiedCloudConfig")
     def test_init_with_project_id(self, mock_config_cls: MagicMock, mock_service: MagicMock):
         """Test initialization with explicit project_id."""
-        from unified_domain_client.cloud_data_provider import CloudDataProviderBase
+        from unified_domain_client.cloud_data_provider import (  # noqa: deep-import
+            CloudDataProviderBase,
+        )
 
         mock_config_instance = MagicMock()
         mock_config_instance.gcp_project_id = ""
@@ -86,7 +92,9 @@ class TestCloudDataProviderBase:
     @patch("unified_domain_client.cloud_data_provider.StandardizedDomainCloudService")
     def test_download_from_gcs_returns_empty_on_404(self, mock_service: MagicMock):
         """Test download_from_gcs returns empty DataFrame on 404."""
-        from unified_domain_client.cloud_data_provider import CloudDataProviderBase
+        from unified_domain_client.cloud_data_provider import (  # noqa: deep-import
+            CloudDataProviderBase,
+        )
 
         target = CloudTarget(
             project_id="p",
@@ -111,7 +119,9 @@ class TestCloudDataProviderBase:
     @patch("unified_domain_client.cloud_data_provider.StandardizedDomainCloudService")
     def test_download_from_gcs_returns_data(self, mock_service: MagicMock):
         """Test download_from_gcs returns DataFrame when successful."""
-        from unified_domain_client.cloud_data_provider import CloudDataProviderBase
+        from unified_domain_client.cloud_data_provider import (  # noqa: deep-import
+            CloudDataProviderBase,
+        )
 
         target = CloudTarget(
             project_id="p",
@@ -135,7 +145,9 @@ class TestCloudDataProviderBase:
     @patch("unified_domain_client.cloud_data_provider.StandardizedDomainCloudService")
     def test_download_from_gcs_handles_no_such_object(self, mock_service: MagicMock):
         """Test download_from_gcs returns empty on 404/No such object."""
-        from unified_domain_client.cloud_data_provider import CloudDataProviderBase
+        from unified_domain_client.cloud_data_provider import (  # noqa: deep-import
+            CloudDataProviderBase,
+        )
 
         target = CloudTarget(
             project_id="p",
@@ -157,7 +169,9 @@ class TestCloudDataProviderBase:
     @patch("unified_domain_client.cloud_data_provider.StandardizedDomainCloudService")
     def test_download_from_gcs_handles_no_such_object_variant(self, mock_service: MagicMock):
         """Test download_from_gcs returns empty on Not Found variant."""
-        from unified_domain_client.cloud_data_provider import CloudDataProviderBase
+        from unified_domain_client.cloud_data_provider import (  # noqa: deep-import
+            CloudDataProviderBase,
+        )
 
         target = CloudTarget(
             project_id="p",
@@ -179,7 +193,9 @@ class TestCloudDataProviderBase:
     @patch("unified_domain_client.cloud_data_provider.StandardizedDomainCloudService")
     def test_check_gcs_exists_true(self, mock_service: MagicMock):
         """Test check_gcs_exists returns True when data exists."""
-        from unified_domain_client.cloud_data_provider import CloudDataProviderBase
+        from unified_domain_client.cloud_data_provider import (  # noqa: deep-import
+            CloudDataProviderBase,
+        )
 
         target = CloudTarget(
             project_id="p",
@@ -200,7 +216,9 @@ class TestCloudDataProviderBase:
     @patch("unified_domain_client.cloud_data_provider.StandardizedDomainCloudService")
     def test_check_gcs_exists_false(self, mock_service: MagicMock):
         """Test check_gcs_exists returns False when empty."""
-        from unified_domain_client.cloud_data_provider import CloudDataProviderBase
+        from unified_domain_client.cloud_data_provider import (  # noqa: deep-import
+            CloudDataProviderBase,
+        )
 
         target = CloudTarget(
             project_id="p",
@@ -230,7 +248,9 @@ class TestInstrumentsDataProvider:
         mock_resolve: MagicMock,
     ):
         """Test get_instruments_for_date filters by venue and instrument_type."""
-        from unified_domain_client.cloud_data_provider import InstrumentsDataProvider
+        from unified_domain_client.cloud_data_provider import (  # noqa: deep-import
+            InstrumentsDataProvider,
+        )
 
         mock_resolve.return_value = "instruments-bucket"
         target = CloudTarget(
@@ -269,7 +289,9 @@ class TestMarketDataProvider:
     def test_get_candles_builds_query(self, mock_service: MagicMock):
         """Test get_candles builds correct BigQuery query."""
 
-        from unified_domain_client.cloud_data_provider import MarketDataProvider
+        from unified_domain_client.cloud_data_provider import (  # noqa: deep-import
+            MarketDataProvider,
+        )
 
         target = CloudTarget(
             project_id="p",
@@ -295,7 +317,9 @@ class TestCloudDataProviderAdditionalMethods:
     """Test additional methods of CloudDataProviderBase."""
 
     def _make_provider(self, mock_service_cls: MagicMock) -> object:
-        from unified_domain_client.cloud_data_provider import CloudDataProviderBase
+        from unified_domain_client.cloud_data_provider import (  # noqa: deep-import
+            CloudDataProviderBase,
+        )
 
         class ConcreteProvider(CloudDataProviderBase):
             pass
@@ -314,7 +338,9 @@ class TestCloudDataProviderAdditionalMethods:
         self, mock_config_cls: MagicMock, mock_service: MagicMock
     ):
         """Test _build_category_service returns bucket and service."""
-        from unified_domain_client.cloud_data_provider import CloudDataProviderBase
+        from unified_domain_client.cloud_data_provider import (  # noqa: deep-import
+            CloudDataProviderBase,
+        )
 
         class ConcreteProvider(CloudDataProviderBase):
             pass
@@ -334,7 +360,9 @@ class TestCloudDataProviderAdditionalMethods:
         self, mock_config_cls: MagicMock, mock_service: MagicMock
     ):
         """Test _build_category_service falls back when ValueError raised."""
-        from unified_domain_client.cloud_data_provider import CloudDataProviderBase
+        from unified_domain_client.cloud_data_provider import (  # noqa: deep-import
+            CloudDataProviderBase,
+        )
 
         class ConcreteProvider(CloudDataProviderBase):
             pass
@@ -351,7 +379,9 @@ class TestCloudDataProviderAdditionalMethods:
     @patch("unified_domain_client.cloud_data_provider.StandardizedDomainCloudService")
     def test_download_from_category_bucket_success(self, mock_service: MagicMock):
         """Test download_from_category_bucket returns DataFrame on success."""
-        from unified_domain_client.cloud_data_provider import CloudDataProviderBase
+        from unified_domain_client.cloud_data_provider import (  # noqa: deep-import
+            CloudDataProviderBase,
+        )
 
         class ConcreteProvider(CloudDataProviderBase):
             pass
@@ -374,7 +404,9 @@ class TestCloudDataProviderAdditionalMethods:
     @patch("unified_domain_client.cloud_data_provider.StandardizedDomainCloudService")
     def test_download_from_category_bucket_404(self, mock_service: MagicMock):
         """Test download_from_category_bucket handles 404."""
-        from unified_domain_client.cloud_data_provider import CloudDataProviderBase
+        from unified_domain_client.cloud_data_provider import (  # noqa: deep-import
+            CloudDataProviderBase,
+        )
 
         class ConcreteProvider(CloudDataProviderBase):
             pass
@@ -397,7 +429,9 @@ class TestCloudDataProviderAdditionalMethods:
     @patch("unified_domain_client.cloud_data_provider.StandardizedDomainCloudService")
     def test_download_from_category_bucket_generic_error(self, mock_service: MagicMock):
         """Test download_from_category_bucket handles generic error."""
-        from unified_domain_client.cloud_data_provider import CloudDataProviderBase
+        from unified_domain_client.cloud_data_provider import (  # noqa: deep-import
+            CloudDataProviderBase,
+        )
 
         class ConcreteProvider(CloudDataProviderBase):
             pass
@@ -420,7 +454,9 @@ class TestCloudDataProviderAdditionalMethods:
     @patch("unified_domain_client.cloud_data_provider.StandardizedDomainCloudService")
     def test_download_from_category_bucket_empty_df(self, mock_service: MagicMock):
         """Test download_from_category_bucket handles empty df."""
-        from unified_domain_client.cloud_data_provider import CloudDataProviderBase
+        from unified_domain_client.cloud_data_provider import (  # noqa: deep-import
+            CloudDataProviderBase,
+        )
 
         class ConcreteProvider(CloudDataProviderBase):
             pass
@@ -443,7 +479,9 @@ class TestCloudDataProviderAdditionalMethods:
     @patch("unified_domain_client.cloud_data_provider.StandardizedDomainCloudService")
     def test_query_bigquery_success(self, mock_service: MagicMock):
         """Test query_bigquery returns DataFrame on success."""
-        from unified_domain_client.cloud_data_provider import CloudDataProviderBase
+        from unified_domain_client.cloud_data_provider import (  # noqa: deep-import
+            CloudDataProviderBase,
+        )
 
         class ConcreteProvider(CloudDataProviderBase):
             pass
@@ -463,7 +501,9 @@ class TestCloudDataProviderAdditionalMethods:
     @patch("unified_domain_client.cloud_data_provider.StandardizedDomainCloudService")
     def test_query_bigquery_error(self, mock_service: MagicMock):
         """Test query_bigquery returns empty DataFrame on error."""
-        from unified_domain_client.cloud_data_provider import CloudDataProviderBase
+        from unified_domain_client.cloud_data_provider import (  # noqa: deep-import
+            CloudDataProviderBase,
+        )
 
         class ConcreteProvider(CloudDataProviderBase):
             pass
@@ -482,7 +522,9 @@ class TestCloudDataProviderAdditionalMethods:
     @patch("unified_domain_client.cloud_data_provider.StandardizedDomainCloudService")
     def test_upload_artifact_success(self, mock_service: MagicMock):
         """Test upload_artifact returns True on success."""
-        from unified_domain_client.cloud_data_provider import CloudDataProviderBase
+        from unified_domain_client.cloud_data_provider import (  # noqa: deep-import
+            CloudDataProviderBase,
+        )
 
         class ConcreteProvider(CloudDataProviderBase):
             pass
@@ -501,7 +543,9 @@ class TestCloudDataProviderAdditionalMethods:
     @patch("unified_domain_client.cloud_data_provider.StandardizedDomainCloudService")
     def test_upload_artifact_error(self, mock_service: MagicMock):
         """Test upload_artifact returns False on error."""
-        from unified_domain_client.cloud_data_provider import CloudDataProviderBase
+        from unified_domain_client.cloud_data_provider import (  # noqa: deep-import
+            CloudDataProviderBase,
+        )
 
         class ConcreteProvider(CloudDataProviderBase):
             pass
@@ -521,7 +565,9 @@ class TestCloudDataProviderAdditionalMethods:
     @patch("unified_domain_client.cloud_data_provider.StandardizedDomainCloudService")
     def test_download_from_gcs_non_404_error(self, mock_service: MagicMock):
         """Test download_from_gcs returns empty on non-404 generic error."""
-        from unified_domain_client.cloud_data_provider import CloudDataProviderBase
+        from unified_domain_client.cloud_data_provider import (  # noqa: deep-import
+            CloudDataProviderBase,
+        )
 
         class ConcreteProvider(CloudDataProviderBase):
             pass
@@ -540,7 +586,9 @@ class TestCloudDataProviderAdditionalMethods:
     @patch("unified_domain_client.cloud_data_provider.StandardizedDomainCloudService")
     def test_is_test_mode_property(self, mock_service: MagicMock):
         """Test is_test_mode property returns bool."""
-        from unified_domain_client.cloud_data_provider import CloudDataProviderBase
+        from unified_domain_client.cloud_data_provider import (  # noqa: deep-import
+            CloudDataProviderBase,
+        )
 
         class ConcreteProvider(CloudDataProviderBase):
             pass
@@ -562,7 +610,9 @@ class TestFeaturesDataProvider:
         self, mock_config_cls: MagicMock, mock_service: MagicMock
     ):
         """Test get_features_for_date returns DataFrame without instrument_key filter."""
-        from unified_domain_client.cloud_data_provider import FeaturesDataProvider
+        from unified_domain_client.cloud_data_provider import (  # noqa: deep-import
+            FeaturesDataProvider,
+        )
 
         mock_config_instance = MagicMock()
         mock_config_instance.features_gcs_bucket = "features-bucket"
@@ -587,7 +637,9 @@ class TestFeaturesDataProvider:
         self, mock_config_cls: MagicMock, mock_service: MagicMock
     ):
         """Test get_features_for_date filters by instrument_key."""
-        from unified_domain_client.cloud_data_provider import FeaturesDataProvider
+        from unified_domain_client.cloud_data_provider import (  # noqa: deep-import
+            FeaturesDataProvider,
+        )
 
         mock_config_instance = MagicMock()
         mock_config_instance.features_gcs_bucket = "features-bucket"
@@ -617,7 +669,9 @@ class TestInstrumentsDataProviderAdditional:
         self, mock_service: MagicMock, mock_resolve: MagicMock
     ):
         """Test get_instruments_for_date without venue/type filter."""
-        from unified_domain_client.cloud_data_provider import InstrumentsDataProvider
+        from unified_domain_client.cloud_data_provider import (  # noqa: deep-import
+            InstrumentsDataProvider,
+        )
 
         mock_resolve.return_value = "instruments-bucket"
         mock_instance = MagicMock()
@@ -635,7 +689,9 @@ class TestInstrumentsDataProviderAdditional:
         self, mock_service: MagicMock, mock_resolve: MagicMock
     ):
         """Test get_instruments_for_date with category filter uses category bucket."""
-        from unified_domain_client.cloud_data_provider import InstrumentsDataProvider
+        from unified_domain_client.cloud_data_provider import (  # noqa: deep-import
+            InstrumentsDataProvider,
+        )
 
         mock_resolve.return_value = "instruments-bucket"
         mock_instance = MagicMock()
@@ -653,7 +709,9 @@ class TestInstrumentsDataProviderAdditional:
     @patch("unified_domain_client.cloud_data_provider.StandardizedDomainCloudService")
     def test_check_instruments_exist_true(self, mock_service: MagicMock, mock_resolve: MagicMock):
         """Test check_instruments_exist returns True when data found."""
-        from unified_domain_client.cloud_data_provider import InstrumentsDataProvider
+        from unified_domain_client.cloud_data_provider import (  # noqa: deep-import
+            InstrumentsDataProvider,
+        )
 
         mock_resolve.return_value = "instruments-bucket"
         mock_instance = MagicMock()
@@ -669,7 +727,9 @@ class TestInstrumentsDataProviderAdditional:
     @patch("unified_domain_client.cloud_data_provider.StandardizedDomainCloudService")
     def test_check_instruments_exist_false(self, mock_service: MagicMock, mock_resolve: MagicMock):
         """Test check_instruments_exist returns False when no data found."""
-        from unified_domain_client.cloud_data_provider import InstrumentsDataProvider
+        from unified_domain_client.cloud_data_provider import (  # noqa: deep-import
+            InstrumentsDataProvider,
+        )
 
         mock_resolve.return_value = "instruments-bucket"
         mock_instance = MagicMock()
@@ -686,7 +746,9 @@ class TestInstrumentsDataProviderAdditional:
         self, mock_service: MagicMock, mock_config_cls: MagicMock
     ):
         """Test _resolve_instruments_bucket_cefi uses config bucket."""
-        from unified_domain_client.cloud_data_provider import _resolve_instruments_bucket_cefi
+        from unified_domain_client.cloud_data_provider import (  # noqa: deep-import
+            _resolve_instruments_bucket_cefi,
+        )
 
         mock_config_instance = MagicMock()
         mock_config_instance.instruments_gcs_bucket = "my-instruments-bucket"
@@ -701,7 +763,9 @@ class TestInstrumentsDataProviderAdditional:
         self, mock_service: MagicMock, mock_config_cls: MagicMock
     ):
         """Test _resolve_instruments_bucket_cefi builds from project_id."""
-        from unified_domain_client.cloud_data_provider import _resolve_instruments_bucket_cefi
+        from unified_domain_client.cloud_data_provider import (  # noqa: deep-import
+            _resolve_instruments_bucket_cefi,
+        )
 
         mock_config_instance = MagicMock()
         mock_config_instance.instruments_gcs_bucket = ""
@@ -717,7 +781,9 @@ class TestInstrumentsDataProviderAdditional:
         self, mock_service: MagicMock, mock_config_cls: MagicMock
     ):
         """Test _resolve_instruments_bucket_cefi raises ValueError when no config."""
-        from unified_domain_client.cloud_data_provider import _resolve_instruments_bucket_cefi
+        from unified_domain_client.cloud_data_provider import (  # noqa: deep-import
+            _resolve_instruments_bucket_cefi,
+        )
 
         mock_config_instance = MagicMock()
         mock_config_instance.instruments_gcs_bucket = ""
@@ -740,7 +806,9 @@ class TestMarketDataProviderAdditional:
         self, mock_config_cls: MagicMock, mock_service: MagicMock
     ):
         """Test get_candles adds UTC timezone when datetimes are naive."""
-        from unified_domain_client.cloud_data_provider import MarketDataProvider
+        from unified_domain_client.cloud_data_provider import (  # noqa: deep-import
+            MarketDataProvider,
+        )
 
         mock_config_instance = MagicMock()
         mock_config_instance.market_data_gcs_bucket = "mkt-bucket"
@@ -770,7 +838,9 @@ class TestMarketDataProviderAdditional:
         """Test get_candles builds query with LIMIT clause."""
         from datetime import UTC, datetime
 
-        from unified_domain_client.cloud_data_provider import MarketDataProvider
+        from unified_domain_client.cloud_data_provider import (  # noqa: deep-import
+            MarketDataProvider,
+        )
 
         mock_config_instance = MagicMock()
         mock_config_instance.market_data_gcs_bucket = "mkt-bucket"

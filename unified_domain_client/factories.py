@@ -1,7 +1,7 @@
 """Factory functions for domain-specific cloud services.
 
 Cloud-agnostic: passes bucket: str directly to StandardizedDomainCloudService.
-project_id and analytics_dataset params kept for backward compatibility but ignored.
+project_id and analytics_dataset params kept for legacy callers (deprecated) but ignored.
 """
 
 from .standardized_service import StandardizedDomainCloudService
