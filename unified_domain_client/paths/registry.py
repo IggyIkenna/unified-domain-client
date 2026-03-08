@@ -268,7 +268,7 @@ class PathRegistry:
     MARKET_CANDLES: str = (
         "processed_candles/by_date/day={date}/timeframe={timeframe}/instrument={instrument}.parquet"
     )
-    FEATURES_DELTA_ONE: str = "delta_one_features/by_date/day={date}/timeframe={timeframe}/instrument={instrument}.parquet"
+    FEATURES_DELTA_ONE: str = "delta_one_features/by_date/day={date}/timeframe={timeframe}/instrument={instrument}.parquet"  # noqa: E501
     ML_PREDICTIONS: str = (
         "ml_predictions/by_date/day={date}/timeframe={timeframe}/instrument={instrument}.parquet"
     )

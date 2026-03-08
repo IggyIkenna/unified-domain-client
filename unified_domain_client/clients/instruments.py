@@ -129,7 +129,7 @@ class InstrumentsDomainClient:
             logger.error("Failed to load instruments for %s: %s", date_str, e)
             return pd.DataFrame()
 
-    def _load_instruments_by_venue(
+    def _load_instruments_by_venue(  # noqa: C901
         self, date_str: str, venues: list[str] | None = None
     ) -> pd.DataFrame:
         try:
@@ -141,7 +141,7 @@ class InstrumentsDomainClient:
             if venues:
                 venue_folders: list[str] = [f"{base_prefix}venue={v}/" for v in venues]
             else:
-                # GCS client list_blobs() returns untyped object; cast to Iterable to allow iteration.
+                # GCS client list_blobs() returns untyped object; cast to Iterable.
                 iterator: Iterable[object] = cast(
                     Iterable[object], bucket.list_blobs(prefix=base_prefix, delimiter="/")
                 )
@@ -181,7 +181,7 @@ class InstrumentsDomainClient:
             logger.warning("Could not load by-venue structure: %s", e)
             return pd.DataFrame()
 
-    def _filter_by_date_availability(self, df: pd.DataFrame, target_date: datetime) -> pd.DataFrame:
+    def _filter_by_date_availability(self, df: pd.DataFrame, target_date: datetime) -> pd.DataFrame:  # noqa: C901
         if df.empty:
             return df
 
@@ -231,7 +231,7 @@ class InstrumentsDomainClient:
 
         return filtered_df
 
-    def _apply_filters(
+    def _apply_filters(  # noqa: C901
         self,
         df: pd.DataFrame,
         venue: str | list[str] | None = None,
@@ -435,7 +435,7 @@ class InstrumentsDomainClient:
         )
         return instruments_df.head(limit) if len(instruments_df) > limit else instruments_df
 
-    def get_expiring_instruments(
+    def get_expiring_instruments(  # noqa: C901
         self,
         date: str | datetime,
         days_until_expiry: int = 30,

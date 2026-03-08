@@ -11,7 +11,7 @@ from .bq_external import BigQueryExternalReader
 from .direct import DirectReader
 
 
-def get_reader(
+def get_reader(  # noqa: C901
     storage_client: StorageClient | None = None,
     mode: ReadMode = ReadMode.AUTO,
     **kwargs: object,

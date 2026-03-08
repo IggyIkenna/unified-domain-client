@@ -268,7 +268,7 @@ def _resolve_instruments_bucket_cefi() -> str:
     proj = config.gcp_project_id
     if not proj:
         raise ValueError(
-            "INSTRUMENTS_GCS_BUCKET or GCP_PROJECT_ID must be set in config. No hardcoded fallbacks allowed."
+            "INSTRUMENTS_GCS_BUCKET or GCP_PROJECT_ID must be set in config. No hardcoded fallbacks allowed."  # noqa: E501
         )
     return f"instruments-store-cefi-{proj}"
 

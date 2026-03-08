@@ -40,7 +40,7 @@ VALID_INSTRUCTION_TYPES = [
     "SWAP",  # DEX swap (requires direction)
     "LEND",  # Lending protocol deposit
     "BORROW",  # Lending protocol borrow
-    "WITHDRAW",  # DEPRECATED: Balance changes handled by strategy layer. Use UNSTAKE for staking withdrawals.
+    "WITHDRAW",  # DEPRECATED: Balance changes handled by strategy layer. Use UNSTAKE for staking withdrawals.  # noqa: E501
     "REPAY",  # Repay borrowed amount
     "STAKE",  # Staking deposit
     "UNSTAKE",  # Staking withdrawal
@@ -354,7 +354,7 @@ class InstructionValidator:
         )
         if len(invalid_types) > 0:
             errors.append(
-                f"Invalid instruction_type values: {list(invalid_types)}. Must be one of {VALID_INSTRUCTION_TYPES}"
+                f"Invalid instruction_type values: {list(invalid_types)}. Must be one of {VALID_INSTRUCTION_TYPES}"  # noqa: E501
             )
 
         # Check for deprecated instruction types and warn
@@ -380,7 +380,7 @@ class InstructionValidator:
 
         if "direction" not in df.columns:
             errors.append(
-                f"direction column REQUIRED for TRADE/SWAP instructions ({trade_swap_mask.sum()} rows)"
+                f"direction column REQUIRED for TRADE/SWAP instructions ({trade_swap_mask.sum()} rows)"  # noqa: E501
             )
             return
 
@@ -395,10 +395,10 @@ class InstructionValidator:
         if len(invalid_dirs) > 0:
             bad_vals = invalid_dirs["direction"].unique().tolist()
             errors.append(
-                f"TRADE/SWAP direction must be -1 (sell) or 1 (buy), got: {bad_vals}. Note: 0 is no longer valid."
+                f"TRADE/SWAP direction must be -1 (sell) or 1 (buy), got: {bad_vals}. Note: 0 is no longer valid."  # noqa: E501
             )
 
-    def _validate_atomic_instructions(self, df: pd.DataFrame, errors: list[str]) -> None:
+    def _validate_atomic_instructions(self, df: pd.DataFrame, errors: list[str]) -> None:  # noqa: C901
         """Validate ATOMIC instruction nested_instructions JSON content."""
         atomic_mask = df["instruction_type"] == "ATOMIC"
         if not atomic_mask.any():
@@ -457,7 +457,7 @@ class InstructionValidator:
         negative_count = (df["benchmark_price"] < 0).sum()
         if negative_count > 0:
             errors.append(
-                f"benchmark_price contains {negative_count} negative values. benchmark_price must be > 0."
+                f"benchmark_price contains {negative_count} negative values. benchmark_price must be > 0."  # noqa: E501
             )
 
         # Check for NaN values
@@ -493,7 +493,7 @@ class InstructionValidator:
             if sid and not validate_strategy_id(str(sid)):
                 errors.append(
                     f"Invalid strategy_id format: {sid}. "
-                    f"Expected: {{CATEGORY}}_{{ASSET}}_{{description}}_{{MODE}}_{{TIMEFRAME}}_V{{N}}"
+                    f"Expected: {{CATEGORY}}_{{ASSET}}_{{description}}_{{MODE}}_{{TIMEFRAME}}_V{{N}}"  # noqa: E501
                 )
 
     def _validate_instrument_id_format(self, df: pd.DataFrame, errors: list[str]) -> None:
@@ -505,7 +505,7 @@ class InstructionValidator:
                     f"Invalid instrument_id format: {inst_id}. Expected: VENUE:TYPE:SYMBOL"
                 )
 
-    def _validate_optional_fields(self, df: pd.DataFrame, errors: list[str]) -> None:
+    def _validate_optional_fields(self, df: pd.DataFrame, errors: list[str]) -> None:  # noqa: C901
         """Validate optional fields (confidence, urgency, price bounds, chains)."""
         # Validate confidence/urgency are in [0, 1]
         bounded_cols = ["confidence", "urgency"]
