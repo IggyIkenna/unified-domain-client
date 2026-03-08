@@ -19,12 +19,30 @@ import json
 import logging
 from datetime import date
 from functools import lru_cache
+from typing import Protocol, cast
 
 from unified_cloud_interface import get_storage_client
 from unified_config_interface import UnifiedCloudConfig
 from unified_ml_interface.models import ModelMetadata, ModelVariantConfig
 
 logger = logging.getLogger(__name__)
+
+
+class _StorageClient(Protocol):
+    """Minimal protocol for the UCI storage client used in artifact_store."""
+
+    def upload_bytes(
+        self,
+        bucket: str,
+        blob_name: str,
+        data: bytes,
+        content_type: str = ...,
+    ) -> None: ...
+
+    def download_bytes(self, bucket: str, blob_name: str) -> bytes | None: ...
+
+    def list_blobs(self, bucket: str, prefix: str) -> list[object]: ...
+
 
 _MODELS_PREFIX = "models"
 _METADATA_SUFFIX = "metadata.json"
@@ -79,24 +97,22 @@ class CloudModelArtifactStore:
     def _upload_bytes(
         self, blob_name: str, data: bytes, content_type: str = "application/octet-stream"
     ) -> None:
-        client = get_storage_client(project_id=self._project_id)
-        client.upload_bytes(  # type: ignore[attr-defined]
-            self._bucket, blob_name, data, content_type=content_type
-        )
+        client = cast(_StorageClient, get_storage_client(project_id=self._project_id))
+        client.upload_bytes(self._bucket, blob_name, data, content_type=content_type)
 
     def _download_bytes(self, blob_name: str) -> bytes | None:
         try:
-            client = get_storage_client(project_id=self._project_id)
-            return client.download_bytes(self._bucket, blob_name)  # type: ignore[attr-defined]
+            client = cast(_StorageClient, get_storage_client(project_id=self._project_id))
+            return client.download_bytes(self._bucket, blob_name)
         except (OSError, ConnectionError, ValueError) as exc:
             logger.debug("Blob not found or error: %s — %s", blob_name, exc)
             return None
 
     def _list_blobs(self, prefix: str) -> list[str]:
         try:
-            client = get_storage_client(project_id=self._project_id)
-            blobs = client.list_blobs(self._bucket, prefix=prefix)  # type: ignore[attr-defined]
-            return [b.name for b in blobs]
+            client = cast(_StorageClient, get_storage_client(project_id=self._project_id))
+            blobs = client.list_blobs(self._bucket, prefix=prefix)
+            return [b.name for b in blobs]  # pyright: ignore[reportAttributeAccessIssue]
         except (OSError, ConnectionError, ValueError) as exc:
             logger.error("Failed to list blobs under %s: %s", prefix, exc)
             return []
@@ -112,7 +128,7 @@ class CloudModelArtifactStore:
         training_period: str | None = None,
     ) -> str:
         """Serialise model with joblib and upload to GCS. Returns storage path."""
-        import joblib  # type: ignore[import-untyped]
+        import joblib  # pyright: ignore[reportMissingTypeStubs]
 
         period = training_period or (
             metadata.training_timestamp.strftime("%Y-%m")
@@ -144,7 +160,7 @@ class CloudModelArtifactStore:
         variant_config: ModelVariantConfig | None = None,
     ) -> object | None:
         """Download and deserialise a model from GCS. Returns None if not found."""
-        import joblib  # type: ignore[import-untyped]
+        import joblib  # pyright: ignore[reportMissingTypeStubs]
 
         period = training_period or self.get_latest_training_period(model_id)
         if not period:
