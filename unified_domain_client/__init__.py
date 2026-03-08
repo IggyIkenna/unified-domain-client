@@ -89,6 +89,8 @@ from unified_domain_client.writers import (  # noqa: deep-import
 
 # Lazy: clients, standardized_service, factories, cloud_data_provider
 _LAZY_NAMES = {
+    # Artifact store
+    "CloudModelArtifactStore",
     # Legacy rich clients (legacy)
     "ExecutionDomainClient",
     "InstrumentsDomainClient",
@@ -221,6 +223,7 @@ _SPORTS_NAMES = frozenset(
 _CLOUD_PROVIDER_NAMES = frozenset(
     {
         "CloudDataProviderBase",
+        "CloudModelArtifactStore",
         "FeaturesDataProvider",
         "InstrumentsDataProvider",
         "MarketDataProvider",
@@ -252,6 +255,9 @@ def __getattr__(name: str) -> object:
     if name in _SPORTS_NAMES:
         return _load_sports(name)
     if name in _CLOUD_PROVIDER_NAMES:
+        from unified_domain_client.artifact_store import (  # noqa: deep-import
+            CloudModelArtifactStore,
+        )
         from unified_domain_client.cloud_data_provider import (  # noqa: deep-import
             CloudDataProviderBase,
             FeaturesDataProvider,
@@ -261,6 +267,7 @@ def __getattr__(name: str) -> object:
 
         return {
             "CloudDataProviderBase": CloudDataProviderBase,
+            "CloudModelArtifactStore": CloudModelArtifactStore,
             "FeaturesDataProvider": FeaturesDataProvider,
             "InstrumentsDataProvider": InstrumentsDataProvider,
             "MarketDataProvider": MarketDataProvider,
@@ -293,6 +300,7 @@ def __getattr__(name: str) -> object:
 
 
 __all__ = [
+    "CloudModelArtifactStore",
     "DateFilterService",
     "StandardizedDomainCloudService",
     "make_domain_service",

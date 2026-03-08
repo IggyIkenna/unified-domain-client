@@ -40,10 +40,9 @@ VALID_INSTRUCTION_TYPES = [
     "SWAP",  # DEX swap (requires direction)
     "LEND",  # Lending protocol deposit
     "BORROW",  # Lending protocol borrow
-    "WITHDRAW",  # DEPRECATED: Balance changes handled by strategy layer. Use UNSTAKE for staking withdrawals.  # noqa: E501
     "REPAY",  # Repay borrowed amount
     "STAKE",  # Staking deposit
-    "UNSTAKE",  # Staking withdrawal
+    "UNSTAKE",  # Staking withdrawal (replaces removed WITHDRAW type)
     "TRANSFER",  # Asset transfer between wallets/chains
     "FLASH_BORROW",  # Flash loan borrow (must pair with FLASH_REPAY)
     "FLASH_REPAY",  # Flash loan repay
@@ -53,16 +52,12 @@ VALID_INSTRUCTION_TYPES = [
     "NO_ACTION",  # Alias for HEARTBEAT
 ]
 
-# DEPRECATED instruction types - kept for legacy callers (deprecated)
-DEPRECATED_INSTRUCTION_TYPES = ["WITHDRAW"]
-
 # Instruction types that can be bundled into ATOMIC transactions
 # TRADE cannot be atomic (it's CeFi/off-chain CLOB execution)
 ATOMIC_COMPATIBLE_TYPES = [
     "SWAP",
     "LEND",
     "BORROW",
-    "WITHDRAW",
     "REPAY",
     "STAKE",
     "UNSTAKE",
@@ -220,12 +215,8 @@ REQUIRED_COLUMNS = [
     "benchmark_price",
 ]
 
-# DEPRECATED: Kept for legacy API compatibility during migration
+# Required direction column names
 DIRECTION_COLUMNS = ["direction", "instruction_type"]
-
-# DEPRECATED: signal_id is now instruction_id
-# This constant exists only for legacy API compatibility during migration
-LEGACY_SIGNAL_ID_COLUMN = "signal_id"
 
 
 # =============================================================================
@@ -270,16 +261,14 @@ class InstructionValidator:
         errors = validator.validate_file("instructions.parquet")
     """
 
-    def __init__(self, strict: bool = True, allow_legacy_signal_id: bool = True):
+    def __init__(self, strict: bool = True):
         """
         Initialize validator.
 
         Args:
             strict: If True, validate all constraints strictly
-            allow_legacy_signal_id: If True, accept signal_id as alias for instruction_id
         """
         self.strict = strict
-        self.allow_legacy_signal_id = allow_legacy_signal_id
 
     def validate(self, df: pd.DataFrame | pa.Table) -> list[str]:
         """
@@ -298,9 +287,6 @@ class InstructionValidator:
             df = df.to_pandas()  # pyright: ignore[reportCallIssue]
         if not isinstance(df, pd.DataFrame):
             return ["Input must be a pandas DataFrame or pyarrow Table"]
-
-        # Handle legacy signal_id -> instruction_id migration
-        df = self._handle_legacy_signal_id(df, errors)
 
         # Check required columns (stop early if missing)
         for col in REQUIRED_COLUMNS:
@@ -323,24 +309,6 @@ class InstructionValidator:
 
         return errors
 
-    def _handle_legacy_signal_id(self, df: pd.DataFrame, errors: list[str]) -> pd.DataFrame:
-        """Handle legacy signal_id -> instruction_id migration."""
-        set(df.columns)
-        has_instruction_id = "instruction_id" in df.columns
-        has_legacy_signal_id = LEGACY_SIGNAL_ID_COLUMN in df.columns
-
-        if not has_instruction_id and has_legacy_signal_id:
-            if self.allow_legacy_signal_id:
-                df = df.rename(columns={LEGACY_SIGNAL_ID_COLUMN: "instruction_id"})
-                logger.warning(
-                    "DEPRECATED: signal_id column found. Use instruction_id instead. "
-                    "Auto-renaming for legacy API compatibility."
-                )
-            else:
-                errors.append("signal_id is DEPRECATED. Use instruction_id instead.")
-
-        return df
-
     def _validate_instruction_types(self, df: pd.DataFrame, errors: list[str]) -> None:
         """Validate instruction_type values are present and valid."""
         null_type_count = df["instruction_type"].isna().sum()
@@ -355,19 +323,6 @@ class InstructionValidator:
         if len(invalid_types) > 0:
             errors.append(
                 f"Invalid instruction_type values: {list(invalid_types)}. Must be one of {VALID_INSTRUCTION_TYPES}"  # noqa: E501
-            )
-
-        # Check for deprecated instruction types and warn
-        deprecated_mask = df["instruction_type"].isin(DEPRECATED_INSTRUCTION_TYPES)
-        if deprecated_mask.any():
-            deprecated_count = deprecated_mask.sum()
-            deprecated_types = df[deprecated_mask]["instruction_type"].unique().tolist()
-            logger.warning(
-                "DEPRECATED instruction types found: %s (%s instructions). "
-                "WITHDRAW is deprecated - balance changes are handled by strategy layer. "
-                "Use UNSTAKE for staking withdrawals.",
-                deprecated_types,
-                deprecated_count,
             )
 
     def _validate_direction(self, df: pd.DataFrame, errors: list[str]) -> None:
@@ -557,34 +512,28 @@ class InstructionValidator:
             raise InstructionValidationError(errors)
 
 
-def validate_instruction_dataframe(
-    df: pd.DataFrame | pa.Table, strict: bool = True, allow_legacy_signal_id: bool = True
-) -> list[str]:
+def validate_instruction_dataframe(df: pd.DataFrame | pa.Table, strict: bool = True) -> list[str]:
     """
     Convenience function to validate an instruction DataFrame.
 
     Args:
         df: pandas DataFrame or pyarrow Table to validate
         strict: If True, validate all constraints strictly
-        allow_legacy_signal_id: If True, accept signal_id as alias for instruction_id
 
     Returns:
         List of validation error messages (empty if valid)
     """
-    validator = InstructionValidator(strict=strict, allow_legacy_signal_id=allow_legacy_signal_id)
+    validator = InstructionValidator(strict=strict)
     return validator.validate(df)
 
 
-def validate_instruction_parquet(
-    path: str | Path, strict: bool = True, allow_legacy_signal_id: bool = True
-) -> list[str]:
+def validate_instruction_parquet(path: str | Path, strict: bool = True) -> list[str]:
     """
     Validate an instruction parquet file.
 
     Args:
         path: Path to parquet file
         strict: If True, validate all constraints strictly
-        allow_legacy_signal_id: If True, accept signal_id as alias for instruction_id
 
     Returns:
         List of validation error messages (empty if valid)
@@ -600,9 +549,7 @@ def validate_instruction_parquet(
     except (OSError, PermissionError, ValueError) as e:
         return [f"Failed to read parquet file {path}: {e}"]
 
-    return validate_instruction_dataframe(
-        df, strict=strict, allow_legacy_signal_id=allow_legacy_signal_id
-    )
+    return validate_instruction_dataframe(df, strict=strict)
 
 
 def get_instruction_pyarrow_schema() -> pa.Schema:
@@ -620,7 +567,6 @@ def migrate_legacy_dataframe(df: pd.DataFrame | pa.Table) -> pd.DataFrame:
     Migrate a legacy instruction DataFrame to the new schema.
 
     Handles:
-    - signal_id -> instruction_id rename
     - price -> price_cap/price_floor (if applicable)
     - notional removal (kept as-is, just not validated)
 
@@ -635,11 +581,6 @@ def migrate_legacy_dataframe(df: pd.DataFrame | pa.Table) -> pd.DataFrame:
         df = df.to_pandas()  # pyright: ignore[reportCallIssue]
 
     df = df.copy()
-
-    # Rename signal_id to instruction_id
-    if LEGACY_SIGNAL_ID_COLUMN in df.columns and "instruction_id" not in df.columns:
-        df = df.rename(columns={LEGACY_SIGNAL_ID_COLUMN: "instruction_id"})
-        logger.info("Migrated signal_id -> instruction_id")
 
     # Migrate price to price_cap (assuming it was used as a limit)
     if "price" in df.columns and "price_cap" not in df.columns:

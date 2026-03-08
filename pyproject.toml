@@ -17,6 +17,9 @@ path = "../unified-config-interface"
 [tool.uv.sources.unified-internal-contracts]
 path = "../unified-internal-contracts"
 
+[tool.uv.sources.unified-ml-interface]
+path = "../unified-ml-interface"
+
 [tool.uv.sources.unified-trading-library]
 path = "../unified-trading-library"
 
@@ -93,6 +96,7 @@ extraPaths = [
     "../unified-internal-contracts",
     "../unified-events-interface",
     "../unified-cloud-interface",
+    "../unified-ml-interface",
     "../unified-trading-library",
 ]
 
@@ -114,7 +118,7 @@ repo_arch_tier = "3"
 
 [project]
 name = "unified-domain-client"
-version = "0.1.41"
+version = "0.1.45"
 description = "Trading domain services - clients, validation, cloud service wrappers"
 requires-python = ">=3.13,<3.14"
 dependencies = [
@@ -125,6 +129,7 @@ dependencies = [
     "unified-cloud-interface[gcp]>=0.1.0,<1.0.0",
     "unified-config-interface>=0.3.0,<1.0.0",
     "unified-internal-contracts>=0.1.0,<1.0.0",
+    "unified-ml-interface>=0.1.0,<1.0.0",
     "unified-trading-library>=0.4.0,<1.0.0",
 ]
 
