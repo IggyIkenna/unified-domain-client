@@ -253,7 +253,7 @@ class DateValidator:
         venue: str | None,
         timeframe: str,
     ) -> str | None:
-        """Resolve earliest valid date from config or raw data fallback. Returns None if unconfigured."""
+        """Resolve earliest valid date from config or raw data fallback. Returns None if unconfigured."""  # noqa: E501
         earliest_date = self.get_earliest_valid_feature_date(
             category=category,
             venue=venue,

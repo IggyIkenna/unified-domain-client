@@ -46,10 +46,16 @@ class GlueCatalog:
                 "Name": dataset_name,
                 "StorageDescriptor": {
                     "Location": s3_location,
-                    "InputFormat": "org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat",
-                    "OutputFormat": "org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat",
+                    "InputFormat": (
+                        "org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat"
+                    ),
+                    "OutputFormat": (
+                        "org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat"
+                    ),
                     "SerdeInfo": {
-                        "SerializationLibrary": "org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe",
+                        "SerializationLibrary": (
+                            "org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe"
+                        ),
                     },
                     "Columns": [],
                 },

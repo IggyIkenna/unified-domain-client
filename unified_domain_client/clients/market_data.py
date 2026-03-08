@@ -211,7 +211,7 @@ class MarketTickDataDomainClient:
         self._bucket = bucket
         logger.info("MarketTickDataDomainClient initialized: bucket=%s", bucket)
 
-    def _build_tick_gcs_path(
+    def _build_tick_gcs_path(  # noqa: C901
         self,
         date_str: str,
         instrument_id: str,
@@ -252,7 +252,10 @@ class MarketTickDataDomainClient:
 
         if type_folder:
             if needs_venue and extracted_venue:
-                return f"{base_path}/instrument_type={type_folder}/venue={extracted_venue}/{instrument_id}.parquet"
+                return (
+                    f"{base_path}/instrument_type={type_folder}"
+                    f"/venue={extracted_venue}/{instrument_id}.parquet"
+                )
             return f"{base_path}/instrument_type={type_folder}/{instrument_id}.parquet"
         return f"{base_path}/{instrument_id}.parquet"
 
@@ -320,7 +323,8 @@ class MarketDataDomainClient(MarketCandleDataDomainClient):
         analytics_dataset: str | None = None,
     ) -> None:
         warnings.warn(
-            "MarketDataDomainClient is deprecated. Use MarketCandleDataDomainClient or MarketTickDataDomainClient.",
+            "MarketDataDomainClient is deprecated. "
+            "Use MarketCandleDataDomainClient or MarketTickDataDomainClient.",
             DeprecationWarning,
             stacklevel=2,
         )

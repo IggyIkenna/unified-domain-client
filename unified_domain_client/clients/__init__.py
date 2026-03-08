@@ -71,7 +71,7 @@ def create_features_client(
     storage_bucket: str | None = None,
     category: str | None = None,
 ) -> FeaturesDeltaOneDomainClient:
-    """Factory function to create FeaturesDeltaOneDomainClient (legacy: feature_type param ignored)."""
+    """Factory to create FeaturesDeltaOneDomainClient (legacy: feature_type param ignored)."""
     return FeaturesDeltaOneDomainClient(
         project_id=project_id,
         storage_bucket=storage_bucket,

@@ -5,7 +5,7 @@ Tier 2 compliance: Local implementation, no unified-trading-library dependency.
 # pyright: reportAny=false, reportUnnecessaryIsInstance=false, reportReturnType=false
 # pyright: reportUnknownVariableType=false, reportUnknownMemberType=false, reportUnknownArgumentType=false
 # pyright: reportInvalidTypeArguments=false, reportAttributeAccessIssue=false
-# Reason: df: object accepts DataFrame | polars.DataFrame; getattr/callable for to_pandas() — polymorphic.
+# Reason: df: object accepts DataFrame | polars.DataFrame; getattr/callable for to_pandas() — polymorphic.  # noqa: E501
 # reportUnnecessaryIsInstance: expected_date union narrowing in nested elifs.
 # reportUnknown*: pandas Series operations on object-typed columns have incomplete stubs.
 # reportReturnType/reportInvalidTypeArguments: pd.to_datetime returns Series[Timestamp] but
@@ -89,14 +89,14 @@ class TimestampDateValidator:
         errors: list[str] = []
         if not valid:
             errors.append(
-                f"Only {pct:.1f}% of timestamps align with {expected_str}. Found dates: {actual_dates}"
+                f"Only {pct:.1f}% of timestamps align with {expected_str}. Found dates: {actual_dates}"  # noqa: E501
             )
         return TimestampAlignmentResult(
             valid=valid, alignment_percentage=pct, errors=errors, actual_dates_found=actual_dates
         )
 
 
-def validate_timestamp_date_alignment(
+def validate_timestamp_date_alignment(  # noqa: C901
     df: pd.DataFrame | object,
     expected_date: date_type | str | None = None,
     timestamp_col: str = "auto",
