@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from functools import lru_cache
 
 import pandas as pd
 from unified_cloud_interface import get_storage_client
@@ -12,6 +13,12 @@ from ..paths import build_bucket, build_path
 from ..standardized_service import StandardizedDomainCloudService
 
 logger = logging.getLogger(__name__)
+
+
+@lru_cache(maxsize=1)
+def _get_cloud_config() -> UnifiedCloudConfig:
+    """Return singleton UnifiedCloudConfig instance."""
+    return UnifiedCloudConfig()
 
 
 class FeaturesDeltaOneDomainClient:
@@ -25,7 +32,7 @@ class FeaturesDeltaOneDomainClient:
         analytics_dataset: str | None = None,
     ) -> None:
         self._category = category
-        self._project_id = project_id or UnifiedCloudConfig().gcp_project_id
+        self._project_id = project_id or _get_cloud_config().gcp_project_id
         bucket = storage_bucket or build_bucket(
             "delta_one_features", project_id=self._project_id, category=category
         )
@@ -84,7 +91,7 @@ class FeaturesCalendarDomainClient:
         storage_bucket: str | None = None,
         analytics_dataset: str | None = None,
     ) -> None:
-        self._project_id = project_id or UnifiedCloudConfig().gcp_project_id
+        self._project_id = project_id or _get_cloud_config().gcp_project_id
         bucket = storage_bucket or build_bucket("calendar_features", project_id=self._project_id)
         self.cloud_service = StandardizedDomainCloudService(domain="features", bucket=bucket)
 
@@ -127,7 +134,7 @@ class FeaturesOnchainDomainClient:
         storage_bucket: str | None = None,
         analytics_dataset: str | None = None,
     ) -> None:
-        self._project_id = project_id or UnifiedCloudConfig().gcp_project_id
+        self._project_id = project_id or _get_cloud_config().gcp_project_id
         bucket = storage_bucket or build_bucket("onchain_features", project_id=self._project_id)
         self.cloud_service = StandardizedDomainCloudService(domain="features", bucket=bucket)
 
@@ -173,7 +180,7 @@ class FeaturesVolatilityDomainClient:
         analytics_dataset: str | None = None,
     ) -> None:
         self._category = category
-        self._project_id = project_id or UnifiedCloudConfig().gcp_project_id
+        self._project_id = project_id or _get_cloud_config().gcp_project_id
         bucket = storage_bucket or build_bucket(
             "volatility_features", project_id=self._project_id, category=category
         )

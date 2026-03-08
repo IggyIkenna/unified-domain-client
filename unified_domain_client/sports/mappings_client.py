@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from functools import lru_cache
 
 import pandas as pd
 from unified_config_interface import UnifiedCloudConfig
@@ -13,6 +14,12 @@ from ..standardized_service import StandardizedDomainCloudService
 logger = logging.getLogger(__name__)
 
 
+@lru_cache(maxsize=1)
+def _get_cloud_config() -> UnifiedCloudConfig:
+    """Return singleton UnifiedCloudConfig instance."""
+    return UnifiedCloudConfig()
+
+
 class SportsMappingsDomainClient:
     """Client for cross-provider entity mappings partitioned by entity type."""
 
@@ -21,7 +28,7 @@ class SportsMappingsDomainClient:
         project_id: str | None = None,
         storage_bucket: str | None = None,
     ) -> None:
-        self._project_id = project_id or UnifiedCloudConfig().gcp_project_id
+        self._project_id = project_id or _get_cloud_config().gcp_project_id
         bucket = storage_bucket or build_bucket("sports_mappings", project_id=self._project_id)
         self.cloud_service = StandardizedDomainCloudService(domain="sports", bucket=bucket)
 

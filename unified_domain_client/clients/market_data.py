@@ -6,6 +6,7 @@ from __future__ import annotations
 import logging
 import warnings
 from datetime import UTC, datetime
+from functools import lru_cache
 from typing import NotRequired, TypedDict, Unpack
 
 import pandas as pd
@@ -16,6 +17,13 @@ from ..standardized_service import StandardizedDomainCloudService
 from .base import BaseDataClient
 
 logger = logging.getLogger(__name__)
+
+
+@lru_cache(maxsize=1)
+def _get_cloud_config() -> UnifiedCloudConfig:
+    """Return singleton UnifiedCloudConfig instance."""
+    return UnifiedCloudConfig()
+
 
 # --------------------------------------------------------------------------- #
 # Thin typed clients (new pattern — constructor injection)
@@ -135,7 +143,7 @@ class MarketCandleDataDomainClient:
         storage_bucket: str | None = None,
         analytics_dataset: str | None = None,
     ) -> None:
-        bucket = storage_bucket or UnifiedCloudConfig().market_data_gcs_bucket
+        bucket = storage_bucket or _get_cloud_config().market_data_gcs_bucket
         self.cloud_service = StandardizedDomainCloudService(domain="market_data", bucket=bucket)
         self._bucket = bucket
         logger.info("MarketCandleDataDomainClient initialized: bucket=%s", bucket)
@@ -206,7 +214,7 @@ class MarketTickDataDomainClient:
         storage_bucket: str | None = None,
         analytics_dataset: str | None = None,
     ) -> None:
-        bucket = storage_bucket or UnifiedCloudConfig().market_data_gcs_bucket
+        bucket = storage_bucket or _get_cloud_config().market_data_gcs_bucket
         self.cloud_service = StandardizedDomainCloudService(domain="market_data", bucket=bucket)
         self._bucket = bucket
         logger.info("MarketTickDataDomainClient initialized: bucket=%s", bucket)
