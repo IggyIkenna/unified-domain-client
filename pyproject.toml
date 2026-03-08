@@ -118,7 +118,7 @@ repo_arch_tier = "3"
 
 [project]
 name = "unified-domain-client"
-version = "0.1.45"
+version = "0.1.50"
 description = "Trading domain services - clients, validation, cloud service wrappers"
 requires-python = ">=3.13,<3.14"
 dependencies = [

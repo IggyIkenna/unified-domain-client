@@ -3,6 +3,9 @@
 Lightweight imports (schemas, date_filter, date_validation) load immediately.
 Clients/standardized_service/factories/cloud_data_provider use lazy imports.
 """
+
+__version__ = "0.1.45"
+
 # pyright: reportUnsupportedDunderAll=false, reportUnknownVariableType=false
 
 from unified_domain_client.catalog import BigQueryCatalog, GlueCatalog  # noqa: deep-import
