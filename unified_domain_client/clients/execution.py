@@ -6,6 +6,7 @@ from __future__ import annotations
 import io
 import logging
 from datetime import datetime
+from functools import lru_cache
 from typing import NotRequired, TypedDict, Unpack
 
 import pandas as pd
@@ -16,6 +17,12 @@ from ..paths import build_bucket, build_path
 from ..standardized_service import StandardizedDomainCloudService
 
 logger = logging.getLogger(__name__)
+
+
+@lru_cache(maxsize=1)
+def _get_cloud_config() -> UnifiedCloudConfig:
+    """Return singleton UnifiedCloudConfig instance."""
+    return UnifiedCloudConfig()
 
 
 class _ExecClientConfig(TypedDict, total=False):
@@ -34,8 +41,8 @@ class ExecutionDomainClient:
         storage_bucket: str | None = None,
         analytics_dataset: str | None = None,
     ) -> None:
-        proj = project_id or UnifiedCloudConfig().gcp_project_id
-        bucket = storage_bucket or UnifiedCloudConfig().execution_gcs_bucket
+        proj = project_id or _get_cloud_config().gcp_project_id
+        bucket = storage_bucket or _get_cloud_config().execution_gcs_bucket
         self.cloud_service = StandardizedDomainCloudService(domain="execution", bucket=bucket)
         self._project_id = proj
         self._bucket = bucket

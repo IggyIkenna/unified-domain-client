@@ -15,6 +15,7 @@ import logging
 import sys
 from abc import ABC
 from datetime import UTC, datetime
+from functools import lru_cache
 
 import pandas as pd
 from unified_config_interface import UnifiedCloudConfig
@@ -22,6 +23,13 @@ from unified_config_interface import UnifiedCloudConfig
 from .standardized_service import (
     StandardizedDomainCloudService,
 )
+
+
+@lru_cache(maxsize=1)
+def _get_cloud_config() -> UnifiedCloudConfig:
+    """Return singleton UnifiedCloudConfig instance."""
+    return UnifiedCloudConfig()
+
 
 logger = logging.getLogger(__name__)
 
@@ -62,7 +70,7 @@ class CloudDataProviderBase(ABC):
             cloud_target: Ignored — kept for legacy callers (deprecated)
         """
         self.domain = domain
-        config = UnifiedCloudConfig()
+        config = _get_cloud_config()
 
         resolved_bucket = bucket or storage_bucket or config.gcs_bucket or f"{domain}-store"
         self.bucket: str = resolved_bucket
@@ -82,7 +90,7 @@ class CloudDataProviderBase(ABC):
     @property
     def is_test_mode(self) -> bool:
         """Check if running in test mode."""
-        config = UnifiedCloudConfig()
+        config = _get_cloud_config()
         return config.is_testing or "pytest" in sys.modules
 
     def download_from_gcs(
@@ -133,7 +141,7 @@ class CloudDataProviderBase(ABC):
         self, category: str
     ) -> tuple[str, "StandardizedDomainCloudService"]:
         """Build a category-specific cloud service. Returns (bucket_name, service)."""
-        config = UnifiedCloudConfig()
+        config = _get_cloud_config()
         try:
             category_bucket = config.get_bucket(self.domain, category)
         except ValueError:
@@ -261,7 +269,7 @@ class CloudDataProviderBase(ABC):
 
 def _resolve_instruments_bucket_cefi() -> str:
     """Resolve instruments CEFI bucket from config. Fails if not configured."""
-    config = UnifiedCloudConfig()
+    config = _get_cloud_config()
     bucket = config.instruments_gcs_bucket
     if bucket:
         return bucket
@@ -278,7 +286,7 @@ class InstrumentsDataProvider(CloudDataProviderBase):
     """Data provider for instruments domain."""
 
     def __init__(self, cloud_target: object | None = None):
-        config = UnifiedCloudConfig()
+        config = _get_cloud_config()
         super().__init__(
             domain="instruments",
             storage_bucket=_resolve_instruments_bucket_cefi(),
@@ -350,7 +358,7 @@ class MarketDataProvider(CloudDataProviderBase):
     """Data provider for market_data domain."""
 
     def __init__(self, cloud_target: object | None = None):
-        config = UnifiedCloudConfig()
+        config = _get_cloud_config()
         super().__init__(
             domain="market_data",
             storage_bucket=config.market_data_gcs_bucket,
@@ -424,7 +432,7 @@ class FeaturesDataProvider(CloudDataProviderBase):
     """Data provider for features domain."""
 
     def __init__(self, cloud_target: object | None = None):
-        config = UnifiedCloudConfig()
+        config = _get_cloud_config()
         super().__init__(
             domain="features",
             storage_bucket=config.features_gcs_bucket,

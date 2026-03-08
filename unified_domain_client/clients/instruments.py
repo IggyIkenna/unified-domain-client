@@ -9,6 +9,7 @@ import re
 from collections.abc import Iterable
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import UTC, datetime, timedelta
+from functools import lru_cache
 from typing import TypedDict, cast
 
 import pandas as pd
@@ -18,6 +19,12 @@ from unified_config_interface import UnifiedCloudConfig
 from ..standardized_service import StandardizedDomainCloudService
 
 logger = logging.getLogger(__name__)
+
+
+@lru_cache(maxsize=1)
+def _get_cloud_config() -> UnifiedCloudConfig:
+    """Return singleton UnifiedCloudConfig instance."""
+    return UnifiedCloudConfig()
 
 
 def _to_upper_list(val: str | list[str]) -> list[str]:
@@ -63,7 +70,7 @@ class InstrumentsDomainClient:
         storage_bucket: str | None = None,
         analytics_dataset: str | None = None,
     ) -> None:
-        resolved_bucket = storage_bucket or UnifiedCloudConfig().instruments_gcs_bucket
+        resolved_bucket = storage_bucket or _get_cloud_config().instruments_gcs_bucket
         self.cloud_service = StandardizedDomainCloudService(
             domain="instruments", bucket=resolved_bucket
         )
