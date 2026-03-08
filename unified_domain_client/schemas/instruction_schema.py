@@ -53,7 +53,7 @@ VALID_INSTRUCTION_TYPES = [
     "NO_ACTION",  # Alias for HEARTBEAT
 ]
 
-# DEPRECATED instruction types - kept for backward compatibility
+# DEPRECATED instruction types - kept for legacy callers (deprecated)
 DEPRECATED_INSTRUCTION_TYPES = ["WITHDRAW"]
 
 # Instruction types that can be bundled into ATOMIC transactions
@@ -220,11 +220,11 @@ REQUIRED_COLUMNS = [
     "benchmark_price",
 ]
 
-# DEPRECATED: Kept for backward compatibility during migration
+# DEPRECATED: Kept for legacy API compatibility during migration
 DIRECTION_COLUMNS = ["direction", "instruction_type"]
 
 # DEPRECATED: signal_id is now instruction_id
-# This constant exists only for backward compatibility during migration
+# This constant exists only for legacy API compatibility during migration
 LEGACY_SIGNAL_ID_COLUMN = "signal_id"
 
 
@@ -334,7 +334,7 @@ class InstructionValidator:
                 df = df.rename(columns={LEGACY_SIGNAL_ID_COLUMN: "instruction_id"})
                 logger.warning(
                     "DEPRECATED: signal_id column found. Use instruction_id instead. "
-                    "Auto-renaming for backward compatibility."
+                    "Auto-renaming for legacy API compatibility."
                 )
             else:
                 errors.append("signal_id is DEPRECATED. Use instruction_id instead.")

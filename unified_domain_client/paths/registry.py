@@ -249,11 +249,11 @@ def build_full_uri(
 class PathRegistry:
     """Central registry of GCS path patterns for all datasets in the system.
 
-    Thin wrapper around PATH_REGISTRY for backward compatibility.
+    Thin wrapper around PATH_REGISTRY for legacy API compatibility.
     Prefer using PATH_REGISTRY, get_spec(), build_bucket(), build_path(), build_full_uri() directly.
     """
 
-    # Legacy path template strings for backward-compatible readers/writers.
+    # Legacy path template strings for legacyible readers/writers.
     # Used with PathRegistry.format() which substitutes {instrument}, {date}, {timeframe}.
     MARKET_TICK_RAW: str = "raw_tick_data/by_date/day={date}/instrument={instrument}.parquet"
     MARKET_CANDLE_1M: str = (
@@ -282,7 +282,7 @@ class PathRegistry:
         """Format a path pattern string with the given keyword arguments.
 
         ``pattern`` is treated as a raw format string (not a PATH_REGISTRY key).
-        This method exists for backward compatibility with readers/writers that
+        This method exists for legacy API compatibility with readers/writers that
         store path template strings in the class-level constants above.
         """
         return pattern.format(**kwargs)

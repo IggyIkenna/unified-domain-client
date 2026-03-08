@@ -3,7 +3,7 @@
 import pandas as pd
 import pytest
 
-from unified_domain_client.validation import DomainValidationConfig, DomainValidationService
+from unified_domain_client import DomainValidationConfig, DomainValidationService
 
 
 class TestDomainValidationService:

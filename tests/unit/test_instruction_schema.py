@@ -7,7 +7,7 @@ import pandas as pd
 import pyarrow as pa
 import pytest
 
-from unified_domain_client.schemas.instruction_schema import (
+from unified_domain_client.schemas.instruction_schema import (  # noqa: deep-import
     INSTRUCTION_SCHEMA,
     LEGACY_SIGNAL_ID_COLUMN,
     InstructionValidationError,
@@ -211,7 +211,7 @@ class TestInstructionValidatorLegacySignalId:
 
     @patch("unified_domain_client.schemas.instruction_schema.validate_strategy_id")
     def test_legacy_signal_id_auto_renamed(self, mock_validate: MagicMock):
-        """Test that signal_id is auto-renamed to instruction_id when allow_legacy_signal_id=True."""
+        """Test signal_id is auto-renamed to instruction_id when allow_legacy_signal_id=True."""
         mock_validate.return_value = True
         validator = InstructionValidator(allow_legacy_signal_id=True)
         df = pd.DataFrame(

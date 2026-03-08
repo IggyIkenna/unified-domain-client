@@ -129,15 +129,23 @@ class InstrumentsDomainClient:
             logger.error("Failed to load instruments for %s: %s", date_str, e)
             return pd.DataFrame()
 
+    def _load_venue_parquet(self, venue_prefix: str) -> pd.DataFrame:
+        """Load instruments parquet for a single venue prefix."""
+        try:
+            gcs_path = f"{venue_prefix}instruments.parquet"
+            result = self.cloud_service.download_from_gcs(gcs_path=gcs_path, format="parquet")
+            return result if isinstance(result, pd.DataFrame) else pd.DataFrame()
+        except (ConnectionError, TimeoutError, OSError, ValueError) as e:
+            logger.warning("Could not load %s: %s", venue_prefix, e)
+            return pd.DataFrame()
+
     def _load_instruments_by_venue(  # noqa: C901
         self, date_str: str, venues: list[str] | None = None
     ) -> pd.DataFrame:
         try:
             client = get_storage_client()
             bucket = client.bucket(self._bucket)
-
             base_prefix = f"instrument_availability/by_date/day={date_str}/"
-
             if venues:
                 venue_folders: list[str] = [f"{base_prefix}venue={v}/" for v in venues]
             else:
@@ -151,29 +159,17 @@ class InstrumentsDomainClient:
                 )
                 prefixes: list[str] = list(raw_prefixes) if raw_prefixes is not None else []
                 venue_folders = [p for p in prefixes if "venue=" in p]
-
             if not venue_folders:
                 return pd.DataFrame()
-
-            def load_venue_file(venue_prefix: str) -> pd.DataFrame:
-                try:
-                    gcs_path = f"{venue_prefix}instruments.parquet"
-                    result = self.cloud_service.download_from_gcs(
-                        gcs_path=gcs_path, format="parquet"
-                    )
-                    return result if isinstance(result, pd.DataFrame) else pd.DataFrame()
-                except (ConnectionError, TimeoutError, OSError, ValueError) as e:
-                    logger.warning("Could not load %s: %s", venue_prefix, e)
-                    return pd.DataFrame()
-
             all_dfs: list[pd.DataFrame] = []
             with ThreadPoolExecutor(max_workers=min(12, len(venue_folders))) as executor:
-                futures = {executor.submit(load_venue_file, vf): vf for vf in venue_folders}
+                futures = {
+                    executor.submit(self._load_venue_parquet, vf): vf for vf in venue_folders
+                }
                 for future in as_completed(futures):
                     df = future.result()
                     if not df.empty:
                         all_dfs.append(df)
-
             if all_dfs:
                 return pd.concat(all_dfs, ignore_index=True)
             return pd.DataFrame()

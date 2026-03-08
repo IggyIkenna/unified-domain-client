@@ -57,9 +57,9 @@ class CloudDataProviderBase(ABC):
             bucket: Cloud storage bucket name (preferred)
             project_id: GCP project ID (used for bucket resolution if bucket not set)
             storage_bucket: Alternate bucket arg — used if bucket not set
-            analytics_dataset: Ignored — kept for backward compatibility
-            bigquery_location: Ignored — kept for backward compatibility
-            cloud_target: Ignored — kept for backward compatibility
+            analytics_dataset: Ignored — kept for legacy callers (deprecated)
+            bigquery_location: Ignored — kept for legacy callers (deprecated)
+            cloud_target: Ignored — kept for legacy callers (deprecated)
         """
         self.domain = domain
         config = UnifiedCloudConfig()
@@ -268,7 +268,8 @@ def _resolve_instruments_bucket_cefi() -> str:
     proj = config.gcp_project_id
     if not proj:
         raise ValueError(
-            "INSTRUMENTS_GCS_BUCKET or GCP_PROJECT_ID must be set in config. No hardcoded fallbacks allowed."  # noqa: E501
+            "instruments_gcs_bucket or gcp_project_id must be set in UnifiedCloudConfig."
+            " No hardcoded fallbacks allowed."
         )
     return f"instruments-store-cefi-{proj}"
 

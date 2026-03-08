@@ -87,7 +87,7 @@ def create_domain_cloud_service(
     """Factory for StandardizedDomainCloudService.
 
     ``bucket`` may be a plain str or a CloudTarget-like object with a
-    ``storage_bucket`` attribute (backward compatibility).
+    ``storage_bucket`` attribute (legacy API compatibility).
     """
     if isinstance(bucket, str):
         resolved = bucket
@@ -108,8 +108,8 @@ def make_domain_service(
     Args:
         domain: Domain name (e.g. "market_data", "strategy")
         bucket: Cloud storage bucket name
-        project_id: Ignored — kept for backward compatibility only
-        dataset: Ignored — kept for backward compatibility only
+        project_id: Ignored — kept for legacy callers (deprecated) only
+        dataset: Ignored — kept for legacy callers (deprecated) only
 
     Returns:
         StandardizedDomainCloudService ready for upload/download

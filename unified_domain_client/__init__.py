@@ -5,26 +5,26 @@ Clients/standardized_service/factories/cloud_data_provider use lazy imports.
 """
 # pyright: reportUnsupportedDunderAll=false, reportUnknownVariableType=false
 
-from unified_domain_client.catalog import BigQueryCatalog, GlueCatalog
-from unified_domain_client.data_completion import (
+from unified_domain_client.catalog import BigQueryCatalog, GlueCatalog  # noqa: deep-import
+from unified_domain_client.data_completion import (  # noqa: deep-import
     DataCompletionChecker,
     get_available_date_range,
     make_completion_checker,
 )
-from unified_domain_client.date_validation import (
+from unified_domain_client.date_validation import (  # noqa: deep-import
     DateValidationResult,
     DateValidator,
     get_earliest_valid_date,
     get_validator,
     should_skip_date,
 )
-from unified_domain_client.instrument_date_filter import DateFilterService
-from unified_domain_client.lookback_constants import (
+from unified_domain_client.instrument_date_filter import DateFilterService  # noqa: deep-import
+from unified_domain_client.lookback_constants import (  # noqa: deep-import
     FEATURE_GROUP_LOOKBACK,
     MAX_LOOKBACK_DAYS_BY_TIMEFRAME,
     TIMEFRAME_SECONDS,
 )
-from unified_domain_client.paths import (
+from unified_domain_client.paths import (  # noqa: deep-import
     PATH_REGISTRY,
     DataSetSpec,
     PathRegistry,
@@ -34,7 +34,7 @@ from unified_domain_client.paths import (
     build_path,
     get_spec,
 )
-from unified_domain_client.readers import (
+from unified_domain_client.readers import (  # noqa: deep-import
     AthenaReader,
     BaseDataReader,
     BaseReader,
@@ -45,7 +45,7 @@ from unified_domain_client.readers import (
     MLReader,
     get_reader,
 )
-from unified_domain_client.schemas import (
+from unified_domain_client.schemas import (  # noqa: deep-import
     CLOB_VENUES,
     CONFIG_SCHEMA,
     DEX_VENUES,
@@ -68,13 +68,16 @@ from unified_domain_client.schemas import (
     validate_instruction_dataframe,
     validate_instruction_parquet,
 )
-from unified_domain_client.timestamp_validation import (
+from unified_domain_client.timestamp_validation import (  # noqa: deep-import
     TimestampAlignmentResult,
     TimestampDateValidator,
     validate_timestamp_date_alignment,
 )
-from unified_domain_client.validation import DomainValidationConfig, DomainValidationService
-from unified_domain_client.writers import (
+from unified_domain_client.validation import (  # noqa: deep-import
+    DomainValidationConfig,
+    DomainValidationService,
+)
+from unified_domain_client.writers import (  # noqa: deep-import
     BaseDataWriter,
     BaseWriter,
     DirectWriter,
@@ -86,7 +89,7 @@ from unified_domain_client.writers import (
 
 # Lazy: clients, standardized_service, factories, cloud_data_provider
 _LAZY_NAMES = {
-    # Legacy rich clients (backward compat)
+    # Legacy rich clients (legacy)
     "ExecutionDomainClient",
     "InstrumentsDomainClient",
     "MarketCandleDataDomainClient",
@@ -137,7 +140,7 @@ def __getattr__(name: str) -> object:
         "InstrumentsDataProvider",
         "MarketDataProvider",
     ):
-        from unified_domain_client.cloud_data_provider import (
+        from unified_domain_client.cloud_data_provider import (  # noqa: deep-import
             CloudDataProviderBase,
             FeaturesDataProvider,
             InstrumentsDataProvider,
@@ -150,16 +153,18 @@ def __getattr__(name: str) -> object:
             "InstrumentsDataProvider": InstrumentsDataProvider,
             "MarketDataProvider": MarketDataProvider,
         }[name]
-    if name == "StandardizedDomainCloudService":
-        from unified_domain_client.standardized_service import StandardizedDomainCloudService
+    if name in ("StandardizedDomainCloudService", "make_domain_service"):
+        from unified_domain_client.standardized_service import (  # noqa: deep-import
+            StandardizedDomainCloudService,
+            make_domain_service,
+        )
 
-        return StandardizedDomainCloudService
-    if name == "make_domain_service":
-        from unified_domain_client.standardized_service import make_domain_service
-
-        return make_domain_service
+        return {
+            "StandardizedDomainCloudService": StandardizedDomainCloudService,
+            "make_domain_service": make_domain_service,
+        }[name]
     if name.startswith("create_") and "cloud_service" in name:
-        from unified_domain_client.factories import (
+        from unified_domain_client.factories import (  # noqa: deep-import
             create_backtesting_cloud_service,
             create_features_cloud_service,
             create_market_data_cloud_service,
@@ -172,7 +177,7 @@ def __getattr__(name: str) -> object:
             "create_market_data_cloud_service": create_market_data_cloud_service,
             "create_strategy_cloud_service": create_strategy_cloud_service,
         }[name]
-    from unified_domain_client.clients import (
+    from unified_domain_client.clients import (  # noqa: deep-import
         ExecutionDomainClient,
         FeaturesCalendarDomainClient,
         FeaturesDeltaOneDomainClient,
@@ -261,11 +266,11 @@ __all__ = [
     "PositionsDomainClient",
     "PnLDomainClient",
     "RiskDomainClient",
-    # Legacy rich clients (backward compat)
+    # Legacy rich clients (legacy)
     "MarketCandleDataDomainClient",
     "MarketTickDataDomainClient",
     "MarketDataDomainClient",
-    # Factory functions (backward compat)
+    # Factory functions (legacy)
     "create_instruments_client",
     "create_market_candle_data_client",
     "create_market_tick_data_client",

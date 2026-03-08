@@ -2,7 +2,7 @@
 
 from enum import StrEnum
 
-from unified_domain_client.paths.registry import (
+from unified_domain_client.paths.registry import (  # noqa: deep-import
     PATH_REGISTRY,
     DataSetSpec,
     PathRegistry,
