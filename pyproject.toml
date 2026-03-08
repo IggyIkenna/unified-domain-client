@@ -27,6 +27,10 @@ where = [
 include = [
     "unified_domain_client",
     "unified_domain_client.*",
+    # Step 1 of rename: unified_domain_services/ is the new canonical import path.
+    # Step 2 (T3 STEP C): remove unified_domain_client/ after all 14 services migrated.
+    "unified_domain_services",
+    "unified_domain_services.*",
 ]
 exclude = [
     "tests*",
@@ -110,7 +114,7 @@ repo_arch_tier = "3"
 
 [project]
 name = "unified-domain-client"
-version = "0.1.37"
+version = "0.1.41"
 description = "Trading domain services - clients, validation, cloud service wrappers"
 requires-python = ">=3.13,<3.14"
 dependencies = [
@@ -128,7 +132,7 @@ dependencies = [
 dev = [
     "pytest>=9.0.1,<10.0.0",
     "pytest-cov>=7.0.0,<8.0.0",
-    "pytest-mock>=3.12.0,<4.0.0",
+    "pytest-mock<4.0.0,>=3.15.0",
     "pytest-asyncio>=0.25.0,<2.0.0",
     "pytest-timeout>=2.4.0,<3.0.0",
     "pytest-xdist>=3.6.0,<4.0.0",
