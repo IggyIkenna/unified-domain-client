@@ -334,9 +334,9 @@ class TestCloudDataProviderAdditionalMethods:
         return ConcreteProvider(domain="test", cloud_target=target)
 
     @patch("unified_domain_client.cloud_data_provider.StandardizedDomainCloudService")
-    @patch("unified_domain_client.cloud_data_provider.UnifiedCloudConfig")
+    @patch("unified_domain_client.cloud_data_provider._get_cloud_config")
     def test_build_category_service_success(
-        self, mock_config_cls: MagicMock, mock_service: MagicMock
+        self, mock_get_config: MagicMock, mock_service: MagicMock
     ):
         """Test _build_category_service returns bucket and service."""
         from unified_domain_client.cloud_data_provider import (  # noqa: deep-import
@@ -349,7 +349,7 @@ class TestCloudDataProviderAdditionalMethods:
         mock_config_instance = MagicMock()
         mock_config_instance.get_bucket.return_value = "category-bucket"
         mock_config_instance.gcs_bucket = ""
-        mock_config_cls.return_value = mock_config_instance
+        mock_get_config.return_value = mock_config_instance
 
         provider = ConcreteProvider(domain="test", bucket="b")
         bucket_name, svc = provider._build_category_service("CEFI")
@@ -741,10 +741,10 @@ class TestInstrumentsDataProviderAdditional:
             result = provider.check_instruments_exist(datetime(2024, 1, 1, tzinfo=UTC))
         assert result is False
 
-    @patch("unified_domain_client.cloud_data_provider.UnifiedCloudConfig")
+    @patch("unified_domain_client.cloud_data_provider._get_cloud_config")
     @patch("unified_domain_client.cloud_data_provider.StandardizedDomainCloudService")
     def test_resolve_instruments_bucket_from_config(
-        self, mock_service: MagicMock, mock_config_cls: MagicMock
+        self, mock_service: MagicMock, mock_get_config: MagicMock
     ):
         """Test _resolve_instruments_bucket_cefi uses config bucket."""
         from unified_domain_client.cloud_data_provider import (  # noqa: deep-import
@@ -753,15 +753,15 @@ class TestInstrumentsDataProviderAdditional:
 
         mock_config_instance = MagicMock()
         mock_config_instance.instruments_gcs_bucket = "my-instruments-bucket"
-        mock_config_cls.return_value = mock_config_instance
+        mock_get_config.return_value = mock_config_instance
 
         result = _resolve_instruments_bucket_cefi()
         assert result == "my-instruments-bucket"
 
-    @patch("unified_domain_client.cloud_data_provider.UnifiedCloudConfig")
+    @patch("unified_domain_client.cloud_data_provider._get_cloud_config")
     @patch("unified_domain_client.cloud_data_provider.StandardizedDomainCloudService")
     def test_resolve_instruments_bucket_from_project_id(
-        self, mock_service: MagicMock, mock_config_cls: MagicMock
+        self, mock_service: MagicMock, mock_get_config: MagicMock
     ):
         """Test _resolve_instruments_bucket_cefi builds from project_id."""
         from unified_domain_client.cloud_data_provider import (  # noqa: deep-import
@@ -771,15 +771,15 @@ class TestInstrumentsDataProviderAdditional:
         mock_config_instance = MagicMock()
         mock_config_instance.instruments_gcs_bucket = ""
         mock_config_instance.gcp_project_id = "my-project"
-        mock_config_cls.return_value = mock_config_instance
+        mock_get_config.return_value = mock_config_instance
 
         result = _resolve_instruments_bucket_cefi()
         assert "my-project" in result
 
-    @patch("unified_domain_client.cloud_data_provider.UnifiedCloudConfig")
+    @patch("unified_domain_client.cloud_data_provider._get_cloud_config")
     @patch("unified_domain_client.cloud_data_provider.StandardizedDomainCloudService")
     def test_resolve_instruments_bucket_raises_when_no_config(
-        self, mock_service: MagicMock, mock_config_cls: MagicMock
+        self, mock_service: MagicMock, mock_get_config: MagicMock
     ):
         """Test _resolve_instruments_bucket_cefi raises ValueError when no config."""
         from unified_domain_client.cloud_data_provider import (  # noqa: deep-import
@@ -789,7 +789,7 @@ class TestInstrumentsDataProviderAdditional:
         mock_config_instance = MagicMock()
         mock_config_instance.instruments_gcs_bucket = ""
         mock_config_instance.gcp_project_id = ""
-        mock_config_cls.return_value = mock_config_instance
+        mock_get_config.return_value = mock_config_instance
 
         try:
             _resolve_instruments_bucket_cefi()

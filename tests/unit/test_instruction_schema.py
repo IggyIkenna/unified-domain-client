@@ -9,7 +9,6 @@ import pytest
 
 from unified_domain_client.schemas.instruction_schema import (  # noqa: deep-import
     INSTRUCTION_SCHEMA,
-    LEGACY_SIGNAL_ID_COLUMN,
     InstructionValidationError,
     InstructionValidator,
     get_instruction_pyarrow_schema,
@@ -130,24 +129,6 @@ class TestValidateInstructionDataframe:
 class TestMigrateLegacyDataframe:
     """Test migrate_legacy_dataframe."""
 
-    def test_migrates_signal_id_to_instruction_id(self):
-        """Test signal_id is renamed to instruction_id."""
-        df = pd.DataFrame(
-            {
-                "timestamp": [1],
-                LEGACY_SIGNAL_ID_COLUMN: ["sig-1"],
-                "instruction_type": ["TRADE"],
-                "instrument_id": ["B:P:X"],
-                "strategy_id": ["S1"],
-                "quantity": [1.0],
-                "benchmark_price": [100.0],
-            }
-        )
-        result = migrate_legacy_dataframe(df)
-        assert "instruction_id" in result.columns
-        assert LEGACY_SIGNAL_ID_COLUMN not in result.columns
-        assert result["instruction_id"].iloc[0] == "sig-1"
-
     def test_migrates_price_to_price_cap(self):
         """Test price is migrated to price_cap."""
         df = pd.DataFrame(
@@ -206,14 +187,58 @@ class TestValidateInstructionParquet:
         assert "not found" in result[0].lower() or "exist" in result[0].lower()
 
 
-class TestInstructionValidatorLegacySignalId:
-    """Test legacy signal_id handling."""
+class TestDeprecatedWithdrawRemoved:
+    """Tests verifying WITHDRAW instruction type and signal_id are fully removed."""
 
     @patch("unified_domain_client.schemas.instruction_schema.validate_strategy_id")
-    def test_legacy_signal_id_auto_renamed(self, mock_validate: MagicMock):
-        """Test signal_id is auto-renamed to instruction_id when allow_legacy_signal_id=True."""
+    def test_withdraw_not_in_valid_instruction_types(self, mock_validate: MagicMock):
+        """WITHDRAW must not appear in VALID_INSTRUCTION_TYPES after cleanup."""
+        from unified_domain_client.schemas.instruction_schema import (  # noqa: deep-import
+            VALID_INSTRUCTION_TYPES,
+        )
+
+        assert "WITHDRAW" not in VALID_INSTRUCTION_TYPES
+
+    @patch("unified_domain_client.schemas.instruction_schema.validate_strategy_id")
+    def test_withdraw_not_in_atomic_compatible_types(self, mock_validate: MagicMock):
+        """WITHDRAW must not appear in ATOMIC_COMPATIBLE_TYPES after cleanup."""
+        from unified_domain_client.schemas.instruction_schema import (  # noqa: deep-import
+            ATOMIC_COMPATIBLE_TYPES,
+        )
+
+        assert "WITHDRAW" not in ATOMIC_COMPATIBLE_TYPES
+
+    @patch("unified_domain_client.schemas.instruction_schema.validate_strategy_id")
+    def test_withdraw_rejected_as_invalid_type(self, mock_validate: MagicMock):
+        """Validator must reject WITHDRAW as an invalid instruction_type."""
         mock_validate.return_value = True
-        validator = InstructionValidator(allow_legacy_signal_id=True)
+        validator = InstructionValidator()
+        df = pd.DataFrame(
+            {
+                "timestamp": pd.array([1704067200000000000], dtype="int64"),
+                "instruction_id": ["i1"],
+                "instruction_type": ["WITHDRAW"],
+                "instrument_id": ["BINANCE:PERPETUAL:BTC-USDT"],
+                "strategy_id": ["CEFI_BTC_momentum_LIVE_1h_V1"],
+                "quantity": [0.1],
+                "benchmark_price": [50000.0],
+            }
+        )
+        result = validator.validate(df)
+        assert any("Invalid instruction_type" in e for e in result)
+
+    @patch("unified_domain_client.schemas.instruction_schema.validate_strategy_id")
+    def test_signal_id_no_longer_exported(self, mock_validate: MagicMock):
+        """LEGACY_SIGNAL_ID_COLUMN must not be importable from instruction_schema."""
+        import unified_domain_client.schemas.instruction_schema as schema_mod
+
+        assert not hasattr(schema_mod, "LEGACY_SIGNAL_ID_COLUMN")
+
+    @patch("unified_domain_client.schemas.instruction_schema.validate_strategy_id")
+    def test_signal_id_column_fails_required_check(self, mock_validate: MagicMock):
+        """DataFrame with only signal_id (no instruction_id) must fail required column check."""
+        mock_validate.return_value = True
+        validator = InstructionValidator()
         df = pd.DataFrame(
             {
                 "timestamp": pd.array([1704067200000000000], dtype="int64"),
@@ -227,27 +252,26 @@ class TestInstructionValidatorLegacySignalId:
             }
         )
         result = validator.validate(df)
-        assert result == []
+        assert any("instruction_id" in e for e in result)
 
     @patch("unified_domain_client.schemas.instruction_schema.validate_strategy_id")
-    def test_legacy_signal_id_rejected_when_not_allowed(self, mock_validate: MagicMock):
-        """Test that signal_id is rejected when allow_legacy_signal_id=False."""
+    def test_unstake_is_valid_replacement_for_withdraw(self, mock_validate: MagicMock):
+        """UNSTAKE must be accepted as the replacement for the removed WITHDRAW type."""
         mock_validate.return_value = True
-        validator = InstructionValidator(allow_legacy_signal_id=False)
+        validator = InstructionValidator()
         df = pd.DataFrame(
             {
                 "timestamp": pd.array([1704067200000000000], dtype="int64"),
-                "signal_id": ["sig-001"],
-                "instruction_type": ["TRADE"],
+                "instruction_id": ["i1"],
+                "instruction_type": ["UNSTAKE"],
                 "instrument_id": ["BINANCE:PERPETUAL:BTC-USDT"],
                 "strategy_id": ["CEFI_BTC_momentum_LIVE_1h_V1"],
                 "quantity": [0.1],
                 "benchmark_price": [50000.0],
-                "direction": [1],
             }
         )
         result = validator.validate(df)
-        assert any("DEPRECATED" in e or "signal_id" in e for e in result)
+        assert not any("Invalid instruction_type" in e for e in result)
 
 
 class TestInstructionValidatorDirectionValidation:
@@ -591,8 +615,8 @@ class TestInstructionValidatorOptionalFields:
         assert any("instruction_type" in e for e in result)
 
     @patch("unified_domain_client.schemas.instruction_schema.validate_strategy_id")
-    def test_deprecated_withdraw_instruction_type(self, mock_validate: MagicMock):
-        """Test that WITHDRAW (deprecated) does not raise but logs warning."""
+    def test_withdraw_is_now_invalid_instruction_type(self, mock_validate: MagicMock):
+        """Test that WITHDRAW is rejected as invalid after deprecation removal."""
         mock_validate.return_value = True
         validator = InstructionValidator()
         df = pd.DataFrame(
@@ -607,5 +631,5 @@ class TestInstructionValidatorOptionalFields:
             }
         )
         result = validator.validate(df)
-        # WITHDRAW is deprecated but still valid - no error expected
-        assert not any("Invalid instruction_type" in e for e in result)
+        # WITHDRAW removed — must be rejected as invalid
+        assert any("Invalid instruction_type" in e for e in result)
