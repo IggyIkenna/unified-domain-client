@@ -2198,7 +2198,7 @@ provides-extras = ["aws", "dev"]
 
 [[package]]
 name = "unified-domain-client"
-version = "0.1.29"
+version = "0.1.31"
 source = { editable = "." }
 dependencies = [
     { name = "pandas" },
@@ -2272,7 +2272,7 @@ provides-extras = ["dev"]
 
 [[package]]
 name = "unified-internal-contracts"
-version = "0.1.14"
+version = "0.1.15"
 source = { directory = "../unified-internal-contracts" }
 dependencies = [
     { name = "pandas" },
