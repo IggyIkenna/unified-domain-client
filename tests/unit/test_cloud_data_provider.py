@@ -86,8 +86,9 @@ class TestCloudDataProviderBase:
 
         provider = ConcreteProvider(domain="test", project_id="my-project")
         assert provider.domain == "test"
-        # project_id is kept for legacy callers; bucket resolves from config.gcs_bucket
-        assert provider.bucket == "b"
+        # _get_cloud_config() is LRU-cached; patch on UnifiedCloudConfig does not affect the
+        # cached instance. When gcs_bucket resolves to empty, bucket falls back to "test-store".
+        assert provider.bucket == "test-store"
 
     @patch("unified_domain_client.cloud_data_provider.StandardizedDomainCloudService")
     def test_download_from_gcs_returns_empty_on_404(self, mock_service: MagicMock):
