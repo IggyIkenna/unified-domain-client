@@ -18,7 +18,7 @@ import pandas as pd
 
 class TestInstrumentsDomainClientAdditionalMethods:
     def _make_client(self):
-        from unified_domain_client.clients.instruments import (
+        from unified_domain_client import (
             InstrumentsDomainClient,  # noqa: deep-import
         )
 
@@ -302,7 +302,7 @@ class TestDataCompletionAdditional:
         assert result == sorted(result)
 
     def test_make_completion_checker_factory(self):
-        from unified_domain_client.data_completion import (
+        from unified_domain_client import (
             make_completion_checker,  # noqa: deep-import
         )
 
@@ -314,7 +314,7 @@ class TestDataCompletionAdditional:
         assert checker.path_pattern == "data/{date}/f.parquet"
 
     def test_get_available_date_range_returns_none_when_no_dates(self):
-        from unified_domain_client.data_completion import (
+        from unified_domain_client import (
             get_available_date_range,  # noqa: deep-import
         )
 
@@ -324,7 +324,7 @@ class TestDataCompletionAdditional:
         assert result == (None, None)
 
     def test_get_available_date_range_returns_min_max(self):
-        from unified_domain_client.data_completion import (
+        from unified_domain_client import (
             get_available_date_range,  # noqa: deep-import
         )
 

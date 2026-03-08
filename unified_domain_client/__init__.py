@@ -108,6 +108,14 @@ _LAZY_NAMES = {
     "PositionsDomainClient",
     "PnLDomainClient",
     "RiskDomainClient",
+    # Liquidity clients
+    "L2BookCheckpointClient",
+    # Sports domain clients
+    "SportsFeaturesDomainClient",
+    "SportsFixturesDomainClient",
+    "SportsMappingsDomainClient",
+    "SportsOddsDomainClient",
+    "SportsTickDataDomainClient",
     # Factory functions
     "create_execution_client",
     "create_features_client",
@@ -127,56 +135,27 @@ _LAZY_NAMES = {
 }
 
 
-def __getattr__(name: str) -> object:
-    """Lazy import for clients/standardized_service/factories.
+def _load_sports(name: str) -> object:
+    """Lazy load sports domain clients."""
+    from unified_domain_client.sports import (  # noqa: deep-import
+        SportsFeaturesDomainClient,
+        SportsFixturesDomainClient,
+        SportsMappingsDomainClient,
+        SportsOddsDomainClient,
+        SportsTickDataDomainClient,
+    )
 
-    Deferred imports: intentional lazy loading to keep package import lightweight.
-    """
-    if name not in _LAZY_NAMES:
-        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-    if name in (
-        "CloudDataProviderBase",
-        "FeaturesDataProvider",
-        "InstrumentsDataProvider",
-        "MarketDataProvider",
-    ):
-        from unified_domain_client.cloud_data_provider import (  # noqa: deep-import
-            CloudDataProviderBase,
-            FeaturesDataProvider,
-            InstrumentsDataProvider,
-            MarketDataProvider,
-        )
+    return {
+        "SportsFeaturesDomainClient": SportsFeaturesDomainClient,
+        "SportsFixturesDomainClient": SportsFixturesDomainClient,
+        "SportsMappingsDomainClient": SportsMappingsDomainClient,
+        "SportsOddsDomainClient": SportsOddsDomainClient,
+        "SportsTickDataDomainClient": SportsTickDataDomainClient,
+    }[name]
 
-        return {
-            "CloudDataProviderBase": CloudDataProviderBase,
-            "FeaturesDataProvider": FeaturesDataProvider,
-            "InstrumentsDataProvider": InstrumentsDataProvider,
-            "MarketDataProvider": MarketDataProvider,
-        }[name]
-    if name in ("StandardizedDomainCloudService", "make_domain_service"):
-        from unified_domain_client.standardized_service import (  # noqa: deep-import
-            StandardizedDomainCloudService,
-            make_domain_service,
-        )
 
-        return {
-            "StandardizedDomainCloudService": StandardizedDomainCloudService,
-            "make_domain_service": make_domain_service,
-        }[name]
-    if name.startswith("create_") and "cloud_service" in name:
-        from unified_domain_client.factories import (  # noqa: deep-import
-            create_backtesting_cloud_service,
-            create_features_cloud_service,
-            create_market_data_cloud_service,
-            create_strategy_cloud_service,
-        )
-
-        return {
-            "create_backtesting_cloud_service": create_backtesting_cloud_service,
-            "create_features_cloud_service": create_features_cloud_service,
-            "create_market_data_cloud_service": create_market_data_cloud_service,
-            "create_strategy_cloud_service": create_strategy_cloud_service,
-        }[name]
+def _load_clients(name: str) -> object:
+    """Lazy load main domain clients and factory functions."""
     from unified_domain_client.clients import (  # noqa: deep-import
         ExecutionDomainClient,
         FeaturesCalendarDomainClient,
@@ -230,6 +209,89 @@ def __getattr__(name: str) -> object:
     }[name]
 
 
+_SPORTS_NAMES = frozenset(
+    {
+        "SportsFeaturesDomainClient",
+        "SportsFixturesDomainClient",
+        "SportsMappingsDomainClient",
+        "SportsOddsDomainClient",
+        "SportsTickDataDomainClient",
+    }
+)
+_CLOUD_PROVIDER_NAMES = frozenset(
+    {
+        "CloudDataProviderBase",
+        "FeaturesDataProvider",
+        "InstrumentsDataProvider",
+        "MarketDataProvider",
+    }
+)
+_FACTORY_SERVICE_NAMES = frozenset(
+    {
+        "create_backtesting_cloud_service",
+        "create_features_cloud_service",
+        "create_market_data_cloud_service",
+        "create_strategy_cloud_service",
+    }
+)
+
+
+def __getattr__(name: str) -> object:
+    """Lazy import for clients/standardized_service/factories.
+
+    Deferred imports: intentional lazy loading to keep package import lightweight.
+    """
+    if name not in _LAZY_NAMES:
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+    if name == "L2BookCheckpointClient":
+        from unified_domain_client.clients.liquidity import (  # noqa: deep-import
+            L2BookCheckpointClient,
+        )
+
+        return L2BookCheckpointClient
+    if name in _SPORTS_NAMES:
+        return _load_sports(name)
+    if name in _CLOUD_PROVIDER_NAMES:
+        from unified_domain_client.cloud_data_provider import (  # noqa: deep-import
+            CloudDataProviderBase,
+            FeaturesDataProvider,
+            InstrumentsDataProvider,
+            MarketDataProvider,
+        )
+
+        return {
+            "CloudDataProviderBase": CloudDataProviderBase,
+            "FeaturesDataProvider": FeaturesDataProvider,
+            "InstrumentsDataProvider": InstrumentsDataProvider,
+            "MarketDataProvider": MarketDataProvider,
+        }[name]
+    if name in ("StandardizedDomainCloudService", "make_domain_service"):
+        from unified_domain_client.standardized_service import (  # noqa: deep-import
+            StandardizedDomainCloudService,
+            make_domain_service,
+        )
+
+        return {
+            "StandardizedDomainCloudService": StandardizedDomainCloudService,
+            "make_domain_service": make_domain_service,
+        }[name]
+    if name in _FACTORY_SERVICE_NAMES:
+        from unified_domain_client.factories import (  # noqa: deep-import
+            create_backtesting_cloud_service,
+            create_features_cloud_service,
+            create_market_data_cloud_service,
+            create_strategy_cloud_service,
+        )
+
+        return {
+            "create_backtesting_cloud_service": create_backtesting_cloud_service,
+            "create_features_cloud_service": create_features_cloud_service,
+            "create_market_data_cloud_service": create_market_data_cloud_service,
+            "create_strategy_cloud_service": create_strategy_cloud_service,
+        }[name]
+    return _load_clients(name)
+
+
 __all__ = [
     "DateFilterService",
     "StandardizedDomainCloudService",
@@ -270,6 +332,14 @@ __all__ = [
     "MarketCandleDataDomainClient",
     "MarketTickDataDomainClient",
     "MarketDataDomainClient",
+    # Liquidity clients
+    "L2BookCheckpointClient",
+    # Sports domain clients
+    "SportsFeaturesDomainClient",
+    "SportsFixturesDomainClient",
+    "SportsMappingsDomainClient",
+    "SportsOddsDomainClient",
+    "SportsTickDataDomainClient",
     # Factory functions (legacy)
     "create_instruments_client",
     "create_market_candle_data_client",
