@@ -22,9 +22,4 @@ STEP 2 (T3 STEP C):  Update all 14 services + T2 libs; remove unified_domain_cli
 # every symbol that unified_domain_client exposes.
 from unified_domain_client import *  # noqa: F401, F403
 from unified_domain_client import __all__ as __all__  # explicit re-export for type-checkers
-
-# Also expose the __version__ if it exists in unified_domain_client
-try:
-    from unified_domain_client import __version__  # noqa: F401
-except ImportError:
-    pass
+from unified_domain_client import __version__  # noqa: F401
