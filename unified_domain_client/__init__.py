@@ -23,21 +23,28 @@ from unified_config_interface.paths import (  # noqa: deep-import
     build_path,
     get_spec,
 )
-
-from unified_domain_client.catalog import BigQueryCatalog, GlueCatalog  # noqa: deep-import
-from unified_domain_client.data_completion import (  # noqa: deep-import
+from unified_trading_library.domain.data_completion import (  # noqa: deep-import
     DataCompletionChecker,
     get_available_date_range,
     make_completion_checker,
 )
-from unified_domain_client.date_validation import (  # noqa: deep-import
+from unified_trading_library.domain.date_validation import (  # noqa: deep-import
     DateValidationResult,
     DateValidator,
     get_earliest_valid_date,
     get_validator,
     should_skip_date,
 )
-from unified_domain_client.instrument_date_filter import DateFilterService  # noqa: deep-import
+from unified_trading_library.domain.instrument_date_filter import (
+    DateFilterService,  # noqa: deep-import
+)
+from unified_trading_library.domain.timestamp_validation import (  # noqa: deep-import
+    TimestampAlignmentResult,
+    TimestampDateValidator,
+    validate_timestamp_date_alignment,
+)
+
+from unified_domain_client.catalog import BigQueryCatalog, GlueCatalog  # noqa: deep-import
 from unified_domain_client.readers import (  # noqa: deep-import
     AthenaReader,
     BaseDataReader,
@@ -71,11 +78,6 @@ from unified_domain_client.schemas import (  # noqa: deep-import
     validate_config_file,
     validate_instruction_dataframe,
     validate_instruction_parquet,
-)
-from unified_domain_client.timestamp_validation import (  # noqa: deep-import
-    TimestampAlignmentResult,
-    TimestampDateValidator,
-    validate_timestamp_date_alignment,
 )
 from unified_domain_client.validation import (  # noqa: deep-import
     DomainValidationConfig,
