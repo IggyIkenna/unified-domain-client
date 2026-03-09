@@ -29,7 +29,7 @@ set -e
 # ── REPO-SPECIFIC SETTINGS ────────────────────────────────────────────────────
 PACKAGE_NAME="unified-domain-client"         # e.g. unified-trading-library
 SOURCE_DIR="unified_domain_client"           # e.g. unified_trading_library  (underscore form)
-MIN_COVERAGE=86  # Template default — set to (actual coverage - 1%) after first test run. See test-coverage-targets.mdc
+MIN_COVERAGE=83  # Calibrated: actual 84.08% → floor(84) - 1 = 83. See test-coverage-targets.mdc
 PYTEST_WORKERS=${PYTEST_WORKERS:-2}
 
 # Path dependencies (libraries may have path deps to unified-api-contracts, unified-config-interface, etc.)

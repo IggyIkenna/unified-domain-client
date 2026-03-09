@@ -111,7 +111,7 @@ source = [
 ]
 
 [tool.coverage.report]
-fail_under = 70
+fail_under = 83
 
 [tool.quality-gates]
 repo_arch_tier = "3"
