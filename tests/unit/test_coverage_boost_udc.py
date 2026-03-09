@@ -392,9 +392,11 @@ class TestMarketTickDataDomainClientPaths:
 
 class TestDataCompletionChecker:
     def _make_checker(self):
-        from unified_domain_client.data_completion import DataCompletionChecker  # noqa: deep-import
+        from unified_trading_library.domain.data_completion import (
+            DataCompletionChecker,  # noqa: deep-import
+        )
 
-        with patch("unified_domain_client.data_completion.get_storage_client"):
+        with patch("unified_trading_library.domain.data_completion.get_storage_client"):
             return DataCompletionChecker(
                 bucket="test-bucket", path_pattern="data/{date}/file.parquet"
             )

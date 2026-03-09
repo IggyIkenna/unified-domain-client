@@ -25,7 +25,11 @@ def test_import_unified_domain_client():
 
 def test_date_validator_import():
     """Test DateValidator and related exports."""
-    from unified_domain_client import DateValidator, get_validator, should_skip_date
+    from unified_trading_library.domain.date_validation import (
+        DateValidator,
+        get_validator,
+        should_skip_date,
+    )
 
     assert DateValidator is not None
     assert callable(get_validator)

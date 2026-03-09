@@ -239,9 +239,11 @@ class TestInstrumentsDomainClientAdditionalMethods:
 
 class TestDataCompletionAdditional:
     def _make_checker(self):
-        from unified_domain_client.data_completion import DataCompletionChecker  # noqa: deep-import
+        from unified_trading_library.domain.data_completion import (
+            DataCompletionChecker,  # noqa: deep-import
+        )
 
-        with patch("unified_domain_client.data_completion.get_storage_client") as mock_gsc:
+        with patch("unified_trading_library.domain.data_completion.get_storage_client") as mock_gsc:
             mock_gsc.return_value = MagicMock()
             checker = DataCompletionChecker(
                 bucket="test-bucket", path_pattern="data/{instrument}/{date}/file.parquet"
@@ -306,7 +308,7 @@ class TestDataCompletionAdditional:
             make_completion_checker,  # noqa: deep-import
         )
 
-        with patch("unified_domain_client.data_completion.get_storage_client"):
+        with patch("unified_trading_library.domain.data_completion.get_storage_client"):
             checker = make_completion_checker(
                 bucket="b", path_pattern="data/{date}/f.parquet", dataset_name="x", project_id="p"
             )
@@ -318,7 +320,7 @@ class TestDataCompletionAdditional:
             get_available_date_range,  # noqa: deep-import
         )
 
-        with patch("unified_domain_client.data_completion.get_storage_client") as mock_gsc:
+        with patch("unified_trading_library.domain.data_completion.get_storage_client") as mock_gsc:
             mock_gsc.return_value.bucket.return_value.list_blobs.return_value = []
             result = get_available_date_range("bucket", "prefix/")
         assert result == (None, None)
@@ -335,7 +337,7 @@ class TestDataCompletionAdditional:
         blob3 = MagicMock()
         blob3.name = "prefix/no-date-here/file.parquet"
 
-        with patch("unified_domain_client.data_completion.get_storage_client") as mock_gsc:
+        with patch("unified_trading_library.domain.data_completion.get_storage_client") as mock_gsc:
             mock_gsc.return_value.bucket.return_value.list_blobs.return_value = [
                 blob1,
                 blob2,

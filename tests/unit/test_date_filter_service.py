@@ -3,8 +3,7 @@
 from datetime import UTC, datetime
 
 import pytest
-
-from unified_domain_client import DateFilterService
+from unified_trading_library.domain.instrument_date_filter import DateFilterService
 
 
 class TestDateFilterService:
