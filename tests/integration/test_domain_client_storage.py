@@ -208,14 +208,14 @@ class TestDomainClientPaths:
     """Integration-level tests for the path-building utilities."""
 
     def test_build_bucket_returns_string(self) -> None:
-        from unified_domain_client.paths import build_bucket
+        from unified_config_interface.paths import build_bucket
 
         result = build_bucket("raw_tick_data", project_id="test-project", category="cefi")
         assert isinstance(result, str)
         assert len(result) > 0
 
     def test_build_path_returns_non_empty_string(self) -> None:
-        from unified_domain_client.paths import build_path
+        from unified_config_interface.paths import build_path
 
         result = build_path(
             "raw_tick_data",
@@ -228,7 +228,7 @@ class TestDomainClientPaths:
         assert "2024-01-01" in result
 
     def test_build_path_includes_venue(self) -> None:
-        from unified_domain_client.paths import build_path
+        from unified_config_interface.paths import build_path
 
         result = build_path(
             "raw_tick_data",

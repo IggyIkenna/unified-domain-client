@@ -8,6 +8,22 @@ __version__ = "0.1.45"
 
 # pyright: reportUnsupportedDunderAll=false, reportUnknownVariableType=false
 
+from unified_config_interface.lookback_constants import (  # noqa: deep-import
+    FEATURE_GROUP_LOOKBACK,
+    MAX_LOOKBACK_DAYS_BY_TIMEFRAME,
+    TIMEFRAME_SECONDS,
+)
+from unified_config_interface.paths import (  # noqa: deep-import
+    PATH_REGISTRY,
+    DataSetSpec,
+    PathRegistry,
+    ReadMode,
+    build_bucket,
+    build_full_uri,
+    build_path,
+    get_spec,
+)
+
 from unified_domain_client.catalog import BigQueryCatalog, GlueCatalog  # noqa: deep-import
 from unified_domain_client.data_completion import (  # noqa: deep-import
     DataCompletionChecker,
@@ -22,21 +38,6 @@ from unified_domain_client.date_validation import (  # noqa: deep-import
     should_skip_date,
 )
 from unified_domain_client.instrument_date_filter import DateFilterService  # noqa: deep-import
-from unified_domain_client.lookback_constants import (  # noqa: deep-import
-    FEATURE_GROUP_LOOKBACK,
-    MAX_LOOKBACK_DAYS_BY_TIMEFRAME,
-    TIMEFRAME_SECONDS,
-)
-from unified_domain_client.paths import (  # noqa: deep-import
-    PATH_REGISTRY,
-    DataSetSpec,
-    PathRegistry,
-    ReadMode,
-    build_bucket,
-    build_full_uri,
-    build_path,
-    get_spec,
-)
 from unified_domain_client.readers import (  # noqa: deep-import
     AthenaReader,
     BaseDataReader,
