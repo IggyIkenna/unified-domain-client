@@ -2092,7 +2092,7 @@ wheels = [
 
 [[package]]
 name = "unified-api-contracts"
-version = "0.1.97"
+version = "0.1.130"
 source = { directory = "../unified-api-contracts" }
 dependencies = [
     { name = "pydantic" },
@@ -2125,7 +2125,7 @@ provides-extras = ["schema-validation", "dev"]
 
 [[package]]
 name = "unified-cloud-interface"
-version = "0.11.21"
+version = "0.11.32"
 source = { directory = "../unified-cloud-interface" }
 dependencies = [
     { name = "redis" },
@@ -2175,7 +2175,7 @@ provides-extras = ["gcp", "aws", "cache", "dev"]
 
 [[package]]
 name = "unified-config-interface"
-version = "0.1.39"
+version = "0.1.49"
 source = { directory = "../unified-config-interface" }
 dependencies = [
     { name = "pydantic" },
@@ -2210,7 +2210,7 @@ provides-extras = ["aws", "dev"]
 
 [[package]]
 name = "unified-domain-client"
-version = "0.1.37"
+version = "0.1.54"
 source = { editable = "." }
 dependencies = [
     { name = "pandas" },
@@ -2220,6 +2220,7 @@ dependencies = [
     { name = "unified-cloud-interface", extra = ["gcp"] },
     { name = "unified-config-interface" },
     { name = "unified-internal-contracts" },
+    { name = "unified-ml-interface" },
     { name = "unified-trading-library" },
 ]
 
@@ -2260,6 +2261,7 @@ requires-dist = [
     { name = "unified-cloud-interface", extras = ["gcp"], directory = "../unified-cloud-interface" },
     { name = "unified-config-interface", directory = "../unified-config-interface" },
     { name = "unified-internal-contracts", directory = "../unified-internal-contracts" },
+    { name = "unified-ml-interface", directory = "../unified-ml-interface" },
     { name = "unified-trading-library", directory = "../unified-trading-library" },
 ]
 provides-extras = ["dev"]
@@ -2286,7 +2288,7 @@ provides-extras = ["dev"]
 
 [[package]]
 name = "unified-internal-contracts"
-version = "0.1.28"
+version = "0.1.33"
 source = { directory = "../unified-internal-contracts" }
 dependencies = [
     { name = "pandas" },
@@ -2314,8 +2316,52 @@ requires-dist = [
 provides-extras = ["dev"]
 
 [[package]]
+name = "unified-ml-interface"
+version = "0.1.19"
+source = { directory = "../unified-ml-interface" }
+dependencies = [
+    { name = "joblib" },
+    { name = "pandas" },
+    { name = "pydantic" },
+    { name = "pydantic-settings" },
+    { name = "python-dateutil" },
+    { name = "unified-cloud-interface", extra = ["gcp"] },
+    { name = "unified-config-interface" },
+    { name = "unified-events-interface" },
+    { name = "unified-internal-contracts" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "bandit", marker = "extra == 'dev'", specifier = ">=1.7.0,<2.0.0" },
+    { name = "basedpyright", marker = "extra == 'dev'", specifier = ">=1.21.0,<2.0.0" },
+    { name = "boto3", marker = "extra == 'aws'", specifier = ">=1.40.70,<2.0.0" },
+    { name = "joblib", specifier = ">=1.3.0,<2.0.0" },
+    { name = "numpy", marker = "extra == 'dev'", specifier = ">=2.3.0,<2.4.0" },
+    { name = "pandas", specifier = ">=2.3.0,<3.0.0" },
+    { name = "pip-audit", marker = "extra == 'dev'", specifier = ">=2.7.0,<3.0.0" },
+    { name = "pre-commit", marker = "extra == 'dev'", specifier = ">=3.0,<4.0.0" },
+    { name = "psutil", marker = "extra == 'dev'", specifier = ">=6.0.0,<7.0.0" },
+    { name = "pydantic", specifier = ">=2.12.5,<3.0.0" },
+    { name = "pydantic-settings", specifier = ">=2.12.0,<3.0.0" },
+    { name = "pytest", marker = "extra == 'dev'", specifier = ">=9.0.1,<10.0.0" },
+    { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = ">=0.25.0,<2.0.0" },
+    { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=7.0.0,<8.0.0" },
+    { name = "pytest-timeout", marker = "extra == 'dev'", specifier = ">=2.4.0,<3.0.0" },
+    { name = "pytest-xdist", marker = "extra == 'dev'", specifier = ">=3.6.0,<4.0.0" },
+    { name = "python-dateutil", specifier = ">=2.8.2,<3.0.0" },
+    { name = "ruff", marker = "extra == 'dev'", specifier = "==0.15.0" },
+    { name = "scikit-learn", marker = "extra == 'dev'", specifier = ">=1.5.0,<2.0.0" },
+    { name = "unified-cloud-interface", extras = ["gcp"], directory = "../unified-cloud-interface" },
+    { name = "unified-config-interface", directory = "../unified-config-interface" },
+    { name = "unified-events-interface", specifier = ">=0.1.0,<1.0.0" },
+    { name = "unified-internal-contracts", directory = "../unified-internal-contracts" },
+]
+provides-extras = ["aws", "dev"]
+
+[[package]]
 name = "unified-trading-library"
-version = "0.3.101"
+version = "0.3.117"
 source = { directory = "../unified-trading-library" }
 dependencies = [
     { name = "fsspec" },
