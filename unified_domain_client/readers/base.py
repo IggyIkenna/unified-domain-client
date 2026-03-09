@@ -10,8 +10,7 @@ from abc import ABC, abstractmethod
 
 import pandas as pd
 from unified_cloud_interface import download_from_storage, storage_exists
-
-from ..paths import PathRegistry
+from unified_config_interface import PathRegistry
 
 logger = logging.getLogger(__name__)
 

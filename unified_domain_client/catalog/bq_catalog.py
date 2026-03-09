@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 
-from ..paths import build_bucket, get_spec
+from unified_config_interface import build_bucket, get_spec
 
 logger = logging.getLogger(__name__)
 

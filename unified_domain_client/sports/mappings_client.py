@@ -6,9 +6,8 @@ import logging
 from functools import lru_cache
 
 import pandas as pd
-from unified_config_interface import UnifiedCloudConfig
+from unified_config_interface import UnifiedCloudConfig, build_bucket, build_path
 
-from ..paths import build_bucket, build_path
 from ..standardized_service import StandardizedDomainCloudService
 
 logger = logging.getLogger(__name__)

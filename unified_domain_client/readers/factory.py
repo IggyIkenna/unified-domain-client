@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 from unified_cloud_interface import StorageClient
+from unified_config_interface import ReadMode
 
-from ..paths import ReadMode
 from .athena import AthenaReader
 from .base import BaseDataReader
 from .bq_external import BigQueryExternalReader
