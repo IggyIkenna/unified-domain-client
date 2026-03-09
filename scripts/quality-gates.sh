@@ -72,17 +72,29 @@ for arg in "$@"; do
 done
 
 # ── BOOTSTRAP ─────────────────────────────────────────────────────────────────
+# Prefer .venv-workspace when available (single Python for all repos)
+WORKSPACE_VENV="${REPO_ROOT}/.venv-workspace"
 if [ -z "${GITHUB_ACTIONS:-}" ] && [ -z "${CI:-}" ] && [ -z "${CLOUD_BUILD:-}" ]; then
-    command -v uv &>/dev/null || pip install uv --quiet
-    uv lock 2>/dev/null || :
-    [ ! -d ".venv" ] && uv venv .venv
-    [ -f ".venv/bin/activate" ] && source .venv/bin/activate || :
-    for lib in "${LOCAL_DEPS[@]}"; do
-        [ -d "${REPO_ROOT}/$lib" ] && uv pip install -e "${REPO_ROOT}/$lib" --quiet 2>/dev/null || :
-    done
-    uv pip install -e ".[dev]" --quiet 2>/dev/null || uv pip install -e . --quiet 2>/dev/null || :
+    if [ -f "$WORKSPACE_VENV/bin/activate" ]; then
+        source "$WORKSPACE_VENV/bin/activate"
+    else
+        command -v uv &>/dev/null || pip install uv --quiet
+        uv lock 2>/dev/null || :
+        [ ! -d ".venv" ] && uv venv .venv
+        [ -f ".venv/bin/activate" ] && source .venv/bin/activate || :
+        for lib in "${LOCAL_DEPS[@]}"; do
+            [ -d "${REPO_ROOT}/$lib" ] && uv pip install -e "${REPO_ROOT}/$lib" --quiet 2>/dev/null || :
+        done
+        uv pip install -e ".[dev]" --quiet 2>/dev/null || uv pip install -e . --quiet 2>/dev/null || :
+    fi
 fi
-PYTHON_CMD=".venv/bin/python"; [ ! -f "$PYTHON_CMD" ] && PYTHON_CMD="python3"
+if [ -f "$WORKSPACE_VENV/bin/python" ]; then
+    PYTHON_CMD="$WORKSPACE_VENV/bin/python"
+elif [ -f ".venv/bin/python" ]; then
+    PYTHON_CMD=".venv/bin/python"
+else
+    PYTHON_CMD="python3"
+fi
 
 STAGED=$(git diff --cached --name-only --diff-filter=ACMR 2>/dev/null | grep '\.py$' | tr '\n' ' ' || :)
 SOURCE_DIRS="${STAGED:-$SOURCE_DIR/ tests/}"
@@ -139,9 +151,9 @@ if [ "$RUN_TESTS" = true ]; then
     [[ -n "$DUP" ]] && { log_fail "Duplicate test files — expand existing files instead:"; echo "$DUP"; exit 1; }
     log_success "No duplicate test files"
 
-    # SKIP_NO_REASON: @pytest.mark.skip must have a reason comment on the preceding line
+    # SKIP_NO_REASON: @pytest.mark.skip/skipif must have '# reason: ...' on the preceding line
     SKIP_NO_REASON=$(rg "@pytest\.mark\.skip" --type py tests/ -B 1 2>/dev/null \
-        | grep -v "# reason:\|# noqa\|^--" | grep "@pytest\.mark\.skip" || :)
+        | grep -v '^--$' | paste - - | grep -v "# reason:\|# noqa" | cut -f2 | grep "@pytest\.mark\.skip" || :)
     [[ -n "$SKIP_NO_REASON" ]] && { log_fail "pytest.mark.skip without reason comment — add '# reason: ...' above"; echo "$SKIP_NO_REASON" | head -3; exit 1; }
     log_success "All pytest.mark.skip have reason comments"
 fi
@@ -183,8 +195,13 @@ V=0
 rg "print\(" --type py --glob "!tests/**" --glob "!scripts/**" "$SOURCE_DIR/" 2>/dev/null \
     && { log_fail "print() — use logger"; ((V++)); } || log_success "No print()"
 
-rg "os\.getenv|os\.environ" --type py --glob "!tests/**" --glob "!scripts/**" "$SOURCE_DIR/" 2>/dev/null \
-    && { log_fail "os.getenv()/os.environ — use UnifiedCloudConfig for config, get_secret_client() for secrets"; ((V++)); } || log_success "No os.getenv()/os.environ"
+# unified-config-interface: bootstrap exception — UCI IS the config layer, must read os.environ (QUALITY_GATE_BYPASS_AUDIT.md §2.4)
+if [[ "$PACKAGE_NAME" != "unified-config-interface" ]]; then
+    rg "os\.getenv|os\.environ" --type py --glob "!tests/**" --glob "!scripts/**" "$SOURCE_DIR/" 2>/dev/null \
+        && { log_fail "os.getenv()/os.environ — use UnifiedCloudConfig for config, get_secret_client() for secrets"; ((V++)); } || log_success "No os.getenv()/os.environ"
+else
+    log_success "os.getenv/bootstrap — UCI is config layer (bypass §2.4)"
+fi
 
 rg 'os\.getenv\s*\([^)]+,\s*""\s*\)' --type py --glob "!tests/**" "$SOURCE_DIR/" 2>/dev/null \
     && { log_fail "os.getenv empty fallback — fail fast"; ((V++)); } || log_success "No os.getenv empty fallback"
@@ -231,9 +248,9 @@ rg "central-element-323112" tests/ 2>/dev/null \
 rg "central-element-323112" --type py --glob "!tests/**" "$SOURCE_DIR/" 2>/dev/null \
     && { log_fail "Hardcoded project ID in production — use config"; ((V++)); } || log_success "No hardcoded project ID in production"
 
-# 1. GCP_PROJECT_ID check — use GCP_PROJECT_ID instead
-rg "GCP_PROJECT_ID" --type py --glob "!tests/**" "$SOURCE_DIR/" 2>/dev/null \
-    && { log_fail "Use GCP_PROJECT_ID not GCP_PROJECT_ID (no exceptions — remove from config class)"; ((V++)); } || log_success "No GCP_PROJECT_ID usage"
+# 1. Project ID — use GCP_PROJECT_ID only; banned: GOOGLE_CLOUD_PROJECT, GCP_PROJECT (without _ID)
+BAD_PROJECT=$(rg "GOOGLE_CLOUD_PROJECT|GCP_PROJECT(?!_ID)" --type py --glob "!tests/**" "$SOURCE_DIR/" 2>/dev/null || :)
+[[ -n "$BAD_PROJECT" ]] && { log_fail "Use GCP_PROJECT_ID; banned: GOOGLE_CLOUD_PROJECT, GCP_PROJECT"; echo "$BAD_PROJECT" | head -3; ((V++)); } || log_success "Project ID uses GCP_PROJECT_ID"
 
 # Domain clients must come from unified_domain_client, not unified_trading_library
 UCS_DOMAIN=$(rg 'from unified_trading_library import[^#]*?(InstrumentsDomainClient|ExecutionDomainClient|MarketCandleDataDomainClient|MarketTickDataDomainClient|create_instruments_client|create_execution_client|create_features_client|create_market_candle_data_client|create_market_tick_data_client)' \
@@ -245,9 +262,9 @@ DOMAIN_FROM_UCS=$(rg 'from unified_trading_library import.*(market_category|Doma
     --type py "$SOURCE_DIR/" 2>/dev/null || :)
 [[ -n "$DOMAIN_FROM_UCS" ]] && { log_fail "Service imports domain symbols from UCS — use unified_domain_client instead"; echo "$DOMAIN_FROM_UCS" | head -5; ((V++)); } || log_success "No domain imports from UCS"
 
-# setup_events/setup_service uses sink= in production
+# setup_events/setup_service uses sink= in production (exclude def lines — UEI defines setup_events)
 SETUP_NO_SINK=$(rg 'setup_(events|service)\s*\(' --type py \
-    --glob "!tests/**" "$SOURCE_DIR/" 2>/dev/null | grep -v 'sink=' || :)
+    --glob "!tests/**" "$SOURCE_DIR/" 2>/dev/null | grep -v 'sink=' | grep -v "def setup_events\|def setup_service" || :)
 [[ -n "$SETUP_NO_SINK" ]] && { log_fail "setup_events()/setup_service() called without sink= in production code"; echo "$SETUP_NO_SINK" | head -5; ((V++)); } || log_success "setup_service() uses sink= in all production call sites"
 
 BAD_AUTH_SKIP=$(rg 'pytest\.skip.*[Cc]redential|pytest\.skip.*GOOGLE_APPLICATION_CREDENTIALS|if not.*gcp_credentials.*pytest\.skip\|if not.*cred_file.*pytest\.skip' \
@@ -402,9 +419,9 @@ DOMAIN_CONTRACTS_IN_LIB=$(rg 'class \w+\(BaseModel\)' --type py \
     echo "$DOMAIN_CONTRACTS_IN_LIB" | head -5
 } || log_success "No misplaced domain BaseModel contracts in library"
 
-# 7. BYPASS — ||true in quality gate scripts
+# 7. BYPASS — ||true in quality gate scripts (exclude comment and log_fail line containing "||true")
 BYPASS=$(rg "\|\|true|\|\| true" --glob "**/quality-gates.sh" --glob "**/quality-gates.yml" . 2>/dev/null \
-    | grep -v "^#\|zombies\|pyright\|cleanup" || :)
+    | grep -v "BYPASS —\|fix the root cause\|zombies\|pyright\|cleanup" || :)
 [[ -n "$BYPASS" ]] && { log_fail "||true bypass in quality gates — fix the root cause"; echo "$BYPASS" | head -3; ((V++)); } || log_success "No ||true quality gate bypasses"
 
 # ============================================================
@@ -428,12 +445,15 @@ fi
 
 # ============================================================
 # STEP 5.11 — Block protocol-specific symbols in service/library code
+# unified-config-interface cloud_config.py: field names (gcs_bucket, bigquery_dataset) are schema — QUALITY_GATE_BYPASS_AUDIT.md §2.6
 # ============================================================
-PROTOCOL_VIOLATIONS=$(rg "CloudTarget|upload_to_gcs_batch|gcs_bucket|bigquery_dataset|StandardizedDomainCloudService" \
-    --type py \
-    --glob '!.venv*' --glob '!**/.venv*/**' \
-    --glob '!tests' \
-    -l . 2>/dev/null || :)
+if [[ "$PACKAGE_NAME" = "unified-config-interface" ]]; then
+    PROTOCOL_VIOLATIONS=$(rg "CloudTarget|upload_to_gcs_batch|gcs_bucket|bigquery_dataset|StandardizedDomainCloudService" \
+        --type py --glob '!.venv*' --glob '!**/.venv*/**' --glob '!tests' --glob '!**/cloud_config.py' -l . 2>/dev/null || :)
+else
+    PROTOCOL_VIOLATIONS=$(rg "CloudTarget|upload_to_gcs_batch|gcs_bucket|bigquery_dataset|StandardizedDomainCloudService" \
+        --type py --glob '!.venv*' --glob '!**/.venv*/**' --glob '!tests' -l . 2>/dev/null || :)
+fi
 if [ -n "$PROTOCOL_VIOLATIONS" ]; then
     log_fail "STEP 5.11: Protocol-specific symbols found. Use get_data_sink() / get_event_bus() from UCI instead:"
     echo "$PROTOCOL_VIOLATIONS"
