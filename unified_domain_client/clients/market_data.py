@@ -10,9 +10,8 @@ from functools import lru_cache
 from typing import NotRequired, TypedDict, Unpack
 
 import pandas as pd
-from unified_config_interface import UnifiedCloudConfig
+from unified_config_interface import UnifiedCloudConfig, build_bucket, build_path
 
-from ..paths import build_bucket, build_path
 from ..standardized_service import StandardizedDomainCloudService
 from .base import BaseDataClient
 

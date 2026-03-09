@@ -2,8 +2,8 @@
 
 ## Library Dependencies
 
-| Library | Why | Import |
-|---------|-----|--------|
+| Library                  | Why                                           | Import                                                     |
+| ------------------------ | --------------------------------------------- | ---------------------------------------------------------- |
 | unified-trading-services | StorageClient, validation, lookback constants | `from unified_trading_services.core.validation import ...` |
 
 ## Install Order (CI/Cloud Build)

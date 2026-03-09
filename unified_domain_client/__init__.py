@@ -8,13 +8,11 @@ __version__ = "0.1.45"
 
 # pyright: reportUnsupportedDunderAll=false, reportUnknownVariableType=false
 
-from unified_config_interface.lookback_constants import (  # noqa: deep-import
+from unified_config_interface import (
     FEATURE_GROUP_LOOKBACK,
     MAX_LOOKBACK_DAYS_BY_TIMEFRAME,
-    TIMEFRAME_SECONDS,
-)
-from unified_config_interface.paths import (  # noqa: deep-import
     PATH_REGISTRY,
+    TIMEFRAME_SECONDS,
     DataSetSpec,
     PathRegistry,
     ReadMode,
@@ -23,24 +21,18 @@ from unified_config_interface.paths import (  # noqa: deep-import
     build_path,
     get_spec,
 )
-from unified_trading_library.domain.data_completion import (  # noqa: deep-import
+from unified_trading_library import (
     DataCompletionChecker,
-    get_available_date_range,
-    make_completion_checker,
-)
-from unified_trading_library.domain.date_validation import (  # noqa: deep-import
+    DateFilterService,
     DateValidationResult,
     DateValidator,
-    get_earliest_valid_date,
-    get_validator,
-    should_skip_date,
-)
-from unified_trading_library.domain.instrument_date_filter import (
-    DateFilterService,  # noqa: deep-import
-)
-from unified_trading_library.domain.timestamp_validation import (  # noqa: deep-import
     TimestampAlignmentResult,
     TimestampDateValidator,
+    get_available_date_range,
+    get_earliest_valid_date,
+    get_validator,
+    make_completion_checker,
+    should_skip_date,
     validate_timestamp_date_alignment,
 )
 

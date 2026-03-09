@@ -23,7 +23,7 @@ from typing import Protocol, cast
 
 from unified_cloud_interface import get_storage_client
 from unified_config_interface import UnifiedCloudConfig
-from unified_ml_interface.models import ModelMetadata, ModelVariantConfig
+from unified_ml_interface import ModelMetadata, ModelVariantConfig
 
 logger = logging.getLogger(__name__)
 

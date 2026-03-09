@@ -5,8 +5,8 @@ from __future__ import annotations
 import logging
 
 import pandas as pd
+from unified_config_interface import build_bucket, build_path
 
-from ..paths import build_bucket, build_path
 from .base import BaseDataClient
 
 logger = logging.getLogger(__name__)
