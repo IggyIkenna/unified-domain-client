@@ -2092,7 +2092,7 @@ wheels = [
 
 [[package]]
 name = "unified-api-contracts"
-version = "0.1.162"
+version = "0.1.172"
 source = { editable = "../unified-api-contracts" }
 dependencies = [
     { name = "pydantic" },
@@ -2211,7 +2211,7 @@ provides-extras = ["aws", "dev"]
 
 [[package]]
 name = "unified-domain-client"
-version = "0.1.68"
+version = "0.1.70"
 source = { editable = "." }
 dependencies = [
     { name = "pandas" },
@@ -2269,7 +2269,7 @@ provides-extras = ["dev"]
 
 [[package]]
 name = "unified-events-interface"
-version = "0.2.18"
+version = "0.2.20"
 source = { editable = "../unified-events-interface" }
 
 [package.metadata]
@@ -2289,7 +2289,7 @@ provides-extras = ["dev"]
 
 [[package]]
 name = "unified-internal-contracts"
-version = "0.1.42"
+version = "0.1.43"
 source = { editable = "../unified-internal-contracts" }
 dependencies = [
     { name = "pandas" },
