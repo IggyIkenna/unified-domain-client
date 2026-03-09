@@ -1,23 +1,14 @@
-"""Path registry patterns for cloud storage paths."""
-
-from enum import StrEnum
-
-from unified_domain_client.paths.registry import (  # noqa: deep-import
+# Moved to unified-config-interface. Re-exported for backward compatibility.
+from unified_config_interface.paths import (  # noqa: F401
     PATH_REGISTRY,
     DataSetSpec,
     PathRegistry,
+    ReadMode,
     build_bucket,
     build_full_uri,
     build_path,
     get_spec,
 )
-
-
-class ReadMode(StrEnum):
-    AUTO = "auto"
-    BQ_EXTERNAL = "bq"
-    ATHENA = "athena"
-
 
 __all__ = [
     "PATH_REGISTRY",
