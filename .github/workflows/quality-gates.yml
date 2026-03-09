@@ -39,15 +39,21 @@ jobs:
             echo "GH_PAT not set - install from Artifact Registry or local paths"
           fi
 
+      - name: Install ripgrep
+        run: sudo apt-get update && sudo apt-get install -y ripgrep
+
       - name: Install dependencies
         run: |
+          uv venv .venv
           if [ -d "deps/unified-config-interface" ]; then
-            uv pip install --system -e deps/unified-config-interface
-            uv pip install --system -e deps/unified-trading-library
-            uv pip install --system -e deps/unified-events-interface
+            uv pip install --python .venv/bin/python -e deps/unified-config-interface
+            uv pip install --python .venv/bin/python -e deps/unified-trading-library
+            uv pip install --python .venv/bin/python -e deps/unified-events-interface
           fi
-          uv pip install --system -e ".[dev]"
-          uv pip install --system ruff==0.15.0
+          uv pip install --python .venv/bin/python -e ".[dev]" || uv pip install --python .venv/bin/python -e .
+          uv pip install --python .venv/bin/python ruff==0.15.0 pytest pytest-cov pytest-asyncio pytest-timeout pytest-xdist basedpyright bandit pip-audit
 
       - name: Run quality gates
-        run: bash scripts/quality-gates.sh --no-fix
+        run: |
+          export PATH="$(pwd)/.venv/bin:$PATH"
+          bash scripts/quality-gates.sh --no-fix
