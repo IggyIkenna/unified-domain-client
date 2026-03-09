@@ -536,8 +536,8 @@ if [ -f ".pre-commit-config.yaml" ] && grep -q "mirrors-prettier" .pre-commit-co
     pre-commit run prettier --all-files 2>/dev/null
     pre-commit run prettier --all-files 2>/dev/null
   else
-    npx prettier --write "**/*.{ts,tsx,js,jsx,json,md,yaml,yml,css}" --ignore-unknown 2>/dev/null
-    npx prettier --write "**/*.{ts,tsx,js,jsx,json,md,yaml,yml,css}" --ignore-unknown 2>/dev/null
+    npx --yes prettier@3.6.2 --write "**/*.{ts,tsx,js,jsx,json,md,yaml,yml,css}" --ignore-unknown 2>/dev/null
+    npx --yes prettier@3.6.2 --write "**/*.{ts,tsx,js,jsx,json,md,yaml,yml,css}" --ignore-unknown 2>/dev/null
   fi
 fi
 

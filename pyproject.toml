@@ -85,6 +85,7 @@ markers = [
 ]
 
 [tool.basedpyright]
+typeCheckingMode = "strict"
 exclude = [
     "build",
     "dist",
