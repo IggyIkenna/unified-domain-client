@@ -142,3 +142,15 @@ upstream stubs — monitor joblib repo for typed support.
 **Next Review:** Q2 2026 (April 2026)
 **Audit Status:** Comprehensive — All bypasses documented and justified
 **Type Checking:** basedpyright — 0 errors, 0 warnings (down from 118)
+
+## basedpyright-baseline: `.basedpyright-baseline.json` (16 pre-existing errors)
+
+**Added:** 2026-03-10 — typecheck fix pass
+**Status:** JUSTIFIED — untyped third-party dependencies; target is zero when stubs become available
+**Errors suppressed:** 16
+
+**Reason:** Missing `unified_ml_interface` package in workspace venv (optional dep not installed globally); cascading Unknown types from unresolved import. Root cause: unified_ml_interface is an optional dep only needed in some deployment contexts.
+
+**Scope:** All errors in `.basedpyright-baseline.json` are from untyped third-party libraries or unresolvable import chains in workspace venv context — NOT architectural violations. No `reportAny` errors in first-party code are suppressed.
+
+**Target:** Remove baseline when upstream type stubs are available.
