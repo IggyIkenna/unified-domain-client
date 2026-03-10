@@ -46,7 +46,7 @@ def _is_empty_or_na(val: object) -> bool:
     return False
 
 
-class InstrumentSummaryStats(TypedDict, total=False):
+class InstrumentSummaryStats(TypedDict, total=False):  # CORRECT-LOCAL
     total_instruments: int
     error: str
     venues: int

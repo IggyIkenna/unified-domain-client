@@ -128,7 +128,7 @@ class CloudModelArtifactStore:
         training_period: str | None = None,
     ) -> str:
         """Serialise model with joblib and upload to GCS. Returns storage path."""
-        import joblib  # pyright: ignore[reportMissingTypeStubs]
+        import joblib  # noqa: qg-inside-import  # pyright: ignore[reportMissingTypeStubs]
 
         period = training_period or (
             metadata.training_timestamp.strftime("%Y-%m")
@@ -160,7 +160,7 @@ class CloudModelArtifactStore:
         variant_config: ModelVariantConfig | None = None,
     ) -> object | None:
         """Download and deserialise a model from GCS. Returns None if not found."""
-        import joblib  # pyright: ignore[reportMissingTypeStubs]
+        import joblib  # noqa: qg-inside-import  # pyright: ignore[reportMissingTypeStubs]
 
         period = training_period or self.get_latest_training_period(model_id)
         if not period:
