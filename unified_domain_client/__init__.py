@@ -156,6 +156,12 @@ def _load_sports(name: str) -> object:
 
 def _load_clients(name: str) -> object:
     """Lazy load main domain clients."""
+    if name == "L2BookCheckpointClient":
+        from unified_domain_client.clients.liquidity import (  # noqa: deep-import
+            L2BookCheckpointClient,
+        )
+
+        return L2BookCheckpointClient
     from unified_domain_client.clients import (  # noqa: deep-import
         ExecutionDomainClient,
         FeaturesCalendarDomainClient,
@@ -301,12 +307,6 @@ def __getattr__(name: str) -> object:
     """
     if name not in _LAZY_NAMES:
         raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-    if name == "L2BookCheckpointClient":
-        from unified_domain_client.clients.liquidity import (  # noqa: deep-import
-            L2BookCheckpointClient,
-        )
-
-        return L2BookCheckpointClient
     if name in _SPORTS_NAMES:
         return _load_sports(name)
     if name in _CLOUD_PROVIDER_NAMES:
