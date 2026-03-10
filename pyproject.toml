@@ -150,7 +150,7 @@ dev = [
     "pytest-xdist>=3.6.0,<4.0.0",
     "ruff==0.15.0",
     "pandas-stubs>=2.2.0,<3.0.0",
-    "basedpyright>=1.21.0,<2.0.0",
+    "basedpyright==1.38.2",
     "pyright>=1.1.390,<2.0.0",
     "pip-audit>=2.7.0,<3.0.0",
     "bandit>=1.7.0,<2.0.0",
