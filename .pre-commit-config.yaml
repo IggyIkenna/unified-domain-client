@@ -12,14 +12,6 @@ repos:
     hooks:
       - id: conventional-pre-commit
         stages: [commit-msg]
-  - repo: local
-    hooks:
-      - id: bump-library-version
-        name: Auto-bump library version
-        entry: bash scripts/bump-library-version.sh
-        language: system
-        pass_filenames: false
-        stages: [pre-commit]
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.15.0
