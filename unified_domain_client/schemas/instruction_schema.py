@@ -237,9 +237,7 @@ class InstructionValidationError(Exception):
 # =============================================================================
 
 
-def _validate_nested_instruction(
-    idx: object, ni: object, errors: list[str]
-) -> None:
+def _validate_nested_instruction(idx: object, ni: object, errors: list[str]) -> None:
     """Validate a single nested instruction dict within an ATOMIC row."""
     if not isinstance(ni, dict):
         return
@@ -253,11 +251,9 @@ def _validate_nested_instruction(
         )
 
 
-def _validate_atomic_row(
-    idx: object, nested_json: object, errors: list[str]
-) -> None:
+def _validate_atomic_row(idx: object, nested_json: object, errors: list[str]) -> None:
     """Validate one ATOMIC row's nested_instructions JSON."""
-    if not nested_json or pd.isna(nested_json):
+    if not nested_json or (isinstance(nested_json, float) and pd.isna(nested_json)):
         errors.append(f"ATOMIC instruction at index {idx} has empty nested_instructions")
         return
     try:
@@ -276,9 +272,7 @@ def _validate_bounded_cols(df: pd.DataFrame, errors: list[str]) -> None:
             non_null = df[col].notna()
             out_of_range = ((df[col] < 0) | (df[col] > 1)) & non_null
             if out_of_range.sum() > 0:
-                errors.append(
-                    f"{col} contains {out_of_range.sum()} values outside [0, 1] range"
-                )
+                errors.append(f"{col} contains {out_of_range.sum()} values outside [0, 1] range")
 
 
 def _validate_price_bounds(df: pd.DataFrame, errors: list[str]) -> None:
@@ -300,14 +294,10 @@ def _validate_chain_fields(df: pd.DataFrame, errors: list[str]) -> None:
         if has_chain.any():
             missing_seq = has_chain & df["chain_sequence"].isna()
             if missing_seq.sum() > 0:
-                errors.append(
-                    f"{missing_seq.sum()} rows have chain_id but missing chain_sequence"
-                )
+                errors.append(f"{missing_seq.sum()} rows have chain_id but missing chain_sequence")
             invalid_seq = has_chain & (df["chain_sequence"] <= 0)
             if invalid_seq.sum() > 0:
-                errors.append(
-                    f"chain_sequence must be > 0: {invalid_seq.sum()} invalid values"
-                )
+                errors.append(f"chain_sequence must be > 0: {invalid_seq.sum()} invalid values")
 
 
 # =============================================================================

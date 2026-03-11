@@ -221,9 +221,7 @@ _VENUE_SENSITIVE_TYPES = frozenset(
 )
 
 
-def _resolve_type_folder(
-    instrument_id: str, instrument_type_folder: str | None
-) -> str | None:
+def _resolve_type_folder(instrument_id: str, instrument_type_folder: str | None) -> str | None:
     """Derive the instrument type folder from the instrument_id if not provided."""
     if instrument_type_folder:
         return instrument_type_folder
@@ -233,9 +231,7 @@ def _resolve_type_folder(
     return None
 
 
-def _resolve_venue(
-    instrument_id: str, venue: str | None, type_folder: str | None
-) -> str | None:
+def _resolve_venue(instrument_id: str, venue: str | None, type_folder: str | None) -> str | None:
     """Extract venue from instrument_id if not provided and the type requires it."""
     if venue:
         return venue

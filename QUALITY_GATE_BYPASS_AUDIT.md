@@ -12,9 +12,10 @@ Inventory of all exceptions, exclusions, and handling that bypass or relax quali
 
 ### 1.1 Path/Glob Exclusions (checks never run on these paths)
 
-| Check            | Excluded Paths | Rationale                                                                                                                                                                  |
-| ---------------- | -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **basedpyright** | None           | All 5 previously excluded files (clients.py, date_validation.py, schemas/**init**.py, schemas/instruction_schema.py, validation.py) now pass — exclusions removed Feb 2026 |
+| Check                     | Excluded Paths                            | Rationale                                                                                                                                                                                                |
+| ------------------------- | ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **basedpyright**          | None                                      | All 5 previously excluded files (clients.py, date_validation.py, schemas/**init**.py, schemas/instruction_schema.py, validation.py) now pass — exclusions removed Feb 2026                               |
+| **INSIDE_EXTRA_EXCLUDES** | `unified_domain_client/artifact_store.py` | Lazy `import joblib` inside save/load methods — joblib is an optional heavy dep only needed for model serialization; top-level import would force all UDC consumers to install joblib. Detailed in §6.1. |
 
 **Note:** PR #4 had excluded these 5 files from pyrightconfig.json. Those exclusions were removed; all files now pass basedpyright.
 

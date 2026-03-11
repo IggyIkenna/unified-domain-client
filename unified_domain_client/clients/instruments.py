@@ -91,9 +91,7 @@ def _parse_ref_date(date: str | datetime) -> datetime:
     return date if date.tzinfo else date.replace(tzinfo=UTC)
 
 
-def _is_expiring_in_window(
-    expiry_str: object, ref_date: datetime, cutoff_date: datetime
-) -> bool:
+def _is_expiring_in_window(expiry_str: object, ref_date: datetime, cutoff_date: datetime) -> bool:
     """Return True if the expiry datetime falls within [ref_date, cutoff_date]."""
     if not expiry_str:
         return False
@@ -244,9 +242,7 @@ class InstrumentsDomainClient:
             logger.warning("Could not load by-venue structure: %s", e)
             return pd.DataFrame()
 
-    def _filter_by_date_availability(
-        self, df: pd.DataFrame, target_date: datetime
-    ) -> pd.DataFrame:
+    def _filter_by_date_availability(self, df: pd.DataFrame, target_date: datetime) -> pd.DataFrame:
         if df.empty:
             return df
 

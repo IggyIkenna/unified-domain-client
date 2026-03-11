@@ -26,9 +26,7 @@ def _make_bq_reader(**kwargs: object) -> BigQueryExternalReader:
     bq_dataset_raw = kwargs.get("bq_dataset")
     if not bq_dataset_raw:
         raise ValueError("bq_dataset is required for ReadMode.BQ_EXTERNAL")
-    return BigQueryExternalReader(
-        project_id=str(project_id_raw), bq_dataset=str(bq_dataset_raw)
-    )
+    return BigQueryExternalReader(project_id=str(project_id_raw), bq_dataset=str(bq_dataset_raw))
 
 
 def _make_athena_reader(**kwargs: object) -> AthenaReader:
