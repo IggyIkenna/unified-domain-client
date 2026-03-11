@@ -7,7 +7,7 @@ import pandas as pd
 import pyarrow as pa
 import pytest
 
-from unified_domain_client.schemas.instruction_schema import (  # noqa: deep-import
+from unified_domain_client.schemas.instruction_schema import (
     INSTRUCTION_SCHEMA,
     InstructionValidationError,
     InstructionValidator,
@@ -193,7 +193,7 @@ class TestDeprecatedWithdrawRemoved:
     @patch("unified_domain_client.schemas.instruction_schema.validate_strategy_id")
     def test_withdraw_not_in_valid_instruction_types(self, mock_validate: MagicMock):
         """WITHDRAW must not appear in VALID_INSTRUCTION_TYPES after cleanup."""
-        from unified_domain_client.schemas.instruction_schema import (  # noqa: deep-import
+        from unified_domain_client.schemas.instruction_schema import (
             VALID_INSTRUCTION_TYPES,
         )
 
@@ -202,7 +202,7 @@ class TestDeprecatedWithdrawRemoved:
     @patch("unified_domain_client.schemas.instruction_schema.validate_strategy_id")
     def test_withdraw_not_in_atomic_compatible_types(self, mock_validate: MagicMock):
         """WITHDRAW must not appear in ATOMIC_COMPATIBLE_TYPES after cleanup."""
-        from unified_domain_client.schemas.instruction_schema import (  # noqa: deep-import
+        from unified_domain_client.schemas.instruction_schema import (
             ATOMIC_COMPATIBLE_TYPES,
         )
 

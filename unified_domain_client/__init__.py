@@ -36,8 +36,8 @@ from unified_trading_library import (
     validate_timestamp_date_alignment,
 )
 
-from unified_domain_client.catalog import BigQueryCatalog, GlueCatalog  # noqa: deep-import
-from unified_domain_client.readers import (  # noqa: deep-import
+from .catalog import BigQueryCatalog, GlueCatalog
+from .readers import (
     AthenaReader,
     BaseDataReader,
     BaseReader,
@@ -48,7 +48,7 @@ from unified_domain_client.readers import (  # noqa: deep-import
     MLReader,
     get_reader,
 )
-from unified_domain_client.schemas import (  # noqa: deep-import
+from .schemas import (
     CLOB_VENUES,
     CONFIG_SCHEMA,
     DEX_VENUES,
@@ -71,11 +71,11 @@ from unified_domain_client.schemas import (  # noqa: deep-import
     validate_instruction_dataframe,
     validate_instruction_parquet,
 )
-from unified_domain_client.validation import (  # noqa: deep-import
+from .validation import (
     DomainValidationConfig,
     DomainValidationService,
 )
-from unified_domain_client.writers import (  # noqa: deep-import
+from .writers import (
     BaseDataWriter,
     BaseWriter,
     DirectWriter,
@@ -137,7 +137,7 @@ _LAZY_NAMES = {
 
 def _load_sports(name: str) -> object:
     """Lazy load sports domain clients."""
-    from unified_domain_client.sports import (  # noqa: deep-import
+    from .sports import (
         SportsFeaturesDomainClient,
         SportsFixturesDomainClient,
         SportsMappingsDomainClient,
@@ -157,12 +157,12 @@ def _load_sports(name: str) -> object:
 def _load_clients(name: str) -> object:
     """Lazy load main domain clients."""
     if name == "L2BookCheckpointClient":
-        from unified_domain_client.clients.liquidity import (  # noqa: deep-import
+        from .clients.liquidity import (
             L2BookCheckpointClient,
         )
 
         return L2BookCheckpointClient
-    from unified_domain_client.clients import (  # noqa: deep-import
+    from .clients import (
         ExecutionDomainClient,
         FeaturesCalendarDomainClient,
         FeaturesDeltaOneDomainClient,
@@ -205,7 +205,7 @@ def _load_clients(name: str) -> object:
 
 def _load_factory_functions(name: str) -> object:
     """Lazy load factory functions from clients package."""
-    from unified_domain_client.clients import (  # noqa: deep-import
+    from .clients import (
         create_execution_client,
         create_features_client,
         create_instruments_client,
@@ -264,10 +264,10 @@ _CLIENT_FACTORY_NAMES = frozenset(
 
 def _load_cloud_providers(name: str) -> object:
     """Lazy load cloud data providers and artifact store."""
-    from unified_domain_client.artifact_store import (  # noqa: deep-import
+    from .artifact_store import (
         CloudModelArtifactStore,
     )
-    from unified_domain_client.cloud_data_provider import (  # noqa: deep-import
+    from .cloud_data_provider import (
         CloudDataProviderBase,
         FeaturesDataProvider,
         InstrumentsDataProvider,
@@ -285,7 +285,7 @@ def _load_cloud_providers(name: str) -> object:
 
 def _load_factory_services(name: str) -> object:
     """Lazy load cloud service factory functions."""
-    from unified_domain_client.factories import (  # noqa: deep-import
+    from .factories import (
         create_backtesting_cloud_service,
         create_features_cloud_service,
         create_market_data_cloud_service,
@@ -312,7 +312,7 @@ def __getattr__(name: str) -> object:
     if name in _CLOUD_PROVIDER_NAMES:
         return _load_cloud_providers(name)
     if name in ("StandardizedDomainCloudService", "make_domain_service"):
-        from unified_domain_client.standardized_service import (  # noqa: deep-import
+        from .standardized_service import (
             StandardizedDomainCloudService,
             make_domain_service,
         )

@@ -15,7 +15,7 @@ def test_standardized_service_download_raises_on_error():
     from unittest.mock import patch
 
     from unified_domain_client import (
-        StandardizedDomainCloudService,  # noqa: deep-import
+        StandardizedDomainCloudService,
     )
 
     svc = StandardizedDomainCloudService(domain="test", bucket="b")
@@ -32,7 +32,7 @@ def test_standardized_service_download_json_format():
     from unittest.mock import patch
 
     from unified_domain_client import (
-        StandardizedDomainCloudService,  # noqa: deep-import
+        StandardizedDomainCloudService,
     )
 
     svc = StandardizedDomainCloudService(domain="test", bucket="b")
@@ -51,7 +51,7 @@ def test_standardized_service_download_unknown_format():
     import pandas as pd
 
     from unified_domain_client import (
-        StandardizedDomainCloudService,  # noqa: deep-import
+        StandardizedDomainCloudService,
     )
 
     svc = StandardizedDomainCloudService(domain="test", bucket="b")
@@ -69,7 +69,7 @@ def test_standardized_service_upload_parquet():
     import pandas as pd
 
     from unified_domain_client import (
-        StandardizedDomainCloudService,  # noqa: deep-import
+        StandardizedDomainCloudService,
     )
 
     svc = StandardizedDomainCloudService(domain="test", bucket="b")
@@ -89,7 +89,7 @@ def test_standardized_service_upload_csv():
     import pandas as pd
 
     from unified_domain_client import (
-        StandardizedDomainCloudService,  # noqa: deep-import
+        StandardizedDomainCloudService,
     )
 
     svc = StandardizedDomainCloudService(domain="test", bucket="b")
@@ -106,7 +106,7 @@ def test_standardized_service_upload_unsupported_format_raises():
     import pandas as pd
 
     from unified_domain_client import (
-        StandardizedDomainCloudService,  # noqa: deep-import
+        StandardizedDomainCloudService,
     )
 
     svc = StandardizedDomainCloudService(domain="test", bucket="b")
@@ -127,7 +127,7 @@ def test_sports_features_read_features_returns_empty_on_error():
     import pandas as pd
 
     from unified_domain_client import (
-        SportsFeaturesDomainClient,  # noqa: deep-import
+        SportsFeaturesDomainClient,
     )
 
     with (
@@ -153,7 +153,7 @@ def test_sports_features_write_features():
     import pandas as pd
 
     from unified_domain_client import (
-        SportsFeaturesDomainClient,  # noqa: deep-import
+        SportsFeaturesDomainClient,
     )
 
     with (
@@ -180,7 +180,7 @@ def test_sports_fixtures_read_fixtures_returns_empty_on_error():
     import pandas as pd
 
     from unified_domain_client import (
-        SportsFixturesDomainClient,  # noqa: deep-import
+        SportsFixturesDomainClient,
     )
 
     with (
@@ -205,7 +205,7 @@ def test_sports_odds_read_odds_returns_empty_on_error():
 
     import pandas as pd
 
-    from unified_domain_client.sports.odds_client import SportsOddsDomainClient  # noqa: deep-import
+    from unified_domain_client.sports.odds_client import SportsOddsDomainClient
 
     with (
         patch("unified_domain_client.sports.odds_client.UnifiedCloudConfig") as mock_cfg,
@@ -228,7 +228,7 @@ def test_sports_tick_data_read_ticks_returns_empty_on_error():
     import pandas as pd
 
     from unified_domain_client import (
-        SportsTickDataDomainClient,  # noqa: deep-import
+        SportsTickDataDomainClient,
     )
 
     with (
@@ -254,7 +254,7 @@ def test_sports_mappings_read_mappings_returns_empty_on_error():
     import pandas as pd
 
     from unified_domain_client import (
-        SportsMappingsDomainClient,  # noqa: deep-import
+        SportsMappingsDomainClient,
     )
 
     with (
@@ -286,7 +286,7 @@ def test_base_data_client_read_parquet_returns_dataframe():
     import pandas as pd
 
     from unified_domain_client import (
-        MarketTickDomainClient,  # noqa: deep-import
+        MarketTickDomainClient,
     )
 
     mock_storage = MagicMock()
@@ -310,7 +310,7 @@ def test_base_data_client_list_blobs_returns_names():
     from unittest.mock import MagicMock
 
     from unified_domain_client import (
-        MarketTickDomainClient,  # noqa: deep-import
+        MarketTickDomainClient,
     )
 
     mock_storage = MagicMock()
@@ -336,7 +336,7 @@ def test_market_tick_domain_client_get_tick_data():
     import pandas as pd
 
     from unified_domain_client import (
-        MarketTickDomainClient,  # noqa: deep-import
+        MarketTickDomainClient,
     )
 
     mock_storage = MagicMock()
@@ -364,7 +364,7 @@ def test_market_tick_domain_client_get_available_dates():
     from unittest.mock import MagicMock
 
     from unified_domain_client import (
-        MarketTickDomainClient,  # noqa: deep-import
+        MarketTickDomainClient,
     )
 
     mock_storage = MagicMock()
@@ -388,7 +388,7 @@ def test_market_candle_domain_client_get_candles():
     import pandas as pd
 
     from unified_domain_client import (
-        MarketCandleDomainClient,  # noqa: deep-import
+        MarketCandleDomainClient,
     )
 
     mock_storage = MagicMock()
@@ -417,7 +417,7 @@ def test_market_candle_domain_client_get_available_timeframes():
     from unittest.mock import MagicMock
 
     from unified_domain_client import (
-        MarketCandleDomainClient,  # noqa: deep-import
+        MarketCandleDomainClient,
     )
 
     mock_storage = MagicMock()
@@ -456,7 +456,7 @@ def test_base_writer_write_parquet():
 
     import pandas as pd
 
-    from unified_domain_client.writers.base import BaseWriter  # noqa: deep-import
+    from unified_domain_client.writers.base import BaseWriter
 
     writer = BaseWriter(bucket="b")
     df = pd.DataFrame({"x": [1, 2]})
@@ -472,7 +472,7 @@ def test_base_writer_write_json():
     """Test BaseWriter.write_json uploads JSON data."""
     from unittest.mock import patch
 
-    from unified_domain_client.writers.base import BaseWriter  # noqa: deep-import
+    from unified_domain_client.writers.base import BaseWriter
 
     writer = BaseWriter(bucket="b")
 
@@ -488,7 +488,7 @@ def test_market_data_writer_write_tick():
 
     import pandas as pd
 
-    from unified_domain_client.writers.base import MarketDataWriter  # noqa: deep-import
+    from unified_domain_client.writers.base import MarketDataWriter
 
     writer = MarketDataWriter(bucket="b")
     df = pd.DataFrame({"ts": [1000]})
@@ -508,7 +508,7 @@ def test_features_writer_write_delta_one():
 
     import pandas as pd
 
-    from unified_domain_client.writers.base import FeaturesWriter  # noqa: deep-import
+    from unified_domain_client.writers.base import FeaturesWriter
 
     writer = FeaturesWriter(bucket="b")
     df = pd.DataFrame({"feature": [1.0]})
@@ -525,7 +525,7 @@ def test_ml_writer_write_predictions():
 
     import pandas as pd
 
-    from unified_domain_client.writers.base import MLWriter  # noqa: deep-import
+    from unified_domain_client.writers.base import MLWriter
 
     writer = MLWriter(bucket="b")
     df = pd.DataFrame({"prediction": [0.9]})
@@ -542,7 +542,7 @@ def test_direct_writer_write():
 
     import pandas as pd
 
-    from unified_domain_client.writers.direct import DirectWriter  # noqa: deep-import
+    from unified_domain_client.writers.direct import DirectWriter
 
     mock_storage = MagicMock()
     writer = DirectWriter(storage_client=mock_storage)
@@ -555,7 +555,7 @@ def test_direct_writer_write_json():
     """Test DirectWriter.write_json calls storage.upload_bytes."""
     from unittest.mock import MagicMock
 
-    from unified_domain_client.writers.direct import DirectWriter  # noqa: deep-import
+    from unified_domain_client.writers.direct import DirectWriter
 
     mock_storage = MagicMock()
     writer = DirectWriter(storage_client=mock_storage)
@@ -565,7 +565,7 @@ def test_direct_writer_write_json():
 
 def test_get_writer_without_storage_raises():
     """Test get_writer raises ValueError when storage_client is None."""
-    from unified_domain_client.writers.factory import get_writer  # noqa: deep-import
+    from unified_domain_client.writers.factory import get_writer
 
     with pytest.raises(ValueError, match="storage_client required"):
         get_writer("some_dataset", storage_client=None)
@@ -575,8 +575,8 @@ def test_get_writer_with_storage_returns_direct_writer():
     """Test get_writer returns DirectWriter when storage_client provided."""
     from unittest.mock import MagicMock
 
-    from unified_domain_client.writers.direct import DirectWriter  # noqa: deep-import
-    from unified_domain_client.writers.factory import get_writer  # noqa: deep-import
+    from unified_domain_client.writers.direct import DirectWriter
+    from unified_domain_client.writers.factory import get_writer
 
     mock_storage = MagicMock()
     writer = get_writer("some_dataset", storage_client=mock_storage)
@@ -593,7 +593,7 @@ def test_sports_features_get_available_dates_returns_empty_on_error():
     from unittest.mock import patch
 
     from unified_domain_client import (
-        SportsFeaturesDomainClient,  # noqa: deep-import
+        SportsFeaturesDomainClient,
     )
 
     with (
@@ -617,7 +617,7 @@ def test_sports_fixtures_write_fixtures():
     import pandas as pd
 
     from unified_domain_client import (
-        SportsFixturesDomainClient,  # noqa: deep-import
+        SportsFixturesDomainClient,
     )
 
     with (
@@ -643,7 +643,7 @@ def test_sports_odds_write_odds():
 
     import pandas as pd
 
-    from unified_domain_client.sports.odds_client import SportsOddsDomainClient  # noqa: deep-import
+    from unified_domain_client.sports.odds_client import SportsOddsDomainClient
 
     with (
         patch("unified_domain_client.sports.odds_client.UnifiedCloudConfig") as mock_cfg,
@@ -667,7 +667,7 @@ def test_sports_tick_data_write_ticks():
     import pandas as pd
 
     from unified_domain_client import (
-        SportsTickDataDomainClient,  # noqa: deep-import
+        SportsTickDataDomainClient,
     )
 
     with (
@@ -694,7 +694,7 @@ def test_sports_mappings_write_mappings():
     import pandas as pd
 
     from unified_domain_client import (
-        SportsMappingsDomainClient,  # noqa: deep-import
+        SportsMappingsDomainClient,
     )
 
     with (
@@ -719,7 +719,7 @@ def test_sports_mappings_has_cloud_service():
     from unittest.mock import patch
 
     from unified_domain_client import (
-        SportsMappingsDomainClient,  # noqa: deep-import
+        SportsMappingsDomainClient,
     )
 
     with (

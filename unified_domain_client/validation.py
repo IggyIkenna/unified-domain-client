@@ -355,7 +355,8 @@ class DomainValidationService:
         """Validate internal domain timestamp semantics (timestamp_in, timestamp_out, timestamp)."""
         if "timestamp_in" not in data.columns:
             warnings.append(
-                "Missing 'timestamp_in' column for internal domain data (optional, indicates when data was received)"  # noqa: E501
+                "Missing 'timestamp_in' column for internal domain data"
+                " (optional, indicates when data was received)"
             )
 
         if "timestamp_out" not in data.columns:
@@ -366,7 +367,8 @@ class DomainValidationService:
 
         if "timestamp" not in data.columns:
             errors.append(
-                "Missing 'timestamp' column for internal domain data (required, candle-aligned timestamp)"  # noqa: E501
+                "Missing 'timestamp' column for internal domain data"
+                " (required, candle-aligned timestamp)"
             )
 
         if all(col in data.columns for col in ["timestamp", "timestamp_out", "timestamp_in"]):
@@ -386,7 +388,8 @@ class DomainValidationService:
 
         if invalid_count > 0:
             warnings.append(
-                f"{invalid_count} rows where timestamp_out < timestamp (expected: timestamp_out >= timestamp)"  # noqa: E501
+                f"{invalid_count} rows where timestamp_out < timestamp"
+                " (expected: timestamp_out >= timestamp)"
             )
 
         timestamp_in_dt = pd.to_datetime(data["timestamp_in"], unit="us", errors="coerce", utc=True)
@@ -395,7 +398,8 @@ class DomainValidationService:
 
         if invalid_count > 0:
             warnings.append(
-                f"{invalid_count} rows where timestamp_in > timestamp_out (expected: timestamp_in <= timestamp_out)"  # noqa: E501
+                f"{invalid_count} rows where timestamp_in > timestamp_out"
+                " (expected: timestamp_in <= timestamp_out)"
             )
 
     def validate_bigquery_upload(
@@ -513,7 +517,8 @@ class DomainValidationService:
                 validation_type="timestamp_ordering_validation",
                 valid=False,
                 errors=[
-                    f"{out_of_order_count} out-of-order timestamps found (timestamps must be monotonically increasing)"  # noqa: E501
+                    f"{out_of_order_count} out-of-order timestamps found"
+                    " (timestamps must be monotonically increasing)"
                 ],
             )
 
@@ -550,7 +555,8 @@ class DomainValidationService:
 
         if len(high_nan_cols) > 0:
             warnings.append(
-                f"{len(high_nan_cols)} feature columns with >10% NaN values: {list(high_nan_cols.index)}"  # noqa: E501
+                f"{len(high_nan_cols)} feature columns with >10% NaN values:"
+                f" {list(high_nan_cols.index)}"
             )
 
         return ValidationResult(

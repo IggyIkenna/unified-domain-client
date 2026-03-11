@@ -233,6 +233,84 @@ class InstructionValidationError(Exception):
 
 
 # =============================================================================
+# VALIDATION HELPERS
+# =============================================================================
+
+
+def _validate_nested_instruction(
+    idx: object, ni: object, errors: list[str]
+) -> None:
+    """Validate a single nested instruction dict within an ATOMIC row."""
+    if not isinstance(ni, dict):
+        return
+    ni_type = ni.get("instruction_type")
+    if ni_type not in ATOMIC_COMPATIBLE_TYPES:
+        errors.append(
+            f"ATOMIC instruction at index {idx} contains invalid "
+            f"nested type '{ni_type}' at position 0. "
+            f"ATOMIC can only contain on-chain types: {ATOMIC_COMPATIBLE_TYPES}. "
+            f"TRADE is NOT allowed (it's CeFi/off-chain)."
+        )
+
+
+def _validate_atomic_row(
+    idx: object, nested_json: object, errors: list[str]
+) -> None:
+    """Validate one ATOMIC row's nested_instructions JSON."""
+    if not nested_json or pd.isna(nested_json):
+        errors.append(f"ATOMIC instruction at index {idx} has empty nested_instructions")
+        return
+    try:
+        nested_raw: object = json.loads(str(nested_json))
+        nested: list[object] = list(nested_raw) if isinstance(nested_raw, list) else []
+        for ni in nested:
+            _validate_nested_instruction(idx, ni, errors)
+    except json.JSONDecodeError as e:
+        errors.append(f"ATOMIC instruction at index {idx} has invalid JSON: {e}")
+
+
+def _validate_bounded_cols(df: pd.DataFrame, errors: list[str]) -> None:
+    """Validate that confidence and urgency are in [0, 1]."""
+    for col in ("confidence", "urgency"):
+        if col in df.columns:
+            non_null = df[col].notna()
+            out_of_range = ((df[col] < 0) | (df[col] > 1)) & non_null
+            if out_of_range.sum() > 0:
+                errors.append(
+                    f"{col} contains {out_of_range.sum()} values outside [0, 1] range"
+                )
+
+
+def _validate_price_bounds(df: pd.DataFrame, errors: list[str]) -> None:
+    """Validate price_cap >= price_floor when both are set."""
+    if "price_cap" in df.columns and "price_floor" in df.columns:
+        both_set = df["price_cap"].notna() & df["price_floor"].notna()
+        if both_set.any():
+            invalid_bounds = df[both_set]["price_cap"] < df[both_set]["price_floor"]
+            if invalid_bounds.sum() > 0:
+                errors.append(
+                    f"price_cap must be >= price_floor: {invalid_bounds.sum()} violations"
+                )
+
+
+def _validate_chain_fields(df: pd.DataFrame, errors: list[str]) -> None:
+    """Validate chain_sequence is present and positive when chain_id is set."""
+    if "chain_id" in df.columns and "chain_sequence" in df.columns:
+        has_chain = df["chain_id"].notna()
+        if has_chain.any():
+            missing_seq = has_chain & df["chain_sequence"].isna()
+            if missing_seq.sum() > 0:
+                errors.append(
+                    f"{missing_seq.sum()} rows have chain_id but missing chain_sequence"
+                )
+            invalid_seq = has_chain & (df["chain_sequence"] <= 0)
+            if invalid_seq.sum() > 0:
+                errors.append(
+                    f"chain_sequence must be > 0: {invalid_seq.sum()} invalid values"
+                )
+
+
+# =============================================================================
 # VALIDATION FUNCTIONS
 # =============================================================================
 
@@ -322,7 +400,8 @@ class InstructionValidator:
         )
         if len(invalid_types) > 0:
             errors.append(
-                f"Invalid instruction_type values: {list(invalid_types)}. Must be one of {VALID_INSTRUCTION_TYPES}"  # noqa: E501
+                f"Invalid instruction_type values: {list(invalid_types)}."
+                f" Must be one of {VALID_INSTRUCTION_TYPES}"
             )
 
     def _validate_direction(self, df: pd.DataFrame, errors: list[str]) -> None:
@@ -335,7 +414,8 @@ class InstructionValidator:
 
         if "direction" not in df.columns:
             errors.append(
-                f"direction column REQUIRED for TRADE/SWAP instructions ({trade_swap_mask.sum()} rows)"  # noqa: E501
+                f"direction column REQUIRED for TRADE/SWAP instructions"
+                f" ({trade_swap_mask.sum()} rows)"
             )
             return
 
@@ -350,10 +430,11 @@ class InstructionValidator:
         if len(invalid_dirs) > 0:
             bad_vals = invalid_dirs["direction"].unique().tolist()
             errors.append(
-                f"TRADE/SWAP direction must be -1 (sell) or 1 (buy), got: {bad_vals}. Note: 0 is no longer valid."  # noqa: E501
+                f"TRADE/SWAP direction must be -1 (sell) or 1 (buy), got: {bad_vals}."
+                " Note: 0 is no longer valid."
             )
 
-    def _validate_atomic_instructions(self, df: pd.DataFrame, errors: list[str]) -> None:  # noqa: C901
+    def _validate_atomic_instructions(self, df: pd.DataFrame, errors: list[str]) -> None:
         """Validate ATOMIC instruction nested_instructions JSON content."""
         atomic_mask = df["instruction_type"] == "ATOMIC"
         if not atomic_mask.any():
@@ -366,27 +447,7 @@ class InstructionValidator:
             return
 
         for idx, row in atomic_df.iterrows():
-            nested_json = row.get("nested_instructions")
-            if not nested_json or pd.isna(nested_json):
-                errors.append(f"ATOMIC instruction at index {idx} has empty nested_instructions")
-                continue
-
-            try:
-                nested_raw: object = json.loads(str(nested_json))
-                nested: list[object] = list(nested_raw) if isinstance(nested_raw, list) else []
-                for i, ni in enumerate(nested):
-                    if not isinstance(ni, dict):
-                        continue
-                    ni_type = ni.get("instruction_type")
-                    if ni_type not in ATOMIC_COMPATIBLE_TYPES:
-                        errors.append(
-                            f"ATOMIC instruction at index {idx} contains invalid "
-                            f"nested type '{ni_type}' at position {i}. "
-                            f"ATOMIC can only contain on-chain types: {ATOMIC_COMPATIBLE_TYPES}. "
-                            f"TRADE is NOT allowed (it's CeFi/off-chain)."
-                        )
-            except json.JSONDecodeError as e:
-                errors.append(f"ATOMIC instruction at index {idx} has invalid JSON: {e}")
+            _validate_atomic_row(idx, row.get("nested_instructions"), errors)
 
     def _validate_quantity(self, df: pd.DataFrame, errors: list[str]) -> None:
         """Validate quantity is present and positive."""
@@ -412,7 +473,8 @@ class InstructionValidator:
         negative_count = (df["benchmark_price"] < 0).sum()
         if negative_count > 0:
             errors.append(
-                f"benchmark_price contains {negative_count} negative values. benchmark_price must be > 0."  # noqa: E501
+                f"benchmark_price contains {negative_count} negative values."
+                " benchmark_price must be > 0."
             )
 
         # Check for NaN values
@@ -448,7 +510,7 @@ class InstructionValidator:
             if sid and not validate_strategy_id(str(sid)):
                 errors.append(
                     f"Invalid strategy_id format: {sid}. "
-                    f"Expected: {{CATEGORY}}_{{ASSET}}_{{description}}_{{MODE}}_{{TIMEFRAME}}_V{{N}}"  # noqa: E501
+                    "Expected: {CATEGORY}_{ASSET}_{description}_{MODE}_{TIMEFRAME}_V{N}"
                 )
 
     def _validate_instrument_id_format(self, df: pd.DataFrame, errors: list[str]) -> None:
@@ -460,42 +522,11 @@ class InstructionValidator:
                     f"Invalid instrument_id format: {inst_id}. Expected: VENUE:TYPE:SYMBOL"
                 )
 
-    def _validate_optional_fields(self, df: pd.DataFrame, errors: list[str]) -> None:  # noqa: C901
+    def _validate_optional_fields(self, df: pd.DataFrame, errors: list[str]) -> None:
         """Validate optional fields (confidence, urgency, price bounds, chains)."""
-        # Validate confidence/urgency are in [0, 1]
-        bounded_cols = ["confidence", "urgency"]
-        for col in bounded_cols:
-            if col in df.columns:
-                non_null = df[col].notna()
-                out_of_range = ((df[col] < 0) | (df[col] > 1)) & non_null
-                if out_of_range.sum() > 0:
-                    errors.append(
-                        f"{col} contains {out_of_range.sum()} values outside [0, 1] range"
-                    )
-
-        # Validate price bounds (price_cap >= price_floor if both set)
-        if "price_cap" in df.columns and "price_floor" in df.columns:
-            both_set = df["price_cap"].notna() & df["price_floor"].notna()
-            if both_set.any():
-                invalid_bounds = df[both_set]["price_cap"] < df[both_set]["price_floor"]
-                if invalid_bounds.sum() > 0:
-                    errors.append(
-                        f"price_cap must be >= price_floor: {invalid_bounds.sum()} violations"
-                    )
-
-        # Validate chain_sequence is positive if chain_id is set
-        if "chain_id" in df.columns and "chain_sequence" in df.columns:
-            has_chain = df["chain_id"].notna()
-            if has_chain.any():
-                missing_seq = has_chain & df["chain_sequence"].isna()
-                if missing_seq.sum() > 0:
-                    errors.append(
-                        f"{missing_seq.sum()} rows have chain_id but missing chain_sequence"
-                    )
-
-                invalid_seq = has_chain & (df["chain_sequence"] <= 0)
-                if invalid_seq.sum() > 0:
-                    errors.append(f"chain_sequence must be > 0: {invalid_seq.sum()} invalid values")
+        _validate_bounded_cols(df, errors)
+        _validate_price_bounds(df, errors)
+        _validate_chain_fields(df, errors)
 
     def validate_or_raise(self, df: pd.DataFrame | pa.Table) -> None:
         """

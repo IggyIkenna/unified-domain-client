@@ -14,7 +14,7 @@ class TestInstrumentsDomainClient:
         self, mock_service: MagicMock, mock_config: MagicMock
     ):
         """Test get_trading_parameters returns None when instrument not found."""
-        from unified_domain_client.clients import InstrumentsDomainClient  # noqa: deep-import
+        from unified_domain_client.clients import InstrumentsDomainClient
 
         mock_config.return_value.gcp_project_id = "p"
         mock_config.return_value.instruments_gcs_bucket = "b"
@@ -31,7 +31,7 @@ class TestInstrumentsDomainClient:
         self, mock_service: MagicMock, mock_config: MagicMock
     ):
         """Test get_trading_parameters returns dict when instrument found."""
-        from unified_domain_client.clients import InstrumentsDomainClient  # noqa: deep-import
+        from unified_domain_client.clients import InstrumentsDomainClient
 
         mock_config.return_value.gcp_project_id = "p"
         mock_config.return_value.instruments_gcs_bucket = "b"
@@ -65,7 +65,7 @@ class TestInstrumentsDomainClient:
     @patch("unified_domain_client.clients.instruments.StandardizedDomainCloudService")
     def test_get_summary_stats_empty(self, mock_service: MagicMock, mock_config: MagicMock):
         """Test get_summary_stats returns error dict when no instruments."""
-        from unified_domain_client.clients import InstrumentsDomainClient  # noqa: deep-import
+        from unified_domain_client.clients import InstrumentsDomainClient
 
         mock_config.return_value.gcp_project_id = "p"
         mock_config.return_value.instruments_gcs_bucket = "b"
@@ -81,7 +81,7 @@ class TestInstrumentsDomainClient:
     @patch("unified_domain_client.clients.instruments.StandardizedDomainCloudService")
     def test_get_summary_stats_with_data(self, mock_service: MagicMock, mock_config: MagicMock):
         """Test get_summary_stats returns stats when instruments exist."""
-        from unified_domain_client.clients import InstrumentsDomainClient  # noqa: deep-import
+        from unified_domain_client.clients import InstrumentsDomainClient
 
         mock_config.return_value.gcp_project_id = "p"
         mock_config.return_value.instruments_gcs_bucket = "b"
@@ -113,7 +113,7 @@ class TestFactoryFunctions:
         self, mock_config: MagicMock, mock_standardized_service: MagicMock
     ):
         """Test create_instruments_client returns client."""
-        from unified_domain_client.clients import create_instruments_client  # noqa: deep-import
+        from unified_domain_client.clients import create_instruments_client
 
         mock_config.return_value.gcp_project_id = "p"
         mock_config.return_value.instruments_gcs_bucket = "b"
@@ -137,7 +137,7 @@ class TestExecutionDomainClient:
     @patch("unified_domain_client.clients.execution.UnifiedCloudConfig")
     def test_instantiate(self, mock_config: MagicMock, mock_svc: MagicMock):
         """Test ExecutionDomainClient can be instantiated."""
-        from unified_domain_client.clients.execution import (  # noqa: deep-import
+        from unified_domain_client.clients.execution import (
             ExecutionDomainClient,
         )
 
@@ -154,7 +154,7 @@ class TestExecutionDomainClient:
         self, mock_config: MagicMock, mock_svc: MagicMock, mock_storage: MagicMock
     ):
         """Test get_fills returns empty DataFrame when download fails."""
-        from unified_domain_client.clients.execution import (  # noqa: deep-import
+        from unified_domain_client.clients.execution import (
             ExecutionDomainClient,
         )
 
@@ -175,7 +175,7 @@ class TestExecutionDomainClient:
         self, mock_config: MagicMock, mock_svc: MagicMock, mock_storage: MagicMock
     ):
         """Test get_orders returns empty DataFrame when download fails."""
-        from unified_domain_client.clients.execution import (  # noqa: deep-import
+        from unified_domain_client.clients.execution import (
             ExecutionDomainClient,
         )
 
@@ -197,7 +197,7 @@ class TestFeaturesDomainClients:
     @patch("unified_domain_client.clients.features.UnifiedCloudConfig")
     def test_delta_one_instantiate(self, mock_config: MagicMock, mock_svc: MagicMock):
         """Test FeaturesDeltaOneDomainClient can be instantiated."""
-        from unified_domain_client.clients.features import (  # noqa: deep-import
+        from unified_domain_client.clients.features import (
             FeaturesDeltaOneDomainClient,
         )
 
@@ -213,7 +213,7 @@ class TestFeaturesDomainClients:
         self, mock_config: MagicMock, mock_svc: MagicMock
     ):
         """Test get_features returns empty DataFrame on error."""
-        from unified_domain_client.clients.features import (  # noqa: deep-import
+        from unified_domain_client.clients.features import (
             FeaturesDeltaOneDomainClient,
         )
 
@@ -230,7 +230,7 @@ class TestFeaturesDomainClients:
     @patch("unified_domain_client.clients.features.UnifiedCloudConfig")
     def test_calendar_instantiate(self, mock_config: MagicMock, mock_svc: MagicMock):
         """Test FeaturesCalendarDomainClient can be instantiated."""
-        from unified_domain_client.clients.features import (  # noqa: deep-import
+        from unified_domain_client.clients.features import (
             FeaturesCalendarDomainClient,
         )
 
@@ -242,7 +242,7 @@ class TestFeaturesDomainClients:
     @patch("unified_domain_client.clients.features.UnifiedCloudConfig")
     def test_onchain_instantiate(self, mock_config: MagicMock, mock_svc: MagicMock):
         """Test FeaturesOnchainDomainClient can be instantiated."""
-        from unified_domain_client.clients.features import (  # noqa: deep-import
+        from unified_domain_client.clients.features import (
             FeaturesOnchainDomainClient,
         )
 
@@ -254,7 +254,7 @@ class TestFeaturesDomainClients:
     @patch("unified_domain_client.clients.features.UnifiedCloudConfig")
     def test_volatility_instantiate(self, mock_config: MagicMock, mock_svc: MagicMock):
         """Test FeaturesVolatilityDomainClient can be instantiated."""
-        from unified_domain_client.clients.features import (  # noqa: deep-import
+        from unified_domain_client.clients.features import (
             FeaturesVolatilityDomainClient,
         )
 
@@ -270,7 +270,7 @@ class TestMLDomainClients:
     @patch("unified_domain_client.clients.ml.UnifiedCloudConfig")
     def test_ml_models_instantiate(self, mock_config: MagicMock, mock_svc: MagicMock):
         """Test MLModelsDomainClient can be instantiated."""
-        from unified_domain_client.clients.ml import MLModelsDomainClient  # noqa: deep-import
+        from unified_domain_client.clients.ml import MLModelsDomainClient
 
         mock_config.return_value.gcp_project_id = "proj"
         client = MLModelsDomainClient(project_id="proj", storage_bucket="ml-bucket")
@@ -282,7 +282,7 @@ class TestMLDomainClients:
         self, mock_config: MagicMock, mock_svc: MagicMock
     ):
         """Test get_model returns empty bytes on error."""
-        from unified_domain_client.clients.ml import MLModelsDomainClient  # noqa: deep-import
+        from unified_domain_client.clients.ml import MLModelsDomainClient
 
         mock_config.return_value.gcp_project_id = "proj"
         mock_svc_instance = MagicMock()
@@ -299,7 +299,7 @@ class TestMLDomainClients:
         self, mock_config: MagicMock, mock_svc: MagicMock
     ):
         """Test get_metadata returns empty dict on error."""
-        from unified_domain_client.clients.ml import MLModelsDomainClient  # noqa: deep-import
+        from unified_domain_client.clients.ml import MLModelsDomainClient
 
         mock_config.return_value.gcp_project_id = "proj"
         mock_svc_instance = MagicMock()
@@ -314,7 +314,7 @@ class TestMLDomainClients:
     @patch("unified_domain_client.clients.ml.UnifiedCloudConfig")
     def test_ml_predictions_instantiate(self, mock_config: MagicMock, mock_svc: MagicMock):
         """Test MLPredictionsDomainClient can be instantiated."""
-        from unified_domain_client.clients.ml import MLPredictionsDomainClient  # noqa: deep-import
+        from unified_domain_client.clients.ml import MLPredictionsDomainClient
 
         mock_config.return_value.gcp_project_id = "proj"
         client = MLPredictionsDomainClient(project_id="proj", storage_bucket="pred-bucket")
@@ -327,7 +327,7 @@ class TestMLDomainClients:
         self, mock_config: MagicMock, mock_svc: MagicMock, mock_storage: MagicMock
     ):
         """Test get_predictions returns empty DataFrame on error."""
-        from unified_domain_client.clients.ml import MLPredictionsDomainClient  # noqa: deep-import
+        from unified_domain_client.clients.ml import MLPredictionsDomainClient
 
         mock_config.return_value.gcp_project_id = "proj"
         mock_storage.side_effect = OSError("not found")
@@ -344,7 +344,7 @@ class TestSimpleDomainClients:
     @patch("unified_domain_client.clients.pnl.UnifiedCloudConfig")
     def test_pnl_instantiate(self, mock_config: MagicMock, mock_svc: MagicMock):
         """Test PnLDomainClient can be instantiated."""
-        from unified_domain_client.clients.pnl import PnLDomainClient  # noqa: deep-import
+        from unified_domain_client.clients.pnl import PnLDomainClient
 
         mock_config.return_value.gcp_project_id = "proj"
         client = PnLDomainClient(project_id="proj", storage_bucket="pnl-bucket")
@@ -357,7 +357,7 @@ class TestSimpleDomainClients:
         self, mock_config: MagicMock, mock_svc: MagicMock, mock_storage: MagicMock
     ):
         """Test get_pnl_attribution returns empty DataFrame on error."""
-        from unified_domain_client.clients.pnl import PnLDomainClient  # noqa: deep-import
+        from unified_domain_client.clients.pnl import PnLDomainClient
 
         mock_config.return_value.gcp_project_id = "proj"
         mock_storage_instance = MagicMock()
@@ -372,7 +372,7 @@ class TestSimpleDomainClients:
     @patch("unified_domain_client.clients.positions.UnifiedCloudConfig")
     def test_positions_instantiate(self, mock_config: MagicMock, mock_svc: MagicMock):
         """Test PositionsDomainClient can be instantiated."""
-        from unified_domain_client.clients.positions import (  # noqa: deep-import
+        from unified_domain_client.clients.positions import (
             PositionsDomainClient,
         )
 
@@ -384,7 +384,7 @@ class TestSimpleDomainClients:
     @patch("unified_domain_client.clients.risk.UnifiedCloudConfig")
     def test_risk_instantiate(self, mock_config: MagicMock, mock_svc: MagicMock):
         """Test RiskDomainClient can be instantiated."""
-        from unified_domain_client.clients.risk import RiskDomainClient  # noqa: deep-import
+        from unified_domain_client.clients.risk import RiskDomainClient
 
         mock_config.return_value.gcp_project_id = "proj"
         client = RiskDomainClient(project_id="proj", storage_bucket="risk-bucket")
@@ -394,7 +394,7 @@ class TestSimpleDomainClients:
     @patch("unified_domain_client.clients.strategy.UnifiedCloudConfig")
     def test_strategy_instantiate(self, mock_config: MagicMock, mock_svc: MagicMock):
         """Test StrategyDomainClient can be instantiated."""
-        from unified_domain_client.clients.strategy import StrategyDomainClient  # noqa: deep-import
+        from unified_domain_client.clients.strategy import StrategyDomainClient
 
         mock_config.return_value.gcp_project_id = "proj"
         client = StrategyDomainClient(project_id="proj", storage_bucket="strategy-bucket")
@@ -406,7 +406,7 @@ class TestSimpleDomainClients:
         self, mock_config: MagicMock, mock_svc: MagicMock
     ):
         """Test get_orders returns empty DataFrame on error."""
-        from unified_domain_client.clients.strategy import StrategyDomainClient  # noqa: deep-import
+        from unified_domain_client.clients.strategy import StrategyDomainClient
 
         mock_config.return_value.gcp_project_id = "proj"
         mock_svc_instance = MagicMock()
@@ -425,7 +425,7 @@ class TestMarketDataDomainClients:
     @patch("unified_domain_client.clients.market_data.UnifiedCloudConfig")
     def test_candle_data_instantiate(self, mock_config: MagicMock, mock_svc: MagicMock):
         """Test MarketCandleDataDomainClient can be instantiated."""
-        from unified_domain_client.clients.market_data import (  # noqa: deep-import
+        from unified_domain_client.clients.market_data import (
             MarketCandleDataDomainClient,
         )
 
@@ -443,7 +443,7 @@ class TestMarketDataDomainClients:
         """Test get_candles returns empty DataFrame on error."""
         from datetime import UTC, datetime
 
-        from unified_domain_client.clients.market_data import (  # noqa: deep-import
+        from unified_domain_client.clients.market_data import (
             MarketCandleDataDomainClient,
         )
 
@@ -462,7 +462,7 @@ class TestMarketDataDomainClients:
     @patch("unified_domain_client.clients.market_data.UnifiedCloudConfig")
     def test_tick_data_instantiate(self, mock_config: MagicMock, mock_svc: MagicMock):
         """Test MarketTickDataDomainClient can be instantiated."""
-        from unified_domain_client.clients.market_data import (  # noqa: deep-import
+        from unified_domain_client.clients.market_data import (
             MarketTickDataDomainClient,
         )
 
@@ -487,7 +487,7 @@ class TestFeaturesDomainClientMethods:
         self, mock_config: MagicMock, mock_svc: MagicMock
     ):
         """Test get_features returns DataFrame when download succeeds."""
-        from unified_domain_client.clients.features import (  # noqa: deep-import
+        from unified_domain_client.clients.features import (
             FeaturesDeltaOneDomainClient,
         )
 
@@ -507,7 +507,7 @@ class TestFeaturesDomainClientMethods:
         self, mock_config: MagicMock, mock_svc: MagicMock, mock_storage: MagicMock
     ):
         """Test get_available_dates returns empty list on error."""
-        from unified_domain_client.clients.features import (  # noqa: deep-import
+        from unified_domain_client.clients.features import (
             FeaturesDeltaOneDomainClient,
         )
 
@@ -523,7 +523,7 @@ class TestFeaturesDomainClientMethods:
         self, mock_config: MagicMock, mock_svc: MagicMock
     ):
         """Test FeaturesCalendarDomainClient.get_features returns empty on error."""
-        from unified_domain_client.clients.features import (  # noqa: deep-import
+        from unified_domain_client.clients.features import (
             FeaturesCalendarDomainClient,
         )
 
@@ -541,7 +541,7 @@ class TestFeaturesDomainClientMethods:
         self, mock_config: MagicMock, mock_svc: MagicMock
     ):
         """Test FeaturesOnchainDomainClient.get_features returns empty on error."""
-        from unified_domain_client.clients.features import (  # noqa: deep-import
+        from unified_domain_client.clients.features import (
             FeaturesOnchainDomainClient,
         )
 
@@ -559,7 +559,7 @@ class TestFeaturesDomainClientMethods:
         self, mock_config: MagicMock, mock_svc: MagicMock
     ):
         """Test FeaturesVolatilityDomainClient.get_features returns empty on error."""
-        from unified_domain_client.clients.features import (  # noqa: deep-import
+        from unified_domain_client.clients.features import (
             FeaturesVolatilityDomainClient,
         )
 
@@ -578,7 +578,7 @@ class TestFeaturesDomainClientMethods:
         self, mock_config: MagicMock, mock_svc: MagicMock, mock_storage: MagicMock
     ):
         """Test FeaturesCalendarDomainClient.get_available_dates returns empty on error."""
-        from unified_domain_client.clients.features import (  # noqa: deep-import
+        from unified_domain_client.clients.features import (
             FeaturesCalendarDomainClient,
         )
 
@@ -595,7 +595,7 @@ class TestFeaturesDomainClientMethods:
         self, mock_config: MagicMock, mock_svc: MagicMock, mock_storage: MagicMock
     ):
         """Test FeaturesOnchainDomainClient.get_available_dates returns empty on error."""
-        from unified_domain_client.clients.features import (  # noqa: deep-import
+        from unified_domain_client.clients.features import (
             FeaturesOnchainDomainClient,
         )
 
@@ -612,7 +612,7 @@ class TestFeaturesDomainClientMethods:
         self, mock_config: MagicMock, mock_svc: MagicMock, mock_storage: MagicMock
     ):
         """Test FeaturesVolatilityDomainClient.get_available_dates returns empty on error."""
-        from unified_domain_client.clients.features import (  # noqa: deep-import
+        from unified_domain_client.clients.features import (
             FeaturesVolatilityDomainClient,
         )
 
@@ -632,7 +632,7 @@ class TestStrategyDomainClientMethods:
         self, mock_config: MagicMock, mock_svc: MagicMock
     ):
         """Test get_instructions returns empty DataFrame on error."""
-        from unified_domain_client.clients.strategy import StrategyDomainClient  # noqa: deep-import
+        from unified_domain_client.clients.strategy import StrategyDomainClient
 
         mock_config.return_value.gcp_project_id = "proj"
         client = StrategyDomainClient(project_id="proj", storage_bucket="strategy-bucket")
@@ -648,7 +648,7 @@ class TestStrategyDomainClientMethods:
         self, mock_config: MagicMock, mock_svc: MagicMock
     ):
         """Test get_backtest_results returns empty dict on error."""
-        from unified_domain_client.clients.strategy import StrategyDomainClient  # noqa: deep-import
+        from unified_domain_client.clients.strategy import StrategyDomainClient
 
         mock_config.return_value.gcp_project_id = "proj"
         client = StrategyDomainClient(project_id="proj", storage_bucket="strategy-bucket")
@@ -664,7 +664,7 @@ class TestStrategyDomainClientMethods:
         self, mock_config: MagicMock, mock_svc: MagicMock
     ):
         """Test get_backtest_results returns dict of DataFrames on success."""
-        from unified_domain_client.clients.strategy import StrategyDomainClient  # noqa: deep-import
+        from unified_domain_client.clients.strategy import StrategyDomainClient
 
         mock_config.return_value.gcp_project_id = "proj"
         client = StrategyDomainClient(project_id="proj", storage_bucket="strategy-bucket")
@@ -682,7 +682,7 @@ class TestStrategyDomainClientMethods:
         self, mock_config: MagicMock, mock_svc: MagicMock, mock_storage: MagicMock
     ):
         """Test list_strategies returns empty list on error."""
-        from unified_domain_client.clients.strategy import StrategyDomainClient  # noqa: deep-import
+        from unified_domain_client.clients.strategy import StrategyDomainClient
 
         mock_config.return_value.gcp_project_id = "proj"
         mock_storage.side_effect = OSError("not found")
@@ -700,7 +700,7 @@ class TestMLDomainClientMethods:
         self, mock_config: MagicMock, mock_svc: MagicMock
     ):
         """Test get_model returns bytes when download succeeds."""
-        from unified_domain_client.clients.ml import MLModelsDomainClient  # noqa: deep-import
+        from unified_domain_client.clients.ml import MLModelsDomainClient
 
         mock_config.return_value.gcp_project_id = "proj"
         client = MLModelsDomainClient(project_id="proj", storage_bucket="ml-bucket")
@@ -716,7 +716,7 @@ class TestMLDomainClientMethods:
         self, mock_config: MagicMock, mock_svc: MagicMock
     ):
         """Test get_metadata returns dict when download succeeds."""
-        from unified_domain_client.clients.ml import MLModelsDomainClient  # noqa: deep-import
+        from unified_domain_client.clients.ml import MLModelsDomainClient
 
         mock_config.return_value.gcp_project_id = "proj"
         client = MLModelsDomainClient(project_id="proj", storage_bucket="ml-bucket")
@@ -733,7 +733,7 @@ class TestMLDomainClientMethods:
         self, mock_config: MagicMock, mock_svc: MagicMock, mock_storage: MagicMock
     ):
         """Test list_models returns empty list on error."""
-        from unified_domain_client.clients.ml import MLModelsDomainClient  # noqa: deep-import
+        from unified_domain_client.clients.ml import MLModelsDomainClient
 
         mock_config.return_value.gcp_project_id = "proj"
         mock_storage.side_effect = OSError("not found")
@@ -748,7 +748,7 @@ class TestMLDomainClientMethods:
         self, mock_config: MagicMock, mock_svc: MagicMock, mock_storage: MagicMock
     ):
         """Test get_available_dates returns empty list on error."""
-        from unified_domain_client.clients.ml import MLPredictionsDomainClient  # noqa: deep-import
+        from unified_domain_client.clients.ml import MLPredictionsDomainClient
 
         mock_config.return_value.gcp_project_id = "proj"
         mock_storage.side_effect = OSError("not found")
@@ -767,7 +767,7 @@ class TestPnLDomainClientMethods:
         self, mock_config: MagicMock, mock_svc: MagicMock, mock_storage: MagicMock
     ):
         """Test get_available_strategies returns empty list on error."""
-        from unified_domain_client.clients.pnl import PnLDomainClient  # noqa: deep-import
+        from unified_domain_client.clients.pnl import PnLDomainClient
 
         mock_config.return_value.gcp_project_id = "proj"
         mock_storage.side_effect = OSError("not found")
@@ -786,7 +786,7 @@ class TestPositionsAndRiskDomainClients:
         self, mock_config: MagicMock, mock_svc: MagicMock, mock_storage: MagicMock
     ):
         """Test PositionsDomainClient.get_positions returns empty on error."""
-        from unified_domain_client.clients.positions import (  # noqa: deep-import
+        from unified_domain_client.clients.positions import (
             PositionsDomainClient,
         )
 
@@ -805,7 +805,7 @@ class TestPositionsAndRiskDomainClients:
         self, mock_config: MagicMock, mock_svc: MagicMock, mock_storage: MagicMock
     ):
         """Test PositionsDomainClient.get_available_accounts returns empty on error."""
-        from unified_domain_client.clients.positions import (  # noqa: deep-import
+        from unified_domain_client.clients.positions import (
             PositionsDomainClient,
         )
 
@@ -822,7 +822,7 @@ class TestPositionsAndRiskDomainClients:
         self, mock_config: MagicMock, mock_svc: MagicMock, mock_storage: MagicMock
     ):
         """Test RiskDomainClient.get_risk_metrics returns empty on error."""
-        from unified_domain_client.clients.risk import RiskDomainClient  # noqa: deep-import
+        from unified_domain_client.clients.risk import RiskDomainClient
 
         mock_config.return_value.gcp_project_id = "proj"
         mock_storage_instance = MagicMock()
@@ -839,7 +839,7 @@ class TestPositionsAndRiskDomainClients:
         self, mock_config: MagicMock, mock_svc: MagicMock, mock_storage: MagicMock
     ):
         """Test RiskDomainClient.get_available_risk_types returns empty on error."""
-        from unified_domain_client.clients.risk import RiskDomainClient  # noqa: deep-import
+        from unified_domain_client.clients.risk import RiskDomainClient
 
         mock_config.return_value.gcp_project_id = "proj"
         mock_storage.side_effect = OSError("not found")

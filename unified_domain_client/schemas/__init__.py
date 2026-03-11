@@ -2,7 +2,7 @@
 # pyright: reportUnknownVariableType=false
 # Re-exports inherit types from source modules; instruction_schema has pyarrow/pandas types.
 
-from unified_domain_client.schemas.config_schema import (  # noqa: deep-import
+from .config_schema import (
     CLOB_VENUES,
     CONFIG_SCHEMA,
     DEX_VENUES,
@@ -18,7 +18,7 @@ from unified_domain_client.schemas.config_schema import (  # noqa: deep-import
     validate_config,
     validate_config_file,
 )
-from unified_domain_client.schemas.instruction_schema import (  # noqa: deep-import
+from .instruction_schema import (
     INSTRUCTION_COLUMNS,
     INSTRUCTION_SCHEMA,
     InstructionValidationError,
@@ -26,7 +26,7 @@ from unified_domain_client.schemas.instruction_schema import (  # noqa: deep-imp
     validate_instruction_dataframe,
     validate_instruction_parquet,
 )
-from unified_domain_client.schemas.instrument_key import InstrumentKey  # noqa: deep-import
+from .instrument_key import InstrumentKey
 
 __all__ = [
     "CLOB_VENUES",

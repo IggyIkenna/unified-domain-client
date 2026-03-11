@@ -19,7 +19,7 @@ import pandas as pd
 class TestInstrumentsDomainClientAdditionalMethods:
     def _make_client(self):
         from unified_domain_client import (
-            InstrumentsDomainClient,  # noqa: deep-import
+            InstrumentsDomainClient,
         )
 
         with patch("unified_domain_client.clients.instruments.UnifiedCloudConfig") as mock_cfg:
@@ -240,7 +240,7 @@ class TestInstrumentsDomainClientAdditionalMethods:
 class TestDataCompletionAdditional:
     def _make_checker(self):
         from unified_trading_library.domain.data_completion import (
-            DataCompletionChecker,  # noqa: deep-import
+            DataCompletionChecker,
         )
 
         with patch("unified_trading_library.domain.data_completion.get_storage_client") as mock_gsc:
@@ -305,7 +305,7 @@ class TestDataCompletionAdditional:
 
     def test_make_completion_checker_factory(self):
         from unified_domain_client import (
-            make_completion_checker,  # noqa: deep-import
+            make_completion_checker,
         )
 
         with patch("unified_trading_library.domain.data_completion.get_storage_client"):
@@ -317,7 +317,7 @@ class TestDataCompletionAdditional:
 
     def test_get_available_date_range_returns_none_when_no_dates(self):
         from unified_domain_client import (
-            get_available_date_range,  # noqa: deep-import
+            get_available_date_range,
         )
 
         with patch("unified_trading_library.domain.data_completion.get_storage_client") as mock_gsc:
@@ -327,7 +327,7 @@ class TestDataCompletionAdditional:
 
     def test_get_available_date_range_returns_min_max(self):
         from unified_domain_client import (
-            get_available_date_range,  # noqa: deep-import
+            get_available_date_range,
         )
 
         blob1 = MagicMock()
@@ -354,7 +354,7 @@ class TestDataCompletionAdditional:
 
 class TestCatalogMethodCoverage:
     def test_bq_catalog_create_external_table(self):
-        from unified_domain_client.catalog.bq_catalog import BigQueryCatalog  # noqa: deep-import
+        from unified_domain_client.catalog.bq_catalog import BigQueryCatalog
 
         catalog = BigQueryCatalog()
         ddl = catalog.create_external_table(
@@ -368,7 +368,7 @@ class TestCatalogMethodCoverage:
         assert "PARQUET" in ddl
 
     def test_glue_catalog_create_table(self):
-        from unified_domain_client.catalog.glue_catalog import GlueCatalog  # noqa: deep-import
+        from unified_domain_client.catalog.glue_catalog import GlueCatalog
 
         catalog = GlueCatalog()
         result = catalog.create_table(

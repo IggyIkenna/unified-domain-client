@@ -76,7 +76,8 @@ class StandardizedDomainCloudService:
         _ = (query, parameters)
         raise NotImplementedError(
             "BigQuery is not supported in StandardizedDomainCloudService. "
-            + "Use get_analytics_client() from unified_cloud_interface.factory in the service layer."  # noqa: E501
+            "Use get_analytics_client() from unified_cloud_interface.factory"
+            " in the service layer."
         )
 
 
