@@ -77,13 +77,21 @@ replaced with `UnifiedCloudConfig` field reads:
 
 ## 3. Summary Counts
 
+**Audit date:** 2026-03-11
+
 | Category                                | Count                                                                                              |
 | --------------------------------------- | -------------------------------------------------------------------------------------------------- |
 | **File-level pyright overrides**        | 5 (clients, date_validation, instruction_schema, **init**, schemas/**init**)                       |
-| **Inline type: ignore**                 | 3 (clients 232, 455; validation 388)                                                               |
-| **Inline pyright: ignore**              | 3 (clients 1023; instruction_schema 297, 613)                                                      |
+| **Inline type: ignore**                 | 0 (clients 232, 455 and validation 388 previously listed here were removed — 2026-03-04/03-10)     |
+| **Inline pyright: ignore**              | 5 (instruction_schema 365, 612; artifact_store 115, 131, 163 — all documented in §2.1 and §6.1)    |
 | **Third-party stub issues**             | 6 (GCS iterator, pandas Series.to_dict, pandas .dt.time, Polars .to_pandas×2, TypedDict unpacking) |
 | **os.environ hits (pending migration)** | 0 (all migrated to UnifiedCloudConfig — 2026-03-04)                                                |
+
+**Note (§8.2 audit 2026-03-11):** No `# type: ignore` suppressions exist in production source as of this
+audit. The three instances previously counted (clients.py:232, clients.py:455, validation.py:388) were
+resolved and removed during the 118-error fix pass (2026-03-04) and subsequent cleanup. Current
+`# pyright: ignore` suppressions are fully documented in section 2.1 (instruction_schema.py) and
+section 6.1 (artifact_store.py).
 
 ---
 
