@@ -46,6 +46,66 @@ def _is_empty_or_na(val: object) -> bool:
     return False
 
 
+def _parse_aware_datetime(dt_str: object) -> datetime | None:
+    """Parse an ISO datetime string to timezone-aware datetime. Returns None on failure."""
+    if _is_empty_or_na(dt_str):
+        return None
+    try:
+        dt = datetime.fromisoformat(str(dt_str).replace("Z", "+00:00"))
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=UTC)
+        return dt
+    except (ValueError, AttributeError):
+        return None
+
+
+def _make_target_aware(target_date: datetime) -> datetime:
+    """Return target_date as a timezone-aware datetime (UTC if naive)."""
+    return target_date if target_date.tzinfo else target_date.replace(tzinfo=UTC)
+
+
+def _apply_symbol_filter(df: pd.DataFrame, symbol_pattern: str) -> pd.DataFrame:
+    """Filter DataFrame by symbol regex pattern (case-insensitive).
+
+    Returns df unchanged on regex error.
+    """
+    try:
+        pattern = re.compile(symbol_pattern, re.IGNORECASE)
+        return df.loc[df["symbol"].str.match(pattern)]
+    except re.error as e:
+        logger.warning("Invalid regex pattern '%s': %s", symbol_pattern, e)
+        return df
+
+
+def _normalize_instrument_ids(instrument_ids: list[str] | str) -> list[str]:
+    """Normalize instrument_ids to a list of stripped strings."""
+    if isinstance(instrument_ids, str):
+        return [i.strip() for i in instrument_ids.split(",")]
+    return instrument_ids
+
+
+def _parse_ref_date(date: str | datetime) -> datetime:
+    """Parse a date string or datetime to a UTC-aware datetime."""
+    if isinstance(date, str):
+        return datetime.strptime(date, "%Y-%m-%d").replace(tzinfo=UTC)
+    return date if date.tzinfo else date.replace(tzinfo=UTC)
+
+
+def _is_expiring_in_window(
+    expiry_str: object, ref_date: datetime, cutoff_date: datetime
+) -> bool:
+    """Return True if the expiry datetime falls within [ref_date, cutoff_date]."""
+    if not expiry_str:
+        return False
+    try:
+        expiry_dt = datetime.fromisoformat(str(expiry_str).replace("Z", "+00:00"))
+        if expiry_dt.tzinfo is None:
+            expiry_dt = expiry_dt.replace(tzinfo=UTC)
+        return ref_date <= expiry_dt <= cutoff_date
+    except (ValueError, TypeError):
+        return False
+
+
 class InstrumentSummaryStats(TypedDict, total=False):  # CORRECT-LOCAL
     total_instruments: int
     error: str
@@ -146,7 +206,7 @@ class InstrumentsDomainClient:
             logger.warning("Could not load %s: %s", venue_prefix, e)
             return pd.DataFrame()
 
-    def _load_instruments_by_venue(  # noqa: C901
+    def _load_instruments_by_venue(
         self, date_str: str, venues: list[str] | None = None
     ) -> pd.DataFrame:
         try:
@@ -184,29 +244,20 @@ class InstrumentsDomainClient:
             logger.warning("Could not load by-venue structure: %s", e)
             return pd.DataFrame()
 
-    def _filter_by_date_availability(self, df: pd.DataFrame, target_date: datetime) -> pd.DataFrame:  # noqa: C901
+    def _filter_by_date_availability(
+        self, df: pd.DataFrame, target_date: datetime
+    ) -> pd.DataFrame:
         if df.empty:
             return df
 
         filtered_df = df.copy()
+        target_aware = _make_target_aware(target_date)
 
         if "available_from_datetime" in filtered_df.columns:
 
             def is_available_from(from_datetime_str: object) -> bool:
-                if _is_empty_or_na(from_datetime_str):
-                    return True
-                try:
-                    from_date = datetime.fromisoformat(
-                        str(from_datetime_str).replace("Z", "+00:00")
-                    )
-                    if from_date.tzinfo is None:
-                        from_date = from_date.replace(tzinfo=UTC)
-                    target_date_aware = (
-                        target_date if target_date.tzinfo else target_date.replace(tzinfo=UTC)
-                    )
-                    return target_date_aware >= from_date
-                except (ValueError, AttributeError):
-                    return True
+                from_date = _parse_aware_datetime(from_datetime_str)
+                return from_date is None or target_aware >= from_date
 
             filtered_df = filtered_df.loc[
                 filtered_df["available_from_datetime"].apply(is_available_from)
@@ -215,18 +266,8 @@ class InstrumentsDomainClient:
         if "available_to_datetime" in filtered_df.columns:
 
             def is_available_to(to_datetime_str: object) -> bool:
-                if _is_empty_or_na(to_datetime_str):
-                    return True
-                try:
-                    to_date = datetime.fromisoformat(str(to_datetime_str).replace("Z", "+00:00"))
-                    if to_date.tzinfo is None:
-                        to_date = to_date.replace(tzinfo=UTC)
-                    target_date_aware = (
-                        target_date if target_date.tzinfo else target_date.replace(tzinfo=UTC)
-                    )
-                    return target_date_aware <= to_date
-                except (ValueError, AttributeError):
-                    return True
+                to_date = _parse_aware_datetime(to_datetime_str)
+                return to_date is None or target_aware <= to_date
 
             filtered_df = filtered_df.loc[
                 filtered_df["available_to_datetime"].apply(is_available_to)
@@ -234,7 +275,7 @@ class InstrumentsDomainClient:
 
         return filtered_df
 
-    def _apply_filters(  # noqa: C901
+    def _apply_filters(
         self,
         df: pd.DataFrame,
         venue: str | list[str] | None = None,
@@ -253,17 +294,9 @@ class InstrumentsDomainClient:
         if quote_currency:
             df = df.loc[df["quote_asset"].isin(_to_upper_list(quote_currency))]
         if symbol_pattern:
-            try:
-                pattern = re.compile(symbol_pattern, re.IGNORECASE)
-                df = df.loc[df["symbol"].str.match(pattern)]
-            except re.error as e:
-                logger.warning("Invalid regex pattern '%s': %s", symbol_pattern, e)
+            df = _apply_symbol_filter(df, symbol_pattern)
         if instrument_ids:
-            ids = (
-                [i.strip() for i in instrument_ids.split(",")]
-                if isinstance(instrument_ids, str)
-                else instrument_ids
-            )
+            ids = _normalize_instrument_ids(instrument_ids)
             df = df.loc[df["instrument_key"].isin(ids)]
         return df
 
@@ -438,7 +471,7 @@ class InstrumentsDomainClient:
         )
         return instruments_df.head(limit) if len(instruments_df) > limit else instruments_df
 
-    def get_expiring_instruments(  # noqa: C901
+    def get_expiring_instruments(
         self,
         date: str | datetime,
         days_until_expiry: int = 30,
@@ -455,22 +488,10 @@ class InstrumentsDomainClient:
         if expiring_df.empty:
             return pd.DataFrame()
 
-        if isinstance(date, str):
-            ref_date = datetime.strptime(date, "%Y-%m-%d").replace(tzinfo=UTC)
-        else:
-            ref_date = date if date.tzinfo else date.replace(tzinfo=UTC)
-
+        ref_date = _parse_ref_date(date)
         cutoff_date = ref_date + timedelta(days=days_until_expiry)
 
-        def is_expiring_soon(expiry_str: object) -> bool:
-            if not expiry_str:
-                return False
-            try:
-                expiry_dt = datetime.fromisoformat(str(expiry_str).replace("Z", "+00:00"))
-                if expiry_dt.tzinfo is None:
-                    expiry_dt = expiry_dt.replace(tzinfo=UTC)
-                return ref_date <= expiry_dt <= cutoff_date
-            except (ValueError, TypeError):
-                return False
+        def _check_expiry(expiry_str: object) -> bool:
+            return _is_expiring_in_window(expiry_str, ref_date, cutoff_date)
 
-        return expiring_df[expiring_df["available_to_datetime"].apply(is_expiring_soon)]
+        return expiring_df[expiring_df["available_to_datetime"].apply(_check_expiry)]

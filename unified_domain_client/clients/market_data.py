@@ -204,6 +204,65 @@ class MarketCandleDataDomainClient:
         return pd.concat(all_candles, ignore_index=True) if all_candles else pd.DataFrame()
 
 
+_VENUE_SENSITIVE_TYPES = frozenset(
+    {
+        "etf",
+        "equities",
+        "futures_chain",
+        "options_chain",
+        "indices",
+        "pool",
+        "lst",
+        "a_token",
+        "debt_token",
+        "perpetuals",
+        "spot",
+    }
+)
+
+
+def _resolve_type_folder(
+    instrument_id: str, instrument_type_folder: str | None
+) -> str | None:
+    """Derive the instrument type folder from the instrument_id if not provided."""
+    if instrument_type_folder:
+        return instrument_type_folder
+    parts = instrument_id.split(":")
+    if len(parts) >= 2:
+        return _INSTRUMENT_TYPE_FOLDER_MAP.get(parts[1].lower(), parts[1].lower())
+    return None
+
+
+def _resolve_venue(
+    instrument_id: str, venue: str | None, type_folder: str | None
+) -> str | None:
+    """Extract venue from instrument_id if not provided and the type requires it."""
+    if venue:
+        return venue
+    if type_folder in _VENUE_SENSITIVE_TYPES:
+        parts = instrument_id.split(":")
+        if parts:
+            return parts[0]
+    return None
+
+
+def _build_tick_path(
+    base_path: str,
+    instrument_id: str,
+    type_folder: str | None,
+    extracted_venue: str | None,
+) -> str:
+    """Assemble the final GCS path from path components."""
+    if type_folder:
+        if type_folder in _VENUE_SENSITIVE_TYPES and extracted_venue:
+            return (
+                f"{base_path}/instrument_type={type_folder}"
+                f"/venue={extracted_venue}/{instrument_id}.parquet"
+            )
+        return f"{base_path}/instrument_type={type_folder}/{instrument_id}.parquet"
+    return f"{base_path}/{instrument_id}.parquet"
+
+
 class MarketTickDataDomainClient:
     """Client for accessing raw tick data from market-tick-data-handler."""
 
@@ -218,7 +277,7 @@ class MarketTickDataDomainClient:
         self._bucket = bucket
         logger.info("MarketTickDataDomainClient initialized: bucket=%s", bucket)
 
-    def _build_tick_gcs_path(  # noqa: C901
+    def _build_tick_gcs_path(
         self,
         date_str: str,
         instrument_id: str,
@@ -228,43 +287,12 @@ class MarketTickDataDomainClient:
         instrument_type_folder: str | None,
     ) -> str:
         """Build GCS path for tick data file."""
-        type_folder = instrument_type_folder
-        if not type_folder:
-            parts = instrument_id.split(":")
-            if len(parts) >= 2:
-                type_folder = _INSTRUMENT_TYPE_FOLDER_MAP.get(parts[1].lower(), parts[1].lower())
-
+        type_folder = _resolve_type_folder(instrument_id, instrument_type_folder)
         base_path = f"raw_tick_data/by_date/day={date_str}/data_type={data_type}"
         if hour is not None:
             base_path = f"{base_path}/hour={hour:02d}"
-
-        needs_venue = type_folder in {
-            "etf",
-            "equities",
-            "futures_chain",
-            "options_chain",
-            "indices",
-            "pool",
-            "lst",
-            "a_token",
-            "debt_token",
-            "perpetuals",
-            "spot",
-        }
-        extracted_venue = venue
-        if not extracted_venue and needs_venue:
-            parts = instrument_id.split(":")
-            if parts:
-                extracted_venue = parts[0]
-
-        if type_folder:
-            if needs_venue and extracted_venue:
-                return (
-                    f"{base_path}/instrument_type={type_folder}"
-                    f"/venue={extracted_venue}/{instrument_id}.parquet"
-                )
-            return f"{base_path}/instrument_type={type_folder}/{instrument_id}.parquet"
-        return f"{base_path}/{instrument_id}.parquet"
+        extracted_venue = _resolve_venue(instrument_id, venue, type_folder)
+        return _build_tick_path(base_path, instrument_id, type_folder, extracted_venue)
 
     def get_tick_data(
         self,

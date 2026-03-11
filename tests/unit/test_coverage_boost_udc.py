@@ -25,44 +25,44 @@ import pandas as pd
 
 class TestToUpperList:
     def test_string_input(self):
-        from unified_domain_client.clients.instruments import _to_upper_list  # noqa: deep-import
+        from unified_domain_client.clients.instruments import _to_upper_list
 
         assert _to_upper_list("btc,eth") == ["BTC", "ETH"]
 
     def test_list_input(self):
-        from unified_domain_client.clients.instruments import _to_upper_list  # noqa: deep-import
+        from unified_domain_client.clients.instruments import _to_upper_list
 
         assert _to_upper_list(["btc", "ETH"]) == ["BTC", "ETH"]
 
     def test_single_string(self):
-        from unified_domain_client.clients.instruments import _to_upper_list  # noqa: deep-import
+        from unified_domain_client.clients.instruments import _to_upper_list
 
         assert _to_upper_list("BTC") == ["BTC"]
 
 
 class TestIsEmptyOrNa:
     def test_none(self):
-        from unified_domain_client.clients.instruments import _is_empty_or_na  # noqa: deep-import
+        from unified_domain_client.clients.instruments import _is_empty_or_na
 
         assert _is_empty_or_na(None)
 
     def test_nan(self):
-        from unified_domain_client.clients.instruments import _is_empty_or_na  # noqa: deep-import
+        from unified_domain_client.clients.instruments import _is_empty_or_na
 
         assert _is_empty_or_na(float("nan"))
 
     def test_empty_string(self):
-        from unified_domain_client.clients.instruments import _is_empty_or_na  # noqa: deep-import
+        from unified_domain_client.clients.instruments import _is_empty_or_na
 
         assert _is_empty_or_na("")
 
     def test_whitespace_string(self):
-        from unified_domain_client.clients.instruments import _is_empty_or_na  # noqa: deep-import
+        from unified_domain_client.clients.instruments import _is_empty_or_na
 
         assert _is_empty_or_na("   ")
 
     def test_non_empty(self):
-        from unified_domain_client.clients.instruments import _is_empty_or_na  # noqa: deep-import
+        from unified_domain_client.clients.instruments import _is_empty_or_na
 
         assert not _is_empty_or_na("BTC")
         assert not _is_empty_or_na(0)
@@ -94,7 +94,7 @@ class TestInstrumentsDomainClientFilters:
 
     def _make_client(self):
         from unified_domain_client import (
-            InstrumentsDomainClient,  # noqa: deep-import
+            InstrumentsDomainClient,
         )
 
         with patch("unified_domain_client.clients.instruments.UnifiedCloudConfig") as mock_cfg:
@@ -217,7 +217,7 @@ class TestInstrumentsDomainClientFilters:
 class TestExecutionDomainClientMethods:
     def _make_client(self):
         from unified_domain_client import (
-            ExecutionDomainClient,  # noqa: deep-import
+            ExecutionDomainClient,
         )
 
         with patch("unified_domain_client.clients.execution.UnifiedCloudConfig") as mock_cfg:
@@ -297,7 +297,7 @@ class TestExecutionDomainClientMethods:
 
     def test_create_execution_client_factory(self):
         from unified_domain_client import (
-            create_execution_client,  # noqa: deep-import
+            create_execution_client,
         )
 
         with patch("unified_domain_client.clients.execution.UnifiedCloudConfig") as mock_cfg:
@@ -316,7 +316,7 @@ class TestExecutionDomainClientMethods:
 class TestMarketTickDataDomainClientPaths:
     def _make_client(self):
         from unified_domain_client import (
-            MarketTickDataDomainClient,  # noqa: deep-import
+            MarketTickDataDomainClient,
         )
 
         with patch("unified_domain_client.clients.market_data.UnifiedCloudConfig") as mock_cfg:
@@ -370,7 +370,7 @@ class TestMarketTickDataDomainClientPaths:
 
     def test_get_candles_range_empty(self):
         from unified_domain_client import (
-            MarketCandleDataDomainClient,  # noqa: deep-import
+            MarketCandleDataDomainClient,
         )
 
         with patch("unified_domain_client.clients.market_data.UnifiedCloudConfig") as mock_cfg:
@@ -393,7 +393,7 @@ class TestMarketTickDataDomainClientPaths:
 class TestDataCompletionChecker:
     def _make_checker(self):
         from unified_trading_library.domain.data_completion import (
-            DataCompletionChecker,  # noqa: deep-import
+            DataCompletionChecker,
         )
 
         with patch("unified_trading_library.domain.data_completion.get_storage_client"):
@@ -431,7 +431,7 @@ class TestDataCompletionChecker:
 class TestL2BookCheckpointClient:
     def _make_client(self):
         from unified_domain_client import (
-            L2BookCheckpointClient,  # noqa: deep-import
+            L2BookCheckpointClient,
         )
 
         mock_storage = MagicMock()
@@ -473,13 +473,13 @@ class TestL2BookCheckpointClient:
 
 class TestCatalogModules:
     def test_bq_catalog_instantiate(self):
-        from unified_domain_client.catalog.bq_catalog import BigQueryCatalog  # noqa: deep-import
+        from unified_domain_client.catalog.bq_catalog import BigQueryCatalog
 
         c = BigQueryCatalog()
         assert c is not None
 
     def test_glue_catalog_instantiate(self):
-        from unified_domain_client.catalog.glue_catalog import GlueCatalog  # noqa: deep-import
+        from unified_domain_client.catalog.glue_catalog import GlueCatalog
 
         c = GlueCatalog()
         assert c is not None
@@ -493,7 +493,7 @@ class TestCatalogModules:
 class TestSportsDomainClients:
     def _make_fixtures_client(self):
         from unified_domain_client import (
-            SportsFixturesDomainClient,  # noqa: deep-import
+            SportsFixturesDomainClient,
         )
 
         with patch("unified_domain_client.sports.fixtures_client.UnifiedCloudConfig") as mock_cfg:
@@ -504,7 +504,7 @@ class TestSportsDomainClients:
 
     def _make_odds_client(self):
         from unified_domain_client import (
-            SportsOddsDomainClient,  # noqa: deep-import
+            SportsOddsDomainClient,
         )
 
         with patch("unified_domain_client.sports.odds_client.UnifiedCloudConfig") as mock_cfg:
@@ -515,7 +515,7 @@ class TestSportsDomainClients:
 
     def _make_tick_client(self):
         from unified_domain_client import (
-            SportsTickDataDomainClient,  # noqa: deep-import
+            SportsTickDataDomainClient,
         )
 
         with patch("unified_domain_client.sports.tick_data_client.UnifiedCloudConfig") as mock_cfg:

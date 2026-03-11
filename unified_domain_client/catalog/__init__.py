@@ -1,6 +1,6 @@
 """Data catalog helpers for BigQuery and AWS Glue."""
 
-from unified_domain_client.catalog.bq_catalog import BigQueryCatalog  # noqa: deep-import
-from unified_domain_client.catalog.glue_catalog import GlueCatalog  # noqa: deep-import
+from .bq_catalog import BigQueryCatalog
+from .glue_catalog import GlueCatalog
 
 __all__ = ["BigQueryCatalog", "GlueCatalog"]

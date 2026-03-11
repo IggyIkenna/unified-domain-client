@@ -12,7 +12,7 @@ def test_base_reader_read_parquet():
 
     import pandas as pd
 
-    from unified_domain_client.readers.base import BaseReader  # noqa: deep-import
+    from unified_domain_client.readers.base import BaseReader
 
     reader = BaseReader(bucket="b")
 
@@ -32,7 +32,7 @@ def test_base_reader_read_json():
     import json
     from unittest.mock import patch
 
-    from unified_domain_client.readers.base import BaseReader  # noqa: deep-import
+    from unified_domain_client.readers.base import BaseReader
 
     reader = BaseReader(bucket="b")
 
@@ -46,7 +46,7 @@ def test_base_reader_exists():
     """Test BaseReader.exists checks if file exists."""
     from unittest.mock import patch
 
-    from unified_domain_client.readers.base import BaseReader  # noqa: deep-import
+    from unified_domain_client.readers.base import BaseReader
 
     reader = BaseReader(bucket="b")
 
@@ -64,7 +64,7 @@ def test_market_data_reader_read_tick():
 
     import pandas as pd
 
-    from unified_domain_client.readers.base import MarketDataReader  # noqa: deep-import
+    from unified_domain_client.readers.base import MarketDataReader
 
     reader = MarketDataReader(bucket="b")
     buf = io.BytesIO()
@@ -84,7 +84,7 @@ def test_market_data_reader_read_candles_timeframes():
 
     import pandas as pd
 
-    from unified_domain_client.readers.base import MarketDataReader  # noqa: deep-import
+    from unified_domain_client.readers.base import MarketDataReader
 
     reader = MarketDataReader(bucket="b")
     buf = io.BytesIO()
@@ -105,7 +105,7 @@ def test_features_reader_read_delta_one():
 
     import pandas as pd
 
-    from unified_domain_client.readers.base import FeaturesReader  # noqa: deep-import
+    from unified_domain_client.readers.base import FeaturesReader
 
     reader = FeaturesReader(bucket="b")
     buf = io.BytesIO()
@@ -125,7 +125,7 @@ def test_ml_reader_read_predictions():
 
     import pandas as pd
 
-    from unified_domain_client.readers.base import MLReader  # noqa: deep-import
+    from unified_domain_client.readers.base import MLReader
 
     reader = MLReader(bucket="b")
     buf = io.BytesIO()
@@ -145,7 +145,7 @@ def test_direct_reader_read():
 
     import pandas as pd
 
-    from unified_domain_client.readers.direct import DirectReader  # noqa: deep-import
+    from unified_domain_client.readers.direct import DirectReader
 
     mock_storage = MagicMock()
     buf = io.BytesIO()
@@ -163,7 +163,7 @@ def test_direct_reader_list_available():
     """Test DirectReader.list_available returns blob names."""
     from unittest.mock import MagicMock
 
-    from unified_domain_client.readers.direct import DirectReader  # noqa: deep-import
+    from unified_domain_client.readers.direct import DirectReader
 
     mock_storage = MagicMock()
     blob1 = MagicMock()

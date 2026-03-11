@@ -15,6 +15,8 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 import pytest
 
+from unified_domain_client.clients.market_data import MarketTickDomainClient
+
 pytestmark = pytest.mark.integration
 
 # ---------------------------------------------------------------------------
@@ -145,9 +147,7 @@ class TestMarketTickDomainClient:
     @pytest.fixture()
     def tick_client(
         self, mock_storage_client: MagicMock, mock_config: MagicMock
-    ) -> MarketTickDomainClient:  # noqa: F821
-        from unified_domain_client.clients.market_data import MarketTickDomainClient
-
+    ) -> MarketTickDomainClient:
         return MarketTickDomainClient(mock_storage_client, mock_config)
 
     def test_get_tick_data_returns_dataframe(self, tick_client: MagicMock) -> None:

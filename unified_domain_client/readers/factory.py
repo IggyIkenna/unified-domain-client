@@ -11,7 +11,42 @@ from .bq_external import BigQueryExternalReader
 from .direct import DirectReader
 
 
-def get_reader(  # noqa: C901
+def _make_direct_reader(
+    storage_client: StorageClient | None,
+) -> DirectReader:
+    if storage_client is None:
+        raise ValueError("storage_client required for ReadMode.AUTO")
+    return DirectReader(storage_client)
+
+
+def _make_bq_reader(**kwargs: object) -> BigQueryExternalReader:
+    project_id_raw = kwargs.get("project_id")
+    if not project_id_raw:
+        raise ValueError("project_id is required for ReadMode.BQ_EXTERNAL")
+    bq_dataset_raw = kwargs.get("bq_dataset")
+    if not bq_dataset_raw:
+        raise ValueError("bq_dataset is required for ReadMode.BQ_EXTERNAL")
+    return BigQueryExternalReader(
+        project_id=str(project_id_raw), bq_dataset=str(bq_dataset_raw)
+    )
+
+
+def _make_athena_reader(**kwargs: object) -> AthenaReader:
+    account_id_raw = kwargs.get("account_id")
+    if not account_id_raw:
+        raise ValueError("account_id is required for ReadMode.ATHENA")
+    glue_database_raw = kwargs.get("glue_database")
+    if not glue_database_raw:
+        raise ValueError("glue_database is required for ReadMode.ATHENA")
+    region_raw = kwargs.get("region", "us-east-1")
+    return AthenaReader(
+        account_id=str(account_id_raw),
+        glue_database=str(glue_database_raw),
+        region=str(region_raw),
+    )
+
+
+def get_reader(
     storage_client: StorageClient | None = None,
     mode: ReadMode = ReadMode.AUTO,
     **kwargs: object,
@@ -25,30 +60,9 @@ def get_reader(  # noqa: C901
         **kwargs: Additional args for BQ/Athena readers (project_id, bq_dataset, etc.)
     """
     if mode == ReadMode.AUTO:
-        if storage_client is None:
-            raise ValueError("storage_client required for ReadMode.AUTO")
-        return DirectReader(storage_client)
+        return _make_direct_reader(storage_client)
     if mode == ReadMode.BQ_EXTERNAL:
-        project_id_raw = kwargs.get("project_id")
-        if not project_id_raw:
-            raise ValueError("project_id is required for ReadMode.BQ_EXTERNAL")
-        bq_dataset_raw = kwargs.get("bq_dataset")
-        if not bq_dataset_raw:
-            raise ValueError("bq_dataset is required for ReadMode.BQ_EXTERNAL")
-        return BigQueryExternalReader(
-            project_id=str(project_id_raw), bq_dataset=str(bq_dataset_raw)
-        )
+        return _make_bq_reader(**kwargs)
     if mode == ReadMode.ATHENA:
-        account_id_raw = kwargs.get("account_id")
-        if not account_id_raw:
-            raise ValueError("account_id is required for ReadMode.ATHENA")
-        glue_database_raw = kwargs.get("glue_database")
-        if not glue_database_raw:
-            raise ValueError("glue_database is required for ReadMode.ATHENA")
-        region_raw = kwargs.get("region", "us-east-1")
-        return AthenaReader(
-            account_id=str(account_id_raw),
-            glue_database=str(glue_database_raw),
-            region=str(region_raw),
-        )
+        return _make_athena_reader(**kwargs)
     raise ValueError(f"Unknown ReadMode: {mode}")

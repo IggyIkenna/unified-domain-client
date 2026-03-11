@@ -3,13 +3,13 @@
 from __future__ import annotations
 
 # 11. Execution
-from unified_domain_client.clients.execution import (  # noqa: deep-import
+from .execution import (
     ExecutionDomainClient,
     create_execution_client,
 )
 
 # 4-7. Features (typed per group)
-from unified_domain_client.clients.features import (  # noqa: deep-import
+from .features import (
     FeaturesCalendarDomainClient,
     FeaturesDeltaOneDomainClient,
     FeaturesOnchainDomainClient,
@@ -17,10 +17,10 @@ from unified_domain_client.clients.features import (  # noqa: deep-import
 )
 
 # 1. Instruments
-from unified_domain_client.clients.instruments import InstrumentsDomainClient  # noqa: deep-import
+from .instruments import InstrumentsDomainClient
 
 # 15-17. Liquidity (L2 checkpoints, liquidation clusters, liquidity features)
-from unified_domain_client.clients.liquidity import (  # noqa: deep-import
+from .liquidity import (
     L2BookCheckpointClient,
     LiquidationClustersClient,
     LiquidityFeaturesClient,
@@ -28,7 +28,7 @@ from unified_domain_client.clients.liquidity import (  # noqa: deep-import
 
 # Backward-compat factory functions
 # 2-3. Market data (thin typed + legacy rich)
-from unified_domain_client.clients.market_data import (  # noqa: deep-import
+from .market_data import (
     MarketCandleDataDomainClient,
     MarketCandleDomainClient,
     MarketDataDomainClient,
@@ -40,22 +40,22 @@ from unified_domain_client.clients.market_data import (  # noqa: deep-import
 )
 
 # 8-9. ML
-from unified_domain_client.clients.ml import (  # noqa: deep-import
+from .ml import (
     MLModelsDomainClient,
     MLPredictionsDomainClient,
 )
 
 # 13. PnL
-from unified_domain_client.clients.pnl import PnLDomainClient  # noqa: deep-import
+from .pnl import PnLDomainClient
 
 # 12. Positions
-from unified_domain_client.clients.positions import PositionsDomainClient  # noqa: deep-import
+from .positions import PositionsDomainClient
 
 # 14. Risk
-from unified_domain_client.clients.risk import RiskDomainClient  # noqa: deep-import
+from .risk import RiskDomainClient
 
 # 10. Strategy
-from unified_domain_client.clients.strategy import StrategyDomainClient  # noqa: deep-import
+from .strategy import StrategyDomainClient
 
 
 def create_instruments_client(

@@ -43,7 +43,7 @@ def test_date_validator_import():
 
 def test_validate_strategy_id_valid():
     """Test validate_strategy_id with valid ID."""
-    from unified_config_interface.id_conventions import validate_strategy_id  # noqa: deep-import
+    from unified_config_interface.id_conventions import validate_strategy_id
 
     assert validate_strategy_id("CEFI_BTC_momentum_SCE_1H_V1") is True
     assert validate_strategy_id("DEFI_ETH_lido-staking_SCE_5M_V1") is True
@@ -52,7 +52,7 @@ def test_validate_strategy_id_valid():
 
 def test_validate_strategy_id_invalid():
     """Test validate_strategy_id with invalid ID."""
-    from unified_config_interface.id_conventions import validate_strategy_id  # noqa: deep-import
+    from unified_config_interface.id_conventions import validate_strategy_id
 
     # Invalid category
     assert validate_strategy_id("INVALID_BTC_momentum_SCE_1H_V1") is False
@@ -72,7 +72,7 @@ def test_validate_strategy_id_invalid():
 def test_get_bucket_for_category_default():
     """Test get_bucket_for_category with default args."""
     from unified_config_interface.market_category import (
-        get_bucket_for_category,  # noqa: deep-import
+        get_bucket_for_category,
     )
 
     result = get_bucket_for_category("CEFI", "my-project")
@@ -82,7 +82,7 @@ def test_get_bucket_for_category_default():
 def test_get_bucket_for_category_test_mode():
     """Test get_bucket_for_category with test_mode=True."""
     from unified_config_interface.market_category import (
-        get_bucket_for_category,  # noqa: deep-import
+        get_bucket_for_category,
     )
 
     result = get_bucket_for_category("DEFI", "my-project", test_mode=True)
@@ -92,7 +92,7 @@ def test_get_bucket_for_category_test_mode():
 def test_get_bucket_for_category_empty():
     """Test get_bucket_for_category with empty category falls back to cefi."""
     from unified_config_interface.market_category import (
-        get_bucket_for_category,  # noqa: deep-import
+        get_bucket_for_category,
     )
 
     result = get_bucket_for_category("", "proj")
@@ -106,7 +106,7 @@ def test_get_bucket_for_category_empty():
 
 def test_create_backtesting_cloud_service():
     """Test create_backtesting_cloud_service factory."""
-    from unified_domain_client.factories import (  # noqa: deep-import
+    from unified_domain_client.factories import (
         create_backtesting_cloud_service,
     )
 
@@ -117,7 +117,7 @@ def test_create_backtesting_cloud_service():
 
 def test_create_features_cloud_service():
     """Test create_features_cloud_service factory."""
-    from unified_domain_client.factories import create_features_cloud_service  # noqa: deep-import
+    from unified_domain_client.factories import create_features_cloud_service
 
     svc = create_features_cloud_service(storage_bucket="custom-bucket")
     assert svc.domain == "features"
@@ -126,7 +126,7 @@ def test_create_features_cloud_service():
 
 def test_create_instruments_cloud_service():
     """Test create_instruments_cloud_service factory."""
-    from unified_domain_client.factories import (  # noqa: deep-import
+    from unified_domain_client.factories import (
         create_instruments_cloud_service,
     )
 
@@ -136,7 +136,7 @@ def test_create_instruments_cloud_service():
 
 def test_create_market_data_cloud_service():
     """Test create_market_data_cloud_service factory."""
-    from unified_domain_client.factories import (  # noqa: deep-import
+    from unified_domain_client.factories import (
         create_market_data_cloud_service,
     )
 
@@ -146,7 +146,7 @@ def test_create_market_data_cloud_service():
 
 def test_create_strategy_cloud_service():
     """Test create_strategy_cloud_service factory."""
-    from unified_domain_client.factories import create_strategy_cloud_service  # noqa: deep-import
+    from unified_domain_client.factories import create_strategy_cloud_service
 
     svc = create_strategy_cloud_service("test-project")
     assert svc.domain == "strategy"
@@ -159,7 +159,7 @@ def test_create_strategy_cloud_service():
 
 def test_standardized_service_init():
     """Test StandardizedDomainCloudService init."""
-    from unified_domain_client.standardized_service import (  # noqa: deep-import
+    from unified_domain_client.standardized_service import (
         StandardizedDomainCloudService,
     )
 
@@ -170,7 +170,7 @@ def test_standardized_service_init():
 
 def test_standardized_service_query_bigquery_raises():
     """Test query_bigquery raises NotImplementedError."""
-    from unified_domain_client.standardized_service import (  # noqa: deep-import
+    from unified_domain_client.standardized_service import (
         StandardizedDomainCloudService,
     )
 
@@ -181,7 +181,7 @@ def test_standardized_service_query_bigquery_raises():
 
 def test_make_domain_service():
     """Test make_domain_service factory function."""
-    from unified_domain_client.standardized_service import make_domain_service  # noqa: deep-import
+    from unified_domain_client.standardized_service import make_domain_service
 
     svc = make_domain_service("instruments", bucket="my-bucket", project_id="proj", dataset="my_ds")
     assert svc.domain == "instruments"
@@ -190,8 +190,8 @@ def test_make_domain_service():
 
 def test_create_domain_cloud_service():
     """Test create_domain_cloud_service factory function."""
-    from unified_domain_client.cloud_target import CloudTarget  # noqa: deep-import
-    from unified_domain_client.standardized_service import (  # noqa: deep-import
+    from unified_domain_client.cloud_target import CloudTarget
+    from unified_domain_client.standardized_service import (
         create_domain_cloud_service,
     )
 
@@ -207,7 +207,7 @@ def test_create_domain_cloud_service():
 
 def test_instrument_key_from_string():
     """Test InstrumentKey.from_string parses correctly."""
-    from unified_domain_client.schemas.instrument_key import InstrumentKey  # noqa: deep-import
+    from unified_domain_client.schemas.instrument_key import InstrumentKey
 
     key = InstrumentKey.from_string("BINANCE-SPOT:SPOT_PAIR:BTC-USDT")
     assert key.symbol == "BTC-USDT"
@@ -216,7 +216,7 @@ def test_instrument_key_from_string():
 
 def test_instrument_key_from_string_invalid():
     """Test InstrumentKey.from_string raises on bad format."""
-    from unified_domain_client.schemas.instrument_key import InstrumentKey  # noqa: deep-import
+    from unified_domain_client.schemas.instrument_key import InstrumentKey
 
     with pytest.raises(ValueError):
         InstrumentKey.from_string("INVALID")
@@ -224,7 +224,7 @@ def test_instrument_key_from_string_invalid():
 
 def test_instrument_key_parse_for_tardis_binance():
     """Test InstrumentKey.parse_for_tardis for Binance."""
-    from unified_domain_client.schemas.instrument_key import InstrumentKey  # noqa: deep-import
+    from unified_domain_client.schemas.instrument_key import InstrumentKey
 
     result = InstrumentKey.parse_for_tardis("BINANCE-SPOT:SPOT_PAIR:SOL-USDT")
     assert result["venue"] == "BINANCE-SPOT"
@@ -233,7 +233,7 @@ def test_instrument_key_parse_for_tardis_binance():
 
 def test_instrument_key_parse_for_tardis_deribit():
     """Test InstrumentKey.parse_for_tardis for Deribit."""
-    from unified_domain_client.schemas.instrument_key import InstrumentKey  # noqa: deep-import
+    from unified_domain_client.schemas.instrument_key import InstrumentKey
 
     result = InstrumentKey.parse_for_tardis("DERIBIT:OPTION:BTC-USD")
     assert result["venue"] == "DERIBIT"
@@ -241,7 +241,7 @@ def test_instrument_key_parse_for_tardis_deribit():
 
 def test_instrument_key_parse_for_tardis_upbit():
     """Test InstrumentKey.parse_for_tardis for Upbit (reverses BASE-QUOTE)."""
-    from unified_domain_client.schemas.instrument_key import InstrumentKey  # noqa: deep-import
+    from unified_domain_client.schemas.instrument_key import InstrumentKey
 
     result = InstrumentKey.parse_for_tardis("UPBIT:SPOT_PAIR:VET-KRW")
     assert "KRW-VET" in result.get("tardis_symbol", "")
@@ -249,7 +249,7 @@ def test_instrument_key_parse_for_tardis_upbit():
 
 def test_instrument_key_parse_for_tardis_coinbase():
     """Test InstrumentKey.parse_for_tardis for Coinbase."""
-    from unified_domain_client.schemas.instrument_key import InstrumentKey  # noqa: deep-import
+    from unified_domain_client.schemas.instrument_key import InstrumentKey
 
     result = InstrumentKey.parse_for_tardis("COINBASE:SPOT_PAIR:SOL-USD")
     assert result.get("tardis_symbol", "").upper() == "SOL-USD"
@@ -257,7 +257,7 @@ def test_instrument_key_parse_for_tardis_coinbase():
 
 def test_instrument_key_parse_for_tardis_invalid():
     """Test InstrumentKey.parse_for_tardis raises on bad format."""
-    from unified_domain_client.schemas.instrument_key import InstrumentKey  # noqa: deep-import
+    from unified_domain_client.schemas.instrument_key import InstrumentKey
 
     with pytest.raises(ValueError):
         InstrumentKey.parse_for_tardis("ONLY_ONE_PART")
@@ -270,7 +270,7 @@ def test_instrument_key_parse_for_tardis_invalid():
 
 def test_paths_registry_get_spec_known():
     """Test get_spec returns spec for known dataset."""
-    from unified_config_interface.paths.registry import get_spec  # noqa: deep-import
+    from unified_config_interface.paths.registry import get_spec
 
     spec = get_spec("processed_candles")
     assert spec.name == "processed_candles"
@@ -278,7 +278,7 @@ def test_paths_registry_get_spec_known():
 
 def test_paths_registry_get_spec_unknown():
     """Test get_spec raises KeyError for unknown dataset."""
-    from unified_config_interface.paths.registry import get_spec  # noqa: deep-import
+    from unified_config_interface.paths.registry import get_spec
 
     with pytest.raises(KeyError, match="not in PATH_REGISTRY"):
         get_spec("nonexistent_dataset")
@@ -286,7 +286,7 @@ def test_paths_registry_get_spec_unknown():
 
 def test_paths_registry_build_bucket():
     """Test build_bucket returns correct bucket name."""
-    from unified_config_interface.paths.registry import build_bucket  # noqa: deep-import
+    from unified_config_interface.paths.registry import build_bucket
 
     bucket = build_bucket("instruments", project_id="test-proj", category="cefi")
     assert "test-proj" in bucket
@@ -294,7 +294,7 @@ def test_paths_registry_build_bucket():
 
 def test_paths_registry_build_path():
     """Test build_path returns correct path."""
-    from unified_config_interface.paths.registry import build_path  # noqa: deep-import
+    from unified_config_interface.paths.registry import build_path
 
     path = build_path("instruments", date="2024-01-15", venue="BINANCE")
     assert "2024-01-15" in path
@@ -302,7 +302,7 @@ def test_paths_registry_build_path():
 
 def test_paths_registry_build_full_uri():
     """Test build_full_uri returns gs:// URI."""
-    from unified_config_interface.paths.registry import build_full_uri  # noqa: deep-import
+    from unified_config_interface.paths.registry import build_full_uri
 
     uri = build_full_uri(
         "instruments", project_id="test-proj", category="cefi", date="2024-01-15", venue="BINANCE"
@@ -312,7 +312,7 @@ def test_paths_registry_build_full_uri():
 
 def test_path_registry_class_all_patterns():
     """Test PathRegistry.all_patterns returns dict."""
-    from unified_config_interface.paths.registry import PathRegistry  # noqa: deep-import
+    from unified_config_interface.paths.registry import PathRegistry
 
     patterns = PathRegistry.all_patterns()
     assert isinstance(patterns, dict)
@@ -321,7 +321,7 @@ def test_path_registry_class_all_patterns():
 
 def test_path_registry_class_format():
     """Test PathRegistry.format substitutes variables."""
-    from unified_config_interface.paths.registry import PathRegistry  # noqa: deep-import
+    from unified_config_interface.paths.registry import PathRegistry
 
     result = PathRegistry.format(
         PathRegistry.MARKET_TICK_RAW, date="2024-01-15", instrument="BTC-USDT"
@@ -337,9 +337,9 @@ def test_path_registry_class_format():
 
 def test_get_reader_auto_requires_storage_client():
     """Test get_reader(AUTO) raises ValueError without storage_client."""
-    from unified_config_interface.paths import ReadMode  # noqa: deep-import
+    from unified_config_interface.paths import ReadMode
 
-    from unified_domain_client.readers.factory import get_reader  # noqa: deep-import
+    from unified_domain_client.readers.factory import get_reader
 
     with pytest.raises(ValueError, match="storage_client required"):
         get_reader(storage_client=None, mode=ReadMode.AUTO)
@@ -347,9 +347,9 @@ def test_get_reader_auto_requires_storage_client():
 
 def test_get_reader_bq_external_requires_project_id():
     """Test get_reader(BQ_EXTERNAL) raises ValueError without project_id."""
-    from unified_config_interface.paths import ReadMode  # noqa: deep-import
+    from unified_config_interface.paths import ReadMode
 
-    from unified_domain_client.readers.factory import get_reader  # noqa: deep-import
+    from unified_domain_client.readers.factory import get_reader
 
     with pytest.raises(ValueError, match="project_id"):
         get_reader(mode=ReadMode.BQ_EXTERNAL)
@@ -358,9 +358,9 @@ def test_get_reader_bq_external_requires_project_id():
 def test_get_reader_bq_external_requires_bq_dataset():
     """Test get_reader(BQ_EXTERNAL) raises ValueError without bq_dataset."""
 
-    from unified_config_interface.paths import ReadMode  # noqa: deep-import
+    from unified_config_interface.paths import ReadMode
 
-    from unified_domain_client.readers.factory import get_reader  # noqa: deep-import
+    from unified_domain_client.readers.factory import get_reader
 
     with pytest.raises(ValueError, match="bq_dataset"):
         get_reader(mode=ReadMode.BQ_EXTERNAL, project_id="p")
@@ -368,12 +368,12 @@ def test_get_reader_bq_external_requires_bq_dataset():
 
 def test_get_reader_bq_external_returns_reader():
     """Test get_reader(BQ_EXTERNAL) returns BigQueryExternalReader."""
-    from unified_config_interface.paths import ReadMode  # noqa: deep-import
+    from unified_config_interface.paths import ReadMode
 
-    from unified_domain_client.readers.bq_external import (  # noqa: deep-import
+    from unified_domain_client.readers.bq_external import (
         BigQueryExternalReader,
     )
-    from unified_domain_client.readers.factory import get_reader  # noqa: deep-import
+    from unified_domain_client.readers.factory import get_reader
 
     reader = get_reader(mode=ReadMode.BQ_EXTERNAL, project_id="p", bq_dataset="ds")
     assert isinstance(reader, BigQueryExternalReader)
@@ -381,9 +381,9 @@ def test_get_reader_bq_external_returns_reader():
 
 def test_get_reader_athena_requires_account_id():
     """Test get_reader(ATHENA) raises ValueError without account_id."""
-    from unified_config_interface.paths import ReadMode  # noqa: deep-import
+    from unified_config_interface.paths import ReadMode
 
-    from unified_domain_client.readers.factory import get_reader  # noqa: deep-import
+    from unified_domain_client.readers.factory import get_reader
 
     with pytest.raises(ValueError, match="account_id"):
         get_reader(mode=ReadMode.ATHENA)
@@ -391,9 +391,9 @@ def test_get_reader_athena_requires_account_id():
 
 def test_get_reader_athena_requires_glue_database():
     """Test get_reader(ATHENA) raises ValueError without glue_database."""
-    from unified_config_interface.paths import ReadMode  # noqa: deep-import
+    from unified_config_interface.paths import ReadMode
 
-    from unified_domain_client.readers.factory import get_reader  # noqa: deep-import
+    from unified_domain_client.readers.factory import get_reader
 
     with pytest.raises(ValueError, match="glue_database"):
         get_reader(mode=ReadMode.ATHENA, account_id="123")
@@ -401,10 +401,10 @@ def test_get_reader_athena_requires_glue_database():
 
 def test_get_reader_athena_returns_reader():
     """Test get_reader(ATHENA) returns AthenaReader."""
-    from unified_config_interface.paths import ReadMode  # noqa: deep-import
+    from unified_config_interface.paths import ReadMode
 
-    from unified_domain_client.readers.athena import AthenaReader  # noqa: deep-import
-    from unified_domain_client.readers.factory import get_reader  # noqa: deep-import
+    from unified_domain_client.readers.athena import AthenaReader
+    from unified_domain_client.readers.factory import get_reader
 
     reader = get_reader(mode=ReadMode.ATHENA, account_id="123456789", glue_database="db")
     assert isinstance(reader, AthenaReader)
@@ -413,7 +413,7 @@ def test_get_reader_athena_returns_reader():
 def test_get_reader_unknown_mode_raises():
     """Test get_reader raises ValueError for unknown mode."""
 
-    from unified_domain_client.readers.factory import get_reader  # noqa: deep-import
+    from unified_domain_client.readers.factory import get_reader
 
     with pytest.raises(ValueError, match="Unknown ReadMode"):
         get_reader(mode="invalid_mode")  # type: ignore[arg-type]
@@ -426,7 +426,7 @@ def test_get_reader_unknown_mode_raises():
 
 def test_sports_clients_importable():
     """Test sports domain clients can be imported."""
-    from unified_domain_client.sports import (  # noqa: deep-import
+    from unified_domain_client.sports import (
         SportsFeaturesDomainClient,
         SportsFixturesDomainClient,
         SportsMappingsDomainClient,
@@ -450,7 +450,7 @@ def test_sports_clients_instantiate_with_mocks():
         patch("unified_domain_client.sports.features_client.StandardizedDomainCloudService"),
     ):
         mock_cfg.return_value.gcp_project_id = "test-project"
-        from unified_domain_client.sports.features_client import (  # noqa: deep-import
+        from unified_domain_client.sports.features_client import (
             SportsFeaturesDomainClient,
         )
 
@@ -462,7 +462,7 @@ def test_sports_clients_instantiate_with_mocks():
         patch("unified_domain_client.sports.fixtures_client.StandardizedDomainCloudService"),
     ):
         mock_cfg.return_value.gcp_project_id = "test-project"
-        from unified_domain_client.sports.fixtures_client import (  # noqa: deep-import
+        from unified_domain_client.sports.fixtures_client import (
             SportsFixturesDomainClient,
         )
 
@@ -476,7 +476,7 @@ def test_sports_clients_instantiate_with_mocks():
         patch("unified_domain_client.sports.mappings_client.StandardizedDomainCloudService"),
     ):
         mock_cfg.return_value.gcp_project_id = "test-project"
-        from unified_domain_client.sports.mappings_client import (  # noqa: deep-import
+        from unified_domain_client.sports.mappings_client import (
             SportsMappingsDomainClient,
         )
 
@@ -490,7 +490,7 @@ def test_sports_clients_instantiate_with_mocks():
         patch("unified_domain_client.sports.odds_client.StandardizedDomainCloudService"),
     ):
         mock_cfg.return_value.gcp_project_id = "test-project"
-        from unified_domain_client.sports.odds_client import (  # noqa: deep-import
+        from unified_domain_client.sports.odds_client import (
             SportsOddsDomainClient,
         )
 
@@ -502,7 +502,7 @@ def test_sports_clients_instantiate_with_mocks():
         patch("unified_domain_client.sports.tick_data_client.StandardizedDomainCloudService"),
     ):
         mock_cfg.return_value.gcp_project_id = "test-project"
-        from unified_domain_client.sports.tick_data_client import (  # noqa: deep-import
+        from unified_domain_client.sports.tick_data_client import (
             SportsTickDataDomainClient,
         )
 
@@ -522,7 +522,7 @@ def test_timestamp_date_validator_empty_df():
     from datetime import date
 
     import pandas as pd
-    from unified_trading_library.domain.timestamp_validation import (  # noqa: deep-import
+    from unified_trading_library.domain.timestamp_validation import (
         TimestampDateValidator,
     )
 
@@ -537,7 +537,7 @@ def test_timestamp_date_validator_no_timestamp_col():
     from datetime import date
 
     import pandas as pd
-    from unified_trading_library.domain.timestamp_validation import (  # noqa: deep-import
+    from unified_trading_library.domain.timestamp_validation import (
         TimestampDateValidator,
     )
 
@@ -555,7 +555,7 @@ def test_timestamp_date_validator_aligned():
     from datetime import datetime as dt
 
     import pandas as pd
-    from unified_trading_library.domain.timestamp_validation import (  # noqa: deep-import
+    from unified_trading_library.domain.timestamp_validation import (
         TimestampDateValidator,
     )
 
@@ -573,7 +573,7 @@ def test_timestamp_date_validator_wrong_date():
     from datetime import datetime as dt
 
     import pandas as pd
-    from unified_trading_library.domain.timestamp_validation import (  # noqa: deep-import
+    from unified_trading_library.domain.timestamp_validation import (
         TimestampDateValidator,
     )
 
@@ -592,7 +592,7 @@ def test_timestamp_date_validator_us_unit():
     from datetime import datetime as dt
 
     import pandas as pd
-    from unified_trading_library.domain.timestamp_validation import (  # noqa: deep-import
+    from unified_trading_library.domain.timestamp_validation import (
         TimestampDateValidator,
     )
 
@@ -609,7 +609,7 @@ def test_timestamp_date_validator_ms_unit():
     from datetime import datetime as dt
 
     import pandas as pd
-    from unified_trading_library.domain.timestamp_validation import (  # noqa: deep-import
+    from unified_trading_library.domain.timestamp_validation import (
         TimestampDateValidator,
     )
 
@@ -622,7 +622,7 @@ def test_timestamp_date_validator_ms_unit():
 
 def test_validate_timestamp_date_alignment_none_df():
     """Test validate_timestamp_date_alignment with None df returns valid."""
-    from unified_trading_library.domain.timestamp_validation import (  # noqa: deep-import
+    from unified_trading_library.domain.timestamp_validation import (
         validate_timestamp_date_alignment,
     )
 
@@ -633,7 +633,7 @@ def test_validate_timestamp_date_alignment_none_df():
 def test_validate_timestamp_date_alignment_empty_df():
     """Test validate_timestamp_date_alignment with empty df returns valid."""
     import pandas as pd
-    from unified_trading_library.domain.timestamp_validation import (  # noqa: deep-import
+    from unified_trading_library.domain.timestamp_validation import (
         validate_timestamp_date_alignment,
     )
 
@@ -646,7 +646,7 @@ def test_validate_timestamp_date_alignment_with_date_string():
     from datetime import datetime as dt
 
     import pandas as pd
-    from unified_trading_library.domain.timestamp_validation import (  # noqa: deep-import
+    from unified_trading_library.domain.timestamp_validation import (
         validate_timestamp_date_alignment,
     )
 
@@ -661,7 +661,7 @@ def test_validate_timestamp_date_alignment_with_path():
     from datetime import datetime as dt
 
     import pandas as pd
-    from unified_trading_library.domain.timestamp_validation import (  # noqa: deep-import
+    from unified_trading_library.domain.timestamp_validation import (
         validate_timestamp_date_alignment,
     )
 
@@ -674,7 +674,7 @@ def test_validate_timestamp_date_alignment_with_path():
 def test_validate_timestamp_date_alignment_no_date():
     """Test validate_timestamp_date_alignment with no date info returns valid."""
     import pandas as pd
-    from unified_trading_library.domain.timestamp_validation import (  # noqa: deep-import
+    from unified_trading_library.domain.timestamp_validation import (
         validate_timestamp_date_alignment,
     )
 
@@ -689,7 +689,7 @@ def test_validate_timestamp_date_alignment_with_date_object():
     from datetime import datetime as dt
 
     import pandas as pd
-    from unified_trading_library.domain.timestamp_validation import (  # noqa: deep-import
+    from unified_trading_library.domain.timestamp_validation import (
         validate_timestamp_date_alignment,
     )
 
@@ -708,7 +708,7 @@ def test_date_validator_empty_config_returns_valid():
     """Test DateValidator with no config file returns valid (no start date configured)."""
     from pathlib import Path
 
-    from unified_trading_library.domain.date_validation import DateValidator  # noqa: deep-import
+    from unified_trading_library.domain.date_validation import DateValidator
 
     # Point to a nonexistent path so config is empty
     validator = DateValidator(config_path=Path("/nonexistent/path.yaml"))
@@ -721,7 +721,7 @@ def test_date_validator_returns_valid_for_recent_date():
     """Test DateValidator.check_date returns valid for recent date when no config."""
     from pathlib import Path
 
-    from unified_trading_library.domain.date_validation import DateValidator  # noqa: deep-import
+    from unified_trading_library.domain.date_validation import DateValidator
 
     validator = DateValidator(config_path=Path("/nonexistent/path.yaml"))
     result = validator.check_date("2024-01-15", "CEFI", venue="BINANCE", timeframe="1h")
@@ -732,7 +732,7 @@ def test_date_validator_get_earliest_raw_data_date_no_config():
     """Test get_earliest_raw_data_date returns None when no config."""
     from pathlib import Path
 
-    from unified_trading_library.domain.date_validation import DateValidator  # noqa: deep-import
+    from unified_trading_library.domain.date_validation import DateValidator
 
     validator = DateValidator(config_path=Path("/nonexistent/path.yaml"))
     result = validator.get_earliest_raw_data_date("market-tick-data-handler", "CEFI")
@@ -743,7 +743,7 @@ def test_date_validator_get_earliest_valid_feature_date_no_config():
     """Test get_earliest_valid_feature_date returns None when no config."""
     from pathlib import Path
 
-    from unified_trading_library.domain.date_validation import DateValidator  # noqa: deep-import
+    from unified_trading_library.domain.date_validation import DateValidator
 
     validator = DateValidator(config_path=Path("/nonexistent/path.yaml"))
     result = validator.get_earliest_valid_feature_date("CEFI", venue="BINANCE", timeframe="24h")
@@ -754,7 +754,7 @@ def test_date_validator_get_earliest_valid_ml_date_no_config():
     """Test get_earliest_valid_ml_date returns None when no config."""
     from pathlib import Path
 
-    from unified_trading_library.domain.date_validation import DateValidator  # noqa: deep-import
+    from unified_trading_library.domain.date_validation import DateValidator
 
     validator = DateValidator(config_path=Path("/nonexistent/path.yaml"))
     result = validator.get_earliest_valid_ml_date("CEFI", timeframe="24h")
@@ -763,7 +763,7 @@ def test_date_validator_get_earliest_valid_ml_date_no_config():
 
 def test_date_validator_calculate_lookback_days_default():
     """Test calculate_lookback_days returns positive number for default timeframe."""
-    from unified_trading_library.domain.date_validation import DateValidator  # noqa: deep-import
+    from unified_trading_library.domain.date_validation import DateValidator
 
     validator = DateValidator()
     days = validator.calculate_lookback_days("24h")
@@ -772,7 +772,7 @@ def test_date_validator_calculate_lookback_days_default():
 
 def test_date_validator_calculate_lookback_days_with_groups():
     """Test calculate_lookback_days with specific feature groups."""
-    from unified_trading_library.domain.date_validation import DateValidator  # noqa: deep-import
+    from unified_trading_library.domain.date_validation import DateValidator
 
     validator = DateValidator()
     days = validator.calculate_lookback_days("1h", feature_groups=["trend", "momentum"])
@@ -792,7 +792,7 @@ def test_should_skip_date_no_config():
     try:
         with patch.object(dv, "get_validator") as mock_get_validator:
             from unified_trading_library.domain.date_validation import (
-                DateValidator,  # noqa: deep-import
+                DateValidator,
             )
 
             v = DateValidator(config_path=Path("/nonexistent/path.yaml"))
@@ -821,7 +821,7 @@ def test_date_validator_inline_config():
     import os
     import tempfile
 
-    from unified_trading_library.domain.date_validation import DateValidator  # noqa: deep-import
+    from unified_trading_library.domain.date_validation import DateValidator
 
     config_content = """
 features-delta-one-service:
