@@ -21,6 +21,7 @@ from datetime import date
 from functools import lru_cache
 from typing import Protocol, cast
 
+import joblib  # pyright: ignore[reportMissingTypeStubs]
 from unified_cloud_interface import get_storage_client
 from unified_config_interface import UnifiedCloudConfig
 from unified_ml_interface import ModelMetadata, ModelVariantConfig
@@ -128,8 +129,6 @@ class CloudModelArtifactStore:
         training_period: str | None = None,
     ) -> str:
         """Serialise model with joblib and upload to GCS. Returns storage path."""
-        import joblib  # pyright: ignore[reportMissingTypeStubs]
-
         period = training_period or (
             metadata.training_timestamp.strftime("%Y-%m")
             if metadata.training_timestamp
@@ -160,8 +159,6 @@ class CloudModelArtifactStore:
         variant_config: ModelVariantConfig | None = None,
     ) -> object | None:
         """Download and deserialise a model from GCS. Returns None if not found."""
-        import joblib  # pyright: ignore[reportMissingTypeStubs]
-
         period = training_period or self.get_latest_training_period(model_id)
         if not period:
             logger.warning("No training period found for model %s", model_id)
