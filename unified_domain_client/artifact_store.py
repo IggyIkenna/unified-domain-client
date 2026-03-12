@@ -193,7 +193,7 @@ class CloudModelArtifactStore:
             if not isinstance(variant_data, dict):
                 logger.error("Metadata for %s/%s missing variant_config", model_id, period)
                 return None
-            variant = ModelVariantConfig.from_dict(variant_data)
+            variant = ModelVariantConfig.from_dict(cast(dict[str, object], variant_data))
             return ModelMetadata(
                 variant_config=variant,
                 model_version=str(data.get("model_version", "1")),
