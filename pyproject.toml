@@ -1,9 +1,6 @@
 [build-system]
-requires = [
-    "setuptools>=75,<82",
-    "wheel",
-]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [tool.uv.sources.unified-api-contracts]
 path = "../unified-api-contracts"
@@ -28,22 +25,6 @@ editable = true
 [tool.uv.sources.unified-trading-library]
 path = "../unified-trading-library"
 editable = true
-
-[tool.setuptools.packages.find]
-where = [
-    ".",
-]
-include = [
-    "unified_domain_client",
-    "unified_domain_client.*",
-    # Step 1 of rename: unified_domain_services/ is the new canonical import path.
-    # Step 2 (T3 STEP C): remove unified_domain_client/ after all 14 services migrated.
-    "unified_domain_services",
-    "unified_domain_services.*",
-]
-exclude = [
-    "tests*",
-]
 
 [tool.ruff]
 line-length = 100
@@ -133,7 +114,7 @@ dependencies = [
     "pyarrow>=23.0.0,<24.0.0",
     "pyyaml>=6.0.1,<7.0.0",
     "unified-api-contracts>=0.1.0,<1.0.0",
-    "unified-cloud-interface[gcp]>=0.1.0,<1.0.0",
+    "unified-cloud-interface>=0.1.0,<1.0.0",
     "unified-config-interface>=0.3.0,<1.0.0",
     "unified-internal-contracts>=0.1.0,<1.0.0",
     "unified-ml-interface>=0.1.0,<1.0.0",
