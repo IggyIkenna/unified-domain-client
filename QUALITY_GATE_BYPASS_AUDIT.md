@@ -163,3 +163,18 @@ upstream stubs — monitor joblib repo for typed support.
 **Scope:** All errors in `.basedpyright-baseline.json` are from untyped third-party libraries or unresolvable import chains in workspace venv context — NOT architectural violations. No `reportAny` errors in first-party code are suppressed.
 
 **Target:** Remove baseline when upstream type stubs are available.
+
+---
+
+## 7. §13 Audit — NotImplementedError Stubs (5 total)
+
+**Audit date:** 2026-03-13
+**Status:** WARN — each item has plan todo in phase2_library_tier_hardening.plan.md (udc-stub-completion-athena-bq-readers)
+
+| File                      | Line   | Stub                                                | Rationale                                                                                                                                            |
+| ------------------------- | ------ | --------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `standardized_service.py` | 77     | `query_bigquery()`                                  | Intentional API boundary — BigQuery not supported in StandardizedDomainCloudService; use `get_analytics_client()` from UCI factory in service layer. |
+| `readers/athena.py`       | 23, 28 | `AthenaReader.read()`, `list_available()`           | Placeholder — implement with boto3 Athena client from UCLI. Tracked in phase2 plan.                                                                  |
+| `readers/bq_external.py`  | 22, 27 | `BigQueryExternalReader.read()`, `list_available()` | Placeholder — implement with BQ client from UCLI. Tracked in phase2 plan.                                                                            |
+
+**Plan reference:** `unified-trading-pm/plans/active/phase2_library_tier_hardening.plan.md` todo `udc-stub-completion-athena-bq-readers`
