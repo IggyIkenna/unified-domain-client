@@ -11,7 +11,8 @@ The ``Venue`` and ``InstrumentType`` enum imports from
 enum-typed validation alongside InstrumentKey.
 """
 
-from unified_config_interface import InstrumentType, Venue
+from unified_api_contracts import InstrumentType
+from unified_config_interface import Venue
 from unified_internal_contracts import InstrumentKey
 
 __all__ = ["InstrumentKey", "InstrumentType", "Venue"]
