@@ -3306,7 +3306,6 @@ dependencies = [
     { name = "unified-config-interface" },
     { name = "unified-events-interface" },
     { name = "unified-internal-contracts" },
-    { name = "unified-ml-interface" },
     { name = "web3" },
 ]
 
@@ -3350,7 +3349,6 @@ requires-dist = [
     { name = "unified-config-interface", editable = "../unified-config-interface" },
     { name = "unified-events-interface", editable = "../unified-events-interface" },
     { name = "unified-internal-contracts", editable = "../unified-internal-contracts" },
-    { name = "unified-ml-interface", editable = "../unified-ml-interface" },
     { name = "web3", specifier = ">=6.0.0,<7.0.0" },
 ]
 
