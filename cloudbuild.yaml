@@ -56,7 +56,7 @@ steps:
     args:
       - "-c"
       - |
-        pip install uv && uv pip install --system ruff
+        pip install uv && uv pip install --system ruff==0.15.0
         ruff check .
         ruff format --check .
 
