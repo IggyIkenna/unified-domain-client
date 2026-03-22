@@ -501,7 +501,7 @@ class TestUnifiedMLInterfaceIntegration:
             instrument_id="BINANCE:PERPETUAL:BTC-USDT",
             timeframe="1h",
             target_type="swing_high",
-            lookback_window=5,
+            target_params={"swing_lookback_window": 5},
         )
         assert config.instrument_id == "BINANCE:PERPETUAL:BTC-USDT"
         assert config.timeframe == "1h"
@@ -515,7 +515,7 @@ class TestUnifiedMLInterfaceIntegration:
             "instrument_id": "BINANCE:PERPETUAL:ETH-USDT",
             "timeframe": "4h",
             "target_type": "breakout",
-            "lookback_window": 10,
+            "target_params": {"swing_lookback_window": 10},
         }
         config = ModelVariantConfig.from_dict(data)
         assert config.instrument_id == "BINANCE:PERPETUAL:ETH-USDT"
@@ -550,7 +550,7 @@ class TestUnifiedMLInterfaceIntegration:
             instrument_id="BINANCE:PERPETUAL:BTC-USDT",
             timeframe="1h",
             target_type="swing_high",
-            lookback_window=5,
+            target_params={"swing_lookback_window": 5},
         )
         metadata = ModelMetadata(variant_config=variant, model_version="1")
         model_id = metadata.model_id
