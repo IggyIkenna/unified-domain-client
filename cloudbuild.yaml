@@ -56,7 +56,7 @@ steps:
     args:
       - "-c"
       - |
-        pip install uv && uv pip install --system ruff==0.15.0
+        uv pip install --system ruff==0.15.0
         ruff check .
         ruff format --check .
 
@@ -67,7 +67,7 @@ steps:
       - "-c"
       - |
         set -e
-        pip install uv && uv pip install --system build
+        uv pip install --system build
         python -m build --wheel --outdir dist/
         ls -lh dist/
     waitFor: ["lint"]
