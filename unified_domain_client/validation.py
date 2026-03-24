@@ -24,7 +24,8 @@ import logging
 from dataclasses import dataclass
 
 import pandas as pd
-from unified_trading_library import ValidationResult
+
+from unified_domain_client.models.validation import ValidationResult
 
 logger = logging.getLogger(__name__)
 

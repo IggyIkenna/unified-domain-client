@@ -9,7 +9,7 @@
 PACKAGE_NAME="unified-domain-client"
 SOURCE_DIR="unified_domain_client"
 MIN_COVERAGE=82
-PYTEST_WORKERS=${PYTEST_WORKERS:-2}
+PYTEST_WORKERS=${PYTEST_WORKERS:-}  # default: max(1, cpu_count//4) computed by base script
 LOCAL_DEPS=()
 WORKSPACE_ROOT="$(cd "$(git rev-parse --show-toplevel)/.." && pwd)"
 source "${WORKSPACE_ROOT}/unified-trading-pm/scripts/quality-gates-base/base-library.sh"

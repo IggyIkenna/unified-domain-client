@@ -21,18 +21,24 @@ from unified_config_interface import (
     build_path,
     get_spec,
 )
-from unified_trading_library import (
+
+from unified_domain_client.data_completion import (
     DataCompletionChecker,
-    DateFilterService,
+    get_available_date_range,
+    make_completion_checker,
+)
+from unified_domain_client.date_validation import (
     DateValidationResult,
     DateValidator,
-    TimestampAlignmentResult,
-    TimestampDateValidator,
-    get_available_date_range,
     get_earliest_valid_date,
     get_validator,
-    make_completion_checker,
     should_skip_date,
+)
+from unified_domain_client.instrument_date_filter import DateFilterService
+from unified_domain_client.models.validation import ValidationResult
+from unified_domain_client.timestamp_validation import (
+    TimestampAlignmentResult,
+    TimestampDateValidator,
     validate_timestamp_date_alignment,
 )
 
@@ -431,6 +437,8 @@ __all__ = [
     # Catalog
     "BigQueryCatalog",
     "GlueCatalog",
+    # Validation models
+    "ValidationResult",
     # Data completion and path registry
     "DataCompletionChecker",
     "get_available_date_range",

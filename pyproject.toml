@@ -22,10 +22,6 @@ editable = true
 path = "../unified-ml-interface"
 editable = true
 
-[tool.uv.sources.unified-trading-library]
-path = "../unified-trading-library"
-editable = true
-
 [tool.ruff]
 line-length = 100
 target-version = "py313"
@@ -85,7 +81,6 @@ extraPaths = [
     "../unified-events-interface",
     "../unified-cloud-interface",
     "../unified-ml-interface",
-    "../unified-trading-library",
 ]
 
 [tool.coverage.run]
@@ -118,7 +113,6 @@ dependencies = [
     "unified-config-interface>=0.3.0,<1.0.0",
     "unified-internal-contracts>=0.1.0,<1.0.0",
     "unified-ml-interface>=0.1.0,<1.0.0",
-    "unified-trading-library>=0.4.0,<1.0.0",
     "pytest>=9.0.1,<10.0.0",
     "pytest-cov>=7.0.0,<8.0.0",
     "pytest-socket>=0.7.0,<1.0.0",
